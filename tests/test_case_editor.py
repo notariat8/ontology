@@ -81,6 +81,16 @@ class CaseEditorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "inzwischen geändert"):
             prepare_change(SLUG, self.model, "wrong")
 
+    def test_erbausschlagung_sop_metadata_survives_editor_roundtrip(self):
+        slug = "erbausschlagung"
+        model = load_case(slug)
+        original = Graph().parse(ROOT / "cases" / slug / "ontology.ttl", format="turtle")
+        subject = URIRef(f"{N8}case/{slug}/node/local.decision.execution")
+        candidate = graph_from_model(slug, model, original)
+        self.assertEqual(to_isomorphic(candidate), to_isomorphic(original))
+        self.assertEqual(str(candidate.value(subject, N8.quellabschnitt)), "VII")
+        self.assertEqual(candidate.value(subject, DCT.source), original.value(subject, DCT.source))
+
     def test_rejects_real_case_values_and_dangling_edges(self):
         self.model["nodes"][0]["value"] = "private data"
         # The editable schema ignores extra fields rather than writing them to RDF.

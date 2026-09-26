@@ -19,6 +19,7 @@ from render_case_docs import render
 ROOT = Path(__file__).resolve().parents[1]
 N8 = Namespace("https://notariat8.github.io/ontology/id/")
 SKOS = Namespace("http://www.w3.org/2004/02/skos/core#")
+RDFS = Namespace("http://www.w3.org/2000/01/rdf-schema#")
 DCT = Namespace("http://purl.org/dc/terms/")
 DE = "de"
 NODE_ID = re.compile(r"[a-z][a-z0-9._-]{0,79}\Z")
@@ -29,6 +30,8 @@ NODE_FIELDS = {
     "label": (SKOS.prefLabel, "lang"),
     "status": (N8.quellstatus, "text"),
     "question": (N8.offeneFrage, "lang"),
+    "section": (N8.quellabschnitt, "text"),
+    "detail": (RDFS.comment, "lang"),
     "owner_role": (N8.verantwortlicheRolle, "text"),
     "privacy_class": (N8.datenschutzklasse, "text"),
     "document_source": (N8.dokumentquelle, "lang"),
@@ -162,7 +165,7 @@ def validate_model(slug: str, data: object) -> dict:
         categories.add(category)
         node = {"id": node_id, "category": category}
         for field, (_, kind) in NODE_FIELDS.items():
-            value = raw.get(field)
+            value = raw.get(field, "" if kind not in ("list", "bool") else ([] if kind == "list" else None))
             if kind == "list":
                 node[field] = _clean_list(value, field)
             elif kind == "bool":

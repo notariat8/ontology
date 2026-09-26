@@ -23,6 +23,10 @@ flowchart LR
 | [catalog/nac-baseline.json](catalog/nac-baseline.json) | Festgeschriebener 20-ID-Abgleich mit NaC |
 | [cases/README.md](cases/README.md) | Einstieg zu allen 20 fallbezogenen TTL-Dateien und Mermaid-Diagrammen |
 | [docs/architekturentscheidung-2026-09-26.md](docs/architekturentscheidung-2026-09-26.md) | Quellen, Alternativen, Grenzen, Integrationsplan |
+| [cases/erbausschlagung/README.md](cases/erbausschlagung/README.md) | Vertiefter Fallgraph mit 45 zusätzlichen Entwurfsbausteinen |
+| [sources/erbausschlagung/ablaufplan.md](sources/erbausschlagung/ablaufplan.md) | Vollständige lesbare Fassung des bereitgestellten NaC-Standardablaufplans |
+| [docs/erbausschlagung/import-notes.md](docs/erbausschlagung/import-notes.md) | Herkunft, Abdeckung, Modellgrenze und ausstehende fachliche Prüfung |
+| [docs/research/detail-gap-2026-09-26.md](docs/research/detail-gap-2026-09-26.md) | Recherche und Ausbaugrenze der übrigen 19 Fälle |
 
 Die lokale und GitHub-CI-Prüfung lautet nach Installation von [requirements.txt](requirements.txt): `python scripts/validate_catalog.py`, `python scripts/validate_cases.py` und `python scripts/render_case_docs.py --check`. Sie prüft Turtle-Syntax, exakt 20 Fallmodule, ihre fachlichen Knotentypen, Beziehungen und die Synchronität der Mermaid-Seiten. Mit `--nac-root <Pfad-zum-NaC-Checkout>` können Katalog und Fallmodule zusätzlich gegen den gepinnten NaC-Stand geprüft werden. Die fachliche Prüfung bleibt ein eigener Review-Schritt.
 
@@ -36,13 +40,13 @@ python -m venv .venv
 .\.venv\Scripts\python.exe scripts/case_editor.py
 ```
 
-Der Browser öffnet `http://127.0.0.1:8765/`. Mit **Änderung beginnen** wird bei Bedarf ein Git-Arbeitszweig angelegt. **Änderung speichern** schreibt das Turtle-Modul und die daraus erzeugte Mermaid-Seite; es veröffentlicht noch nichts. Danach werden beide Dateien als Pull Request mit Quellenstand und fachlicher Begründung geprüft. Neue Bausteine tragen eine `local.`-Kennung und bleiben als lokale Entwürfe von den importierten NaC-Knoten unterscheidbar. Der NaC-Abgleich mit `--nac-root` kann nach fachlichen Erweiterungen erwartungsgemäß eine Abweichung melden; der konkrete NaC-Commit und diese Abweichung müssen im Pull Request benannt werden. Keine Mandatsdaten in den Editor eingeben.
+Der Browser öffnet `http://127.0.0.1:8765/`. Mit **Änderung beginnen** wird bei Bedarf ein Git-Arbeitszweig angelegt. **Änderung speichern** schreibt das Turtle-Modul und die daraus erzeugte Mermaid-Seite; es veröffentlicht noch nichts. Danach werden beide Dateien als Pull Request mit Quellenstand und fachlicher Begründung geprüft. Neue Bausteine tragen eine `local.`-Kennung und bleiben als lokale Entwürfe von den importierten NaC-Knoten unterscheidbar. Der NaC-Abgleich mit `--nac-root` prüft weiterhin die ursprünglichen NaC-Knoten und -Beziehungen; zusätzliche lokale Entwürfe werden getrennt zugelassen. Keine Mandatsdaten in den Editor eingeben.
 
 Die Ontologie beschreibt **was** eine Vorgangsart ist und welche Angabenfragen, Dokumenttypen, Entscheidungen, Prüfgates und Nachweistypen ihre Vorlage enthält. Die Fallmodule übernehmen deren gerichtete Beziehungen aus NaC und sind hier die Pflegequelle. NaC-BPMN beschreibt **wie** ein bestimmter Ablauf verläuft. Mermaid wird aus Turtle erzeugt. SHACL soll später Qualitätsregeln für Turtle-Daten prüfen. Laufende Akten, Personendaten und Dokumentinhalte gehören nicht in dieses GitHub-Repository.
 
 ## Zuständigkeit und Pflege
 
-NaC pflegt den führenden Usecase-Katalog über GitOps. Änderungen an diesem RDF-Katalog erfolgen über Issue, Branch, Pull Request, Prüfung und dokumentierte Freigabe. Notarinnen und Notare übernehmen die fachliche Reviewer-Rolle für Begriffe, Rechtsquellen und fachliche Beziehungen; die technische Pflege und der NaC-Abgleich liegen im GitOps-Prozess. Die konkreten Reviewer-Konten sind noch nicht benannt. Der [PR-Vordruck](.github/pull_request_template.md) hält die Nachweise fest.
+NaC pflegt den führenden Usecase-Katalog über GitOps. Änderungen an diesem RDF-Katalog erfolgen über Issue, Branch, Pull Request, Prüfung und dokumentierte Freigabe. Notarinnen und Notare übernehmen die fachliche Reviewer-Rolle für Begriffe, Rechtsquellen und fachliche Beziehungen; die technische Pflege und der NaC-Abgleich liegen im GitOps-Prozess. Für die vertiefte Erbausschlagung ist Notarin Hannah-Silvia Heise als fachliche Reviewerin vorgesehen. Ihr GitHub-Benutzername wird nachgereicht; der aktuelle Entwurf ist **nicht fachlich freigegeben**. Der [PR-Vordruck](.github/pull_request_template.md) hält die Nachweise fest.
 
 Für einen Fall die jeweilige [Turtle-Datei](cases/README.md) ändern und mit `python scripts/render_case_docs.py --write` die Mermaid-Sicht aktualisieren. Der erstmalige Import aus NaC ist in [bootstrap_from_nac.py](scripts/bootstrap_from_nac.py) reproduzierbar dokumentiert; das Skript überschreibt bestehende Fallontologien absichtlich nicht. Die aus NaC übernommenen `open`-Angaben sind **Vorlagenfragen**, keine Daten oder Status realer Mandate. Die 20 Module wurden noch nicht notariell fachgeprüft.
 

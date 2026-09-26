@@ -177,6 +177,10 @@ function renderNodeForm() {
   const status=field(root,node.id.startsWith("local.") ? "Pflegestatus des lokalen Entwurfs" : "Status der NaC-Vorlage",node.status,value=>node.status=value);
   if (!node.id.startsWith("local.")) status.readOnly=true;
   field(root,"Offene Fachfrage",node.question,value=>node.question=value,true);
+  if (node.id.startsWith("local.")) {
+    field(root,"Kapitel der Fachvorlage",node.section || "",value=>node.section=value);
+    field(root,"Fachliche Erläuterung",node.detail || "",value=>node.detail=value,true);
+  }
   const grid=element("div",undefined,"grid");root.append(grid);
   field(grid,"Verantwortliche Rolle",node.owner_role,value=>node.owner_role=value);
   field(grid,"Datenschutzklasse",node.privacy_class,value=>node.privacy_class=value);
@@ -228,7 +232,7 @@ async function init() {
     $("sources").addEventListener("input",event=>{state.current.sources=event.target.value.split("\n").map(v=>v.trim()).filter(Boolean);dirty();});
     $("add-node").addEventListener("click",()=>{
       let counter=1;while(state.current.nodes.some(node=>node.id===`local.${counter}`)) counter++;
-      const node={id:`local.${counter}`,category:"required_information",label:"Neuer Baustein",status:"local-draft",question:"",owner_role:"",privacy_class:"",document_source:"",contains_personal_data:null,required_for:[],options:[]};
+      const node={id:`local.${counter}`,category:"required_information",label:"Neuer Baustein",status:"local-draft",question:"",section:"",detail:"",owner_role:"",privacy_class:"",document_source:"",contains_personal_data:null,required_for:[],options:[]};
       state.current.nodes.push(node);dirty();renderAll();selectNode(node.id);
     });
     $("delete-node").addEventListener("click",()=>{

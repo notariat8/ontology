@@ -11,6 +11,7 @@ from rdflib import Graph, Namespace, RDF
 ROOT = Path(__file__).resolve().parents[1]
 N8 = Namespace("https://notariat8.github.io/ontology/id/")
 SKOS = Namespace("http://www.w3.org/2004/02/skos/core#")
+RDFS = Namespace("http://www.w3.org/2000/01/rdf-schema#")
 DCT = Namespace("http://purl.org/dc/terms/")
 CATEGORIES = [
     (N8.Angabenfrage, "Angabenfragen", "info"),
@@ -65,13 +66,20 @@ def render(slug: str, case_graph: Graph | None = None) -> str:
         "",
         f"[Turtle-Quelle](ontology.ttl) · [NaC-Vorlagengraph]({source}) · [NaC-BPMN]({bpmn})",
         "",
+    ]
+    if slug == "erbausschlagung":
+        lines.extend([
+            "[Vollständiger Ablaufplan](../../sources/erbausschlagung/ablaufplan.md) · [Übernahme und Prüfpunkte](../../docs/erbausschlagung/import-notes.md) · [Synthetische Prüfszenarien](../../docs/erbausschlagung/synthetische-szenarien.md)",
+            "",
+        ])
+    lines.extend([
         "Ausgangspunkt dieses Fachgraphen sind **Vorlagenbegriffe** aus NaC; lokale Ergänzungen tragen eine `local.`-Kennung. `open` in der NaC-Quelle bedeutet eine offene Modellierungsfrage, keinen Status einer echten Akte. Die Pfeile zeigen fachliche Beziehungen; den zeitlichen Ablauf beschreibt das verlinkte BPMN-Modell. Eine notarielle Prüfung dieser Übernahme steht noch aus.",
         "",
         "## Fallgraph",
         "",
         "```mermaid",
         "flowchart LR",
-    ]
+    ])
     for index, (heading, (style, group)) in enumerate(by_type.items(), 1):
         lines.append(f'    subgraph g{index}["{heading}"]')
         for node in group:
@@ -98,6 +106,22 @@ def render(slug: str, case_graph: Graph | None = None) -> str:
     lines.extend(["```", "", "## Enthaltene Bausteine", "", "| Gruppe | Anzahl |", "| --- | ---: |"])
     for heading, (_, group) in by_type.items():
         lines.append(f"| {heading} | {len(group)} |")
+    chapters = {chapter: index for index, chapter in enumerate(("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"))}
+    local_nodes = sorted(
+        (node for node in order if graph.value(node, N8.lokaleNodeId) is not None),
+        key=lambda node: (chapters.get(str(graph.value(node, N8.quellabschnitt)), 99), str(graph.value(node, SKOS.prefLabel))),
+    )
+    if local_nodes:
+        lines.extend(["", "## Ergänzungen aus der Fachvorlage", "", "Diese Einträge sind ein fachlicher Entwurf. Die Kapitelangabe verweist auf den vollständigen Ablaufplan; Entscheidungen und Prüfgates ersetzen keine Einzelfallprüfung.", "", "| Kapitel | Baustein | Prüfgegenstand oder mögliche Optionen |", "| --- | --- | --- |"])
+        for node in local_nodes:
+            chapter = str(graph.value(node, N8.quellabschnitt) or "–")
+            label = str(graph.value(node, SKOS.prefLabel)).replace("|", "/")
+            explanation = str(graph.value(node, RDFS.comment) or graph.value(node, N8.offeneFrage) or "")
+            if not explanation:
+                explanation = ", ".join(sorted(str(value) for value in graph.objects(node, N8.entscheidungsoption)))
+            if not explanation:
+                explanation = f"Siehe Kapitel {chapter} des vollständigen Ablaufplans."
+            lines.append(f"| {chapter} | {label} | {explanation.replace('|', '/')} |")
     legal = sorted({str(url) for url in graph.objects(case, DCT.references)})
     lines.extend(["", "## In NaC genannte Rechtsquellen", ""])
     for url in legal:
