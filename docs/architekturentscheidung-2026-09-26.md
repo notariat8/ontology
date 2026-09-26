@@ -65,3 +65,15 @@ Empfohlene Erfassung: erst Amtsgeschäft und Fachbereich trennen, dann konkrete 
 - Welche noch nicht katalogisierten Amtstätigkeiten haben Priorität? Der Anspruch „alle“ braucht eine explizite Abdeckungsmatrix und periodische Rechtsquellenprüfung.
 
 Die externe Quellenlage wurde am 26.09.2026 recherchiert. Rechtsquellen und NaC-Stand müssen vor einer fachlich verbindlichen Veröffentlichung erneut geprüft werden.
+
+## Fortschreibung auf Nutzerentscheidung vom 26.09.2026
+
+Die folgende Entscheidung ersetzt die oben zunächst offenen Punkte für den aktuellen Ausbauschritt:
+
+- **Umfang:** genau die 20 kanonischen NaC-Fälle; keine weitere Aufnahme in diesem Schritt. Die zwei historischen Aliase bleiben ausgeschlossen. Die exakte Menge ist in [`catalog/nac-baseline.json`](../../catalog/nac-baseline.json) festgehalten und wird durch CI geprüft. Der Abgleich mit NaCs GitHub-`main` vom 26.09.2026 (`862c87e1e378657f0066faed1bd36b830be2146d`) ergab dieselben 20 Usecase-Verzeichnisse plus die zwei Aliase.
+- **Führende Pflege:** NaC-GitOps führt die kanonischen Usecases und IDs. Dieses Repository übernimmt einen ausdrücklich versionierten Stand. Änderungen gehen durch Issue, Branch, Pull Request, maschinelle Prüfung und Review. Damit wird die parallele Liste nicht stillschweigend zur zweiten Quelle der Wahrheit.
+- **Fachlicher Review:** Notarinnen und Notare werden Reviewer für Begriffe, Quellen und fachliche Relationen. Ihre konkreten GitHub-Konten und die technische Review-Pflicht im Branchschutz sind noch einzurichten; ohne benannte Reviewer wird keine bereits erfolgte notarielle Prüfung behauptet.
+- **Lizenz:** Wie NaC: fachliches Turtle-Vokabular, Katalog, Dokumentation und Mermaid unter `CC-BY-4.0`; Validatoren und technische Workflows unter `AGPL-3.0-or-later`. Volltexte und Zuordnung stehen in [`LICENSES/`](../../LICENSES/README.md), der NaC-Herkunftshinweis in [`NOTICE`](../../NOTICE).
+- **Webadresse:** wird später entschieden. Die bisherige Turtle-IRI-Basis ist ein technischer Bezeichner, keine veröffentlichte oder beschlossene Website. Auflösung und Hosting werden jetzt nicht als Voraussetzung behandelt.
+
+Die ursprüngliche Forschungsfrage nach vollständiger Abdeckung bleibt dokumentiert, ist aber **nicht** der Umfang dieser 20-Fälle-Phase. Auch SHACL bleibt ein späterer Ausbauschritt innerhalb dieser festgelegten Menge.
