@@ -1,4 +1,5 @@
 @prefix n8: <https://notariat8.github.io/ontology/id/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -7,7 +8,8 @@
 
 <https://notariat8.github.io/ontology/id/> a owl:Ontology ;
   rdfs:label "Notariats-Ontologie für NaC"@de ;
-  rdfs:comment "Fachvokabular für Typen notarieller Vorgänge; keine Akten- oder Laufzeitdaten."@de .
+  rdfs:comment "Fachvokabular für Typen notarieller Vorgänge; keine Akten- oder Laufzeitdaten."@de ;
+  dcterms:license <https://creativecommons.org/licenses/by/4.0/> .
 
 n8:Vorgangsart a owl:Class ;
   rdfs:subClassOf skos:Concept ;

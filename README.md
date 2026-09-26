@@ -1,8 +1,8 @@
 # Notariats-Ontologie für NaC
 
-Dieses Repository entwickelt einen **öffentlichen, versionierten Fachwortschatz für deutsche Notariate**. Es beschreibt Vorgangsarten und ihre Beziehungen in [Turtle](ontology/core.ttl) und [Turtle-Katalogdaten](catalog/nac-usecases.ttl). Ein Diagramm gibt Menschen den Einstieg. Die [Forschungs- und Architekturentscheidung](docs/architekturentscheidung-2026-09-26.md) erklärt den Bezug zu NaC.
+Dieses Repository entwickelt einen **versionierten Fachwortschatz für deutsche Notariate**. Es ist derzeit privat; eine öffentliche Webadresse wird später festgelegt. Es beschreibt Vorgangsarten und ihre Beziehungen in [Turtle](ontology/core.ttl) und [Turtle-Katalogdaten](catalog/nac-usecases.ttl). Ein Diagramm gibt Menschen den Einstieg. Die [Forschungs- und Architekturentscheidung](docs/architekturentscheidung-2026-09-26.md) erklärt den Bezug zu NaC.
 
-**Stand 26.09.2026:** Das ist ein erster, aus NaC abgeleiteter Katalog mit 20 kanonischen Vorgangsarten. Er ist keine vollständige Taxonomie aller denkbaren notariellen Tätigkeiten und keine rechtliche Freigabe. Zwei historische NaC-Aliase werden nicht als neue Arten gezählt. Fachliche Ergänzungen sind vorgesehen.
+**Verbindlicher Startumfang:** genau die [20 kanonischen NaC-Vorgangsarten](catalog/nac-baseline.json). Die zwei historischen NaC-Aliase zählen nicht dazu. Zusätzliche Arten werden in diesem Stand nicht aufgenommen. Das ist keine vollständige Taxonomie aller denkbaren notariellen Tätigkeiten und keine rechtliche Freigabe.
 
 ```mermaid
 flowchart LR
@@ -20,21 +20,19 @@ flowchart LR
 | --- | --- |
 | [ontology/core.ttl](ontology/core.ttl) | Fachklassen und Eigenschaften; maschinenlesbares Vokabular |
 | [catalog/nac-usecases.ttl](catalog/nac-usecases.ttl) | NaC-Basiskatalog mit stabilen `BusinessCaseTypeId`-Werten |
+| [catalog/nac-baseline.json](catalog/nac-baseline.json) | Festgeschriebener 20-ID-Abgleich mit NaC |
 | [docs/architekturentscheidung-2026-09-26.md](docs/architekturentscheidung-2026-09-26.md) | Quellen, Alternativen, Grenzen, Integrationsplan |
 
-Die lokale und GitHub-CI-Prüfung lautet nach Installation von [requirements.txt](requirements.txt): `python scripts/validate_catalog.py`. Sie prüft Turtle-Syntax und Katalogstruktur; der Abgleich mit NaC und die fachliche Prüfung bleiben separate Review-Schritte.
+Die lokale und GitHub-CI-Prüfung lautet nach Installation von [requirements.txt](requirements.txt): `python scripts/validate_catalog.py`. Sie prüft Turtle-Syntax, Katalogstruktur und die exakten 20 IDs. Mit `python scripts/validate_catalog.py --nac-root <Pfad-zum-NaC-Checkout>` prüft sie zusätzlich die Usecase- und BPMN-Dateien im NaC-Checkout. Die fachliche Prüfung bleibt ein eigener Review-Schritt.
 
 Die Ontologie beschreibt **was** eine Vorgangsart ist und welche Konzepte dazugehören. NaC-BPMN beschreibt **wie** ein bestimmter Ablauf verläuft. Mermaid ist nur die Lesesicht. SHACL soll später Pflichtangaben und Qualitätsregeln für Turtle-Daten prüfen. Laufende Akten, Personendaten und Dokumentinhalte gehören nicht in dieses GitHub-Repository.
 
-## Pflege einer Vorgangsart
+## Zuständigkeit und Pflege
 
-1. Prüfen, ob der Begriff bereits im NaC-Katalog steht; NaC-ID und kanonischen Slug unverändert übernehmen.
-2. Neue Art mit deutscher Bezeichnung, Definition, Fachbereich, Quellen, Geltungsstand und Evidenzstatus erfassen; ungesicherte Rechtsaussagen als offen markieren.
-3. Falls ein NaC-Usecase oder BPMN-Modell existiert, den **konkreten** Pfad zuordnen. Fehlt ein Modell, bleibt die Art trotzdem gültig.
-4. Turtle syntaktisch prüfen, Links und NaC-ID gegen NaC abgleichen und die Änderung fachlich reviewen. Eine SHACL-Prüfung folgt nach Festlegung der Shapes.
+NaC pflegt den führenden Usecase-Katalog über GitOps. Änderungen an diesem RDF-Katalog erfolgen über Issue, Branch, Pull Request, Prüfung und dokumentierte Freigabe. Notarinnen und Notare übernehmen die fachliche Reviewer-Rolle für Begriffe, Rechtsquellen und fachliche Beziehungen; die technische Pflege und der NaC-Abgleich liegen im GitOps-Prozess. Die konkreten Reviewer-Konten sind noch nicht benannt. Der [PR-Vordruck](.github/pull_request_template.md) hält die Nachweise fest.
 
-Die IRI-Basis `https://notariat8.github.io/ontology/id/` ist für eine spätere GitHub-Pages-Veröffentlichung reserviert. Diese URL ist derzeit **nicht als erreichbar nachgewiesen**. Bis zur Veröffentlichung sind die Git-Dateien der Abrufpfad; eine spätere Umstellung der IRI-Basis wäre eine Migration.
+Die in Turtle verwendete IRI-Basis `https://notariat8.github.io/ontology/id/` ist derzeit ein **technischer Bezeichner aus dem ersten Stand**, keine beschlossene Webadresse oder nachgewiesene Website. Die Entscheidung über Auflösung und Hosting wird später getroffen. Bis dahin sind die Git-Dateien der Abrufpfad; eine Änderung der IRI-Basis wäre eine bewusste Migration.
 
-## Nächste Ausbaustufe
+## Lizenz und weiterer Ausbau
 
-Erst den fachlichen Umfang und die Rolle dieses Repositories mit dem NaC-Owner festlegen. Dann die noch nicht kanonisierten Amtsgeschäfte systematisch aus BNotO, BeurkG, NotAktVV und NaC-Backlog erfassen, fachlich prüfen und als Katalogversion veröffentlichen. Anschließend SHACL-Core-Shapes und CI-Validierung ergänzen. Die Lizenz für dieses neue Repository ist noch festzulegen; NaC-Lizenzen gelten nicht automatisch für neu geschaffene Inhalte hier.
+Wie bei NaC stehen fachliche Inhalte und Diagramme unter `CC-BY-4.0`, ausführbare Validatoren unter `AGPL-3.0-or-later`; siehe [Lizenzzuordnung](LICENSES/README.md) und [Herkunftshinweis](NOTICE). SHACL-Core-Shapes können später für diese 20 Fälle ergänzt werden. Eine Erweiterung über die 20 Fälle hinaus braucht eine neue gemeinsame Umfangsentscheidung mit NaC.

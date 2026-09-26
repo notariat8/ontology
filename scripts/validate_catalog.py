@@ -1,9 +1,11 @@
-"""Validate the public RDF catalog without accessing NaC or live case data."""
+"""Validate the fixed NaC RDF catalog without accessing live case data."""
 
+import argparse
+import json
 from pathlib import Path
 import sys
 
-from rdflib import Graph, Namespace, RDF
+from rdflib import Graph, Namespace, RDF, URIRef
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,6 +14,13 @@ SKOS = Namespace("http://www.w3.org/2004/02/skos/core#")
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--nac-root", type=Path, help="Optional local NaC checkout for cross-repository checks")
+    args = parser.parse_args()
+    baseline = json.loads((ROOT / "catalog/nac-baseline.json").read_text(encoding="utf-8"))
+    expected = set(baseline["business_case_type_ids"])
+    if baseline["canonical_count"] != len(expected) or len(expected) != 20:
+        raise ValueError("NaC baseline must lock exactly 20 unique canonical IDs")
     graph = Graph()
     for path in (ROOT / "ontology/core.ttl", ROOT / "catalog/nac-usecases.ttl"):
         graph.parse(path, format="turtle")
@@ -33,8 +42,30 @@ def main() -> int:
         ids.add(slug)
         if (entry, SKOS.inScheme, N8["nac-vorgangsarten"]) not in graph:
             raise ValueError(f"{entry}: missing concept scheme")
+        ref = baseline["source_ref"]
+        expected_usecase = URIRef(f"https://github.com/notariat8/NaC/tree/{ref}/usecases/{slug}")
+        bpmn_path = "bpmn/immobilienkaufvertrag.bpmn" if slug == "immobilienkaufvertrag" else f"bpmn/usecases/{slug}.bpmn"
+        expected_bpmn = URIRef(f"https://github.com/notariat8/NaC/blob/{ref}/{bpmn_path}")
+        if list(graph.objects(entry, N8.hatNaCUsecase)) != [expected_usecase]:
+            raise ValueError(f"{entry}: NaC usecase link does not match the pinned baseline")
+        if list(graph.objects(entry, N8.hatBpmnModell)) != [expected_bpmn]:
+            raise ValueError(f"{entry}: BPMN link does not match the pinned baseline")
 
-    print(f"OK: {len(graph)} RDF triples, {len(entries)} unique NaC business-case types")
+    if ids != expected:
+        raise ValueError(f"catalog differs from the NaC 20-case baseline: missing={sorted(expected - ids)}, extra={sorted(ids - expected)}")
+
+    if args.nac_root:
+        usecases = args.nac_root / "usecases"
+        actual = {p.name for p in usecases.iterdir() if p.is_dir() and (p / "knowledge-graph.graph.json").exists()}
+        actual -= set(baseline["legacy_aliases_excluded"])
+        if actual != expected:
+            raise ValueError(f"NaC checkout differs from baseline: missing={sorted(expected - actual)}, extra={sorted(actual - expected)}")
+        for slug in expected:
+            bpmn = args.nac_root / "bpmn" / ("immobilienkaufvertrag.bpmn" if slug == "immobilienkaufvertrag" else f"usecases/{slug}.bpmn")
+            if not bpmn.is_file():
+                raise ValueError(f"missing NaC BPMN model: {bpmn}")
+
+    print(f"OK: {len(graph)} RDF triples, exactly {len(entries)} NaC business-case types" + ("; local NaC checkout matches" if args.nac_root else ""))
     return 0
 
 

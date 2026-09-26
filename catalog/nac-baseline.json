@@ -1,0 +1,32 @@
+{
+  "source_repository": "https://github.com/notariat8/NaC",
+  "source_ref": "862c87e1e378657f0066faed1bd36b830be2146d",
+  "checked_at": "2026-09-26",
+  "canonical_count": 20,
+  "legacy_aliases_excluded": [
+    "grundstueckskaufvertrag",
+    "testament"
+  ],
+  "business_case_type_ids": [
+    "adoption-familienrechtliche-erklaerungen",
+    "bautraegervertrag",
+    "ehevertrag-scheidungsfolgenvereinbarung",
+    "erbausschlagung",
+    "erbscheinsantrag-nachlass",
+    "geschaeftsanteilsuebertragung-gmbh",
+    "gesellschafterbeschluss-gmbh-ug",
+    "grundschuld-hypothekenbestellung",
+    "handelsregisteranmeldung",
+    "immobilienkaufvertrag",
+    "loeschungsbewilligung-grundbuchloeschung",
+    "online-gmbh-gruendung",
+    "pflichtteilsverzicht-erbverzicht",
+    "schenkungsvertrag-uebertragungsvertrag",
+    "teilungserklaerung-weg",
+    "testament-erbvertrag",
+    "unterschriftsbeglaubigung",
+    "vereinsregisteranmeldung",
+    "vollmacht-immobilien-gesellschaftsgeschaefte",
+    "vorsorgevollmacht-patientenverfuegung"
+  ]
+}
