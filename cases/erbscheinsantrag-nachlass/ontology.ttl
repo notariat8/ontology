@@ -1,0 +1,224 @@
+# SPDX-License-Identifier: CC-BY-4.0
+# Edit this Turtle file for fachliche Pflege; Mermaid is derived from it.
+@prefix n8: <https://notariat8.github.io/ontology/id/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+n8:vorgangsart-erbscheinsantrag-nachlass
+  dcterms:description "Antrag und Erklärungen für Erbschein, Nachlassgericht, Ausschlagung, eidesstattliche Versicherung und erbrechtliche Nachweisführung."@de ;
+  dcterms:source <https://github.com/notariat8/NaC/blob/862c87e1e378657f0066faed1bd36b830be2146d/usecases/erbscheinsantrag-nachlass/knowledge-graph.graph.json> ;
+  dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+  dcterms:references <https://www.gesetze-im-internet.de/beurkg/> ;
+  dcterms:references <https://www.gesetze-im-internet.de/bgb/__2353.html> ;
+  dcterms:references <https://www.gesetze-im-internet.de/gbo/> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/decedent.identity> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/residence.jurisdiction> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/applicants.identity> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/heirship.basis> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/family.evidence> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/dispositions.evidence> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/renunciations.disclaimers> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/oath.statement> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/cost.business_value> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/doc.death_certificate_reference> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/doc.application_draft> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/doc.family_evidence> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/decision.certificate_type> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/decision.oath_required> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/decision.gnotkg_cost_path> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/gate.heirship_review> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/gate.oath_readiness> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/gate.gnotkg_cost_review> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/evidence.evidence_package> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/evidence.court_submission> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/evidence.gnotkg_cost_note> .
+
+# Angabenfragen
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/decedent.identity> a n8:Angabenfrage ;
+  n8:nacNodeId "decedent.identity" ;
+  skos:prefLabel "Erblasser Identität"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Erblasser Identität benötigt?"@de ;
+  n8:verantwortlicheRolle "applicant" ;
+  n8:datenschutzklasse "personal_data" ;
+  n8:erforderlichFuer "application" ;
+  n8:erforderlichFuer "court_route" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/residence.jurisdiction> a n8:Angabenfrage ;
+  n8:nacNodeId "residence.jurisdiction" ;
+  skos:prefLabel "Wohnsitz Zuständigkeit"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Wohnsitz Zuständigkeit benötigt?"@de ;
+  n8:verantwortlicheRolle "notary_clerk" ;
+  n8:datenschutzklasse "mandate_metadata" ;
+  n8:erforderlichFuer "court_route" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/applicants.identity> a n8:Angabenfrage ;
+  n8:nacNodeId "applicants.identity" ;
+  skos:prefLabel "Antragsteller Identität"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Antragsteller Identität benötigt?"@de ;
+  n8:verantwortlicheRolle "notary_clerk" ;
+  n8:datenschutzklasse "personal_data" ;
+  n8:erforderlichFuer "identity_gate" ;
+  n8:erforderlichFuer "application" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/heirship.basis> a n8:Angabenfrage ;
+  n8:nacNodeId "heirship.basis" ;
+  skos:prefLabel "Erbenstellung Grundlage"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Erbenstellung Grundlage benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "sensitive_family_data" ;
+  n8:erforderlichFuer "legal_review" ;
+  n8:erforderlichFuer "application" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/family.evidence> a n8:Angabenfrage ;
+  n8:nacNodeId "family.evidence" ;
+  skos:prefLabel "Familie Nachweis"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Familie Nachweis benötigt?"@de ;
+  n8:verantwortlicheRolle "applicant" ;
+  n8:datenschutzklasse "family_data" ;
+  n8:erforderlichFuer "evidence_package" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/dispositions.evidence> a n8:Angabenfrage ;
+  n8:nacNodeId "dispositions.evidence" ;
+  skos:prefLabel "Verfügungen Nachweis"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Verfügungen Nachweis benötigt?"@de ;
+  n8:verantwortlicheRolle "notary_clerk" ;
+  n8:datenschutzklasse "sensitive_legal_data" ;
+  n8:erforderlichFuer "legal_review" ;
+  n8:erforderlichFuer "evidence_package" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/renunciations.disclaimers> a n8:Angabenfrage ;
+  n8:nacNodeId "renunciations.disclaimers" ;
+  skos:prefLabel "Ausschlagungen Ausschlagungen"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Ausschlagungen Ausschlagungen benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "sensitive_legal_data" ;
+  n8:erforderlichFuer "legal_review" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/oath.statement> a n8:Angabenfrage ;
+  n8:nacNodeId "oath.statement" ;
+  skos:prefLabel "Eidesstattliche Versicherung Erklärung"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Eidesstattliche Versicherung Erklärung benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "sensitive_process_data" ;
+  n8:erforderlichFuer "application" ;
+  n8:erforderlichFuer "appointment" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/cost.business_value> a n8:Angabenfrage ;
+  n8:nacNodeId "cost.business_value" ;
+  skos:prefLabel "Geschäftswert für GNotKG-Kostenprüfung"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Geschäftswertangaben, Wertvorschriften und Nachweise werden für die GNotKG-Kostenprüfung benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "financial_data" ;
+  n8:erforderlichFuer "gnotkg_cost_review" ;
+  n8:erforderlichFuer "cost_note" .
+
+# Dokumenttypen
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/doc.death_certificate_reference> a n8:Dokumenttyp ;
+  n8:nacNodeId "doc.death_certificate_reference" ;
+  skos:prefLabel "Dokument: Sterbefall Bescheinigung Referenz"@de ;
+  n8:quellstatus "open" ;
+  n8:dokumentquelle "manuell geprüfter Nachweisspeicher"@de ;
+  n8:enthaeltPersonendaten true .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/doc.application_draft> a n8:Dokumenttyp ;
+  n8:nacNodeId "doc.application_draft" ;
+  skos:prefLabel "Dokument: Antrag Entwurf"@de ;
+  n8:quellstatus "open" ;
+  n8:dokumentquelle "nach Prüfung erzeugter Workflow-Entwurf"@de ;
+  n8:enthaeltPersonendaten true .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/doc.family_evidence> a n8:Dokumenttyp ;
+  n8:nacNodeId "doc.family_evidence" ;
+  skos:prefLabel "Dokument: Familie Nachweis"@de ;
+  n8:quellstatus "open" ;
+  n8:dokumentquelle "manuell geprüfter Nachweisspeicher"@de ;
+  n8:enthaeltPersonendaten true .
+
+# Entscheidungen
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/decision.certificate_type> a n8:Entscheidungspunkt ;
+  n8:nacNodeId "decision.certificate_type" ;
+  skos:prefLabel "Entscheidung: Bescheinigung Art"@de ;
+  n8:quellstatus "open" ;
+  n8:entscheidungsoption "national_erbschein" ;
+  n8:entscheidungsoption "european_certificate" ;
+  n8:entscheidungsoption "renunciation" ;
+  n8:entscheidungsoption "other" ;
+  n8:entscheidungsoption "unknown" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/decision.oath_required> a n8:Entscheidungspunkt ;
+  n8:nacNodeId "decision.oath_required" ;
+  skos:prefLabel "Entscheidung: Eidesstattliche Versicherung erforderlich"@de ;
+  n8:quellstatus "open" ;
+  n8:entscheidungsoption "notary" ;
+  n8:entscheidungsoption "court" ;
+  n8:entscheidungsoption "not_required" ;
+  n8:entscheidungsoption "unknown" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/decision.gnotkg_cost_path> a n8:Entscheidungspunkt ;
+  n8:nacNodeId "decision.gnotkg_cost_path" ;
+  skos:prefLabel "Entscheidung: GNotKG-Kostenweg"@de ;
+  n8:quellstatus "open" ;
+  n8:entscheidungsoption "table_a" ;
+  n8:entscheidungsoption "table_b" ;
+  n8:entscheidungsoption "fixed_fee" ;
+  n8:entscheidungsoption "framework_fee" ;
+  n8:entscheidungsoption "needs_review" ;
+  n8:entscheidungsoption "unknown" .
+
+# Prüfgates
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/gate.heirship_review> a n8:Pruefgate ;
+  n8:nacNodeId "gate.heirship_review" ;
+  skos:prefLabel "Prüfgate: Erbenstellung Prüfung"@de ;
+  n8:quellstatus "open" ;
+  n8:verantwortlicheRolle "notary" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/gate.oath_readiness> a n8:Pruefgate ;
+  n8:nacNodeId "gate.oath_readiness" ;
+  skos:prefLabel "Prüfgate: Eidesstattliche Versicherung Bereitschaft"@de ;
+  n8:quellstatus "open" ;
+  n8:verantwortlicheRolle "notary" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/gate.gnotkg_cost_review> a n8:Pruefgate ;
+  n8:nacNodeId "gate.gnotkg_cost_review" ;
+  skos:prefLabel "Prüfgate: GNotKG-Kostenprüfung"@de ;
+  n8:quellstatus "open" ;
+  n8:verantwortlicheRolle "notary" .
+
+# Nachweistypen
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/evidence.evidence_package> a n8:Nachweistyp ;
+  n8:nacNodeId "evidence.evidence_package" ;
+  skos:prefLabel "Nachweis: Nachweis Paket"@de ;
+  n8:quellstatus "open" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/evidence.court_submission> a n8:Nachweistyp ;
+  n8:nacNodeId "evidence.court_submission" ;
+  skos:prefLabel "Nachweis: Gericht Einreichung"@de ;
+  n8:quellstatus "open" .
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/evidence.gnotkg_cost_note> a n8:Nachweistyp ;
+  n8:nacNodeId "evidence.gnotkg_cost_note" ;
+  skos:prefLabel "Nachweis: GNotKG-Kostenentwurf und Kostenprüfung"@de ;
+  n8:quellstatus "open" .
+
+# Beziehungen aus dem NaC-Vorlagengraphen; keine BPMN-Sequenzflüsse.
+
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/heirship.basis> n8:blockiertBisGeprueft <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/gate.heirship_review> .
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/oath.statement> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/gate.oath_readiness> .
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/family.evidence> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/evidence.evidence_package> .
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/cost.business_value> n8:informiert <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/decision.gnotkg_cost_path> .
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/decision.gnotkg_cost_path> n8:blockiertBisVollstaendig <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/gate.gnotkg_cost_review> .
+<https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/gate.gnotkg_cost_review> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbscheinsantrag-nachlass/node/evidence.gnotkg_cost_note> .

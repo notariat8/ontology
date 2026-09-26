@@ -77,3 +77,9 @@ Die folgende Entscheidung ersetzt die oben zunächst offenen Punkte für den akt
 - **Webadresse:** wird später entschieden. Die bisherige Turtle-IRI-Basis ist ein technischer Bezeichner, keine veröffentlichte oder beschlossene Website. Auflösung und Hosting werden jetzt nicht als Voraussetzung behandelt.
 
 Die ursprüngliche Forschungsfrage nach vollständiger Abdeckung bleibt dokumentiert, ist aber **nicht** der Umfang dieser 20-Fälle-Phase. Auch SHACL bleibt ein späterer Ausbauschritt innerhalb dieser festgelegten Menge.
+
+## Korrektur des Lieferumfangs nach Nutzerfeedback
+
+Ein bloßer 20er-Typenindex und eine Gesamtgrafik erfüllten die ursprüngliche Bitte um eine **hier pflegbare Ontologie** nicht. Für jeden der 20 kanonischen NaC-Fälle liegt deshalb nun unter [`cases/`](../../cases/README.md) ein eigenes Turtle-Modul mit Angabenfragen, Dokumenttypen, Entscheidungspunkten, Prüfgates, Nachweistypen, acht gerichteten Beziehungstypen und den in NaC genannten Rechtsquellen. Die Mermaid-Sicht je Fall wird aus diesem Turtle-Modul erzeugt; Änderungen erfolgen in Turtle. Das gemeinsame Vokabular steht in [`ontology/core.ttl`](../../ontology/core.ttl).
+
+Die Module wurden aus NaCs usecase-lokalen Vorlagengraphen beim festgehaltenen Commit `862c87e1e378657f0066faed1bd36b830be2146d` initialisiert und auf Knoten, Labels, Kanten und Quellverweise abgeglichen. Das ist eine **inhaltstreue Übernahme eines noch offenen NaC-Modellierungsstands**, keine eigenständige notarielle Validierung und keine Aussage über reale Akten. BPMN bleibt für zeitliche Abläufe und Ausführung führend.

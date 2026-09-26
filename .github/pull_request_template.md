@@ -9,6 +9,7 @@
 
 - [ ] Der Katalog enthält genau die 20 vereinbarten kanonischen NaC-IDs; Aliase sind ausgeschlossen.
 - [ ] `python scripts/validate_catalog.py` ist erfolgreich.
+- [ ] `python scripts/validate_cases.py` und `python scripts/render_case_docs.py --check` sind erfolgreich.
 - [ ] Der Abgleich mit einem aktuellen NaC-Checkout (`--nac-root`) oder GitHub-Stand ist dokumentiert.
 - [ ] Bei fachlichen Änderungen hat eine Notarin oder ein Notar die Begriffe und Quellen geprüft.
 - [ ] Keine Mandatsdaten, Personendaten, Dokumentinhalte oder Secrets sind enthalten.

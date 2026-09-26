@@ -1,0 +1,214 @@
+# SPDX-License-Identifier: CC-BY-4.0
+# Edit this Turtle file for fachliche Pflege; Mermaid is derived from it.
+@prefix n8: <https://notariat8.github.io/ontology/id/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+n8:vorgangsart-testament-erbvertrag
+  dcterms:description "Vorbereitung und Beurkundung testamentarischer Verfügungen oder Erbverträge mit Geschäftsfähigkeit, Familienlage, Vermögen, Vorverfügungen und Verwahrungsgates."@de ;
+  dcterms:source <https://github.com/notariat8/NaC/blob/862c87e1e378657f0066faed1bd36b830be2146d/usecases/testament-erbvertrag/knowledge-graph.graph.json> ;
+  dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+  dcterms:references <https://www.gesetze-im-internet.de/beurkg/> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/testator.identity> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/capacity.flags> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/family.structure> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/assets.categories> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/dispositions.wishes> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/prior.dispositions> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/executor.choice> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/custody.register> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/cost.business_value> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/doc.disposition_draft> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/doc.prior_dispositions> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/decision.instrument_type> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/decision.executor> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/decision.gnotkg_cost_path> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/gate.capacity_review> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/gate.binding_effect_review> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/gate.gnotkg_cost_review> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/evidence.capacity_notes> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/evidence.custody_registration> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/evidence.gnotkg_cost_note> .
+
+# Angabenfragen
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/testator.identity> a n8:Angabenfrage ;
+  n8:nacNodeId "testator.identity" ;
+  skos:prefLabel "Testierende Person Identität"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Testierende Person Identität benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "personal_data" ;
+  n8:erforderlichFuer "identity_gate" ;
+  n8:erforderlichFuer "capacity_review" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/capacity.flags> a n8:Angabenfrage ;
+  n8:nacNodeId "capacity.flags" ;
+  skos:prefLabel "Geschäftsfähigkeit Prüfflaggen"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Geschäftsfähigkeit Prüfflaggen benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "sensitive_personal_data" ;
+  n8:erforderlichFuer "legal_review" ;
+  n8:erforderlichFuer "appointment" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/family.structure> a n8:Angabenfrage ;
+  n8:nacNodeId "family.structure" ;
+  skos:prefLabel "Familie Struktur"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Familie Struktur benötigt?"@de ;
+  n8:verantwortlicheRolle "testator" ;
+  n8:datenschutzklasse "family_data" ;
+  n8:erforderlichFuer "drafting" ;
+  n8:erforderlichFuer "mandatory_share_review" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/assets.categories> a n8:Angabenfrage ;
+  n8:nacNodeId "assets.categories" ;
+  skos:prefLabel "Vermögen Kategorien"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Vermögen Kategorien benötigt?"@de ;
+  n8:verantwortlicheRolle "testator" ;
+  n8:datenschutzklasse "financial_data" ;
+  n8:erforderlichFuer "drafting" ;
+  n8:erforderlichFuer "tax_or_business_flags" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/dispositions.wishes> a n8:Angabenfrage ;
+  n8:nacNodeId "dispositions.wishes" ;
+  skos:prefLabel "Verfügungen Wünsche"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Verfügungen Wünsche benötigt?"@de ;
+  n8:verantwortlicheRolle "testator" ;
+  n8:datenschutzklasse "sensitive_personal_data" ;
+  n8:erforderlichFuer "drafting" ;
+  n8:erforderlichFuer "legal_review" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/prior.dispositions> a n8:Angabenfrage ;
+  n8:nacNodeId "prior.dispositions" ;
+  skos:prefLabel "Vorverfügungen Verfügungen"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Vorverfügungen Verfügungen benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "sensitive_legal_data" ;
+  n8:erforderlichFuer "legal_review" ;
+  n8:erforderlichFuer "custody" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/executor.choice> a n8:Angabenfrage ;
+  n8:nacNodeId "executor.choice" ;
+  skos:prefLabel "Testamentsvollstrecker Auswahl"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Testamentsvollstrecker Auswahl benötigt?"@de ;
+  n8:verantwortlicheRolle "testator" ;
+  n8:datenschutzklasse "sensitive_personal_data" ;
+  n8:erforderlichFuer "drafting" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/custody.register> a n8:Angabenfrage ;
+  n8:nacNodeId "custody.register" ;
+  skos:prefLabel "Verwahrung Register"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Verwahrung Register benötigt?"@de ;
+  n8:verantwortlicheRolle "notary_clerk" ;
+  n8:datenschutzklasse "mandate_metadata" ;
+  n8:erforderlichFuer "closing" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/cost.business_value> a n8:Angabenfrage ;
+  n8:nacNodeId "cost.business_value" ;
+  skos:prefLabel "Geschäftswert für GNotKG-Kostenprüfung"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Geschäftswertangaben, Wertvorschriften und Nachweise werden für die GNotKG-Kostenprüfung benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "financial_data" ;
+  n8:erforderlichFuer "gnotkg_cost_review" ;
+  n8:erforderlichFuer "cost_note" .
+
+# Dokumenttypen
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/doc.disposition_draft> a n8:Dokumenttyp ;
+  n8:nacNodeId "doc.disposition_draft" ;
+  skos:prefLabel "Dokument: Disposition Entwurf"@de ;
+  n8:quellstatus "open" ;
+  n8:dokumentquelle "nach notarieller Prüfung erzeugter Workflow-Entwurf"@de ;
+  n8:enthaeltPersonendaten true .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/doc.prior_dispositions> a n8:Dokumenttyp ;
+  n8:nacNodeId "doc.prior_dispositions" ;
+  skos:prefLabel "Dokument: Vorverfügungen Verfügungen"@de ;
+  n8:quellstatus "open" ;
+  n8:dokumentquelle "manuell geprüfter Upload oder vorgelegtes Original"@de ;
+  n8:enthaeltPersonendaten true .
+
+# Entscheidungen
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/decision.instrument_type> a n8:Entscheidungspunkt ;
+  n8:nacNodeId "decision.instrument_type" ;
+  skos:prefLabel "Entscheidung: Instrument Art"@de ;
+  n8:quellstatus "open" ;
+  n8:entscheidungsoption "single_testament" ;
+  n8:entscheidungsoption "joint_will" ;
+  n8:entscheidungsoption "inheritance_contract" ;
+  n8:entscheidungsoption "unknown" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/decision.executor> a n8:Entscheidungspunkt ;
+  n8:nacNodeId "decision.executor" ;
+  skos:prefLabel "Entscheidung: Testamentsvollstrecker"@de ;
+  n8:quellstatus "open" ;
+  n8:entscheidungsoption "yes" ;
+  n8:entscheidungsoption "no" ;
+  n8:entscheidungsoption "needs_review" ;
+  n8:entscheidungsoption "unknown" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/decision.gnotkg_cost_path> a n8:Entscheidungspunkt ;
+  n8:nacNodeId "decision.gnotkg_cost_path" ;
+  skos:prefLabel "Entscheidung: GNotKG-Kostenweg"@de ;
+  n8:quellstatus "open" ;
+  n8:entscheidungsoption "table_a" ;
+  n8:entscheidungsoption "table_b" ;
+  n8:entscheidungsoption "fixed_fee" ;
+  n8:entscheidungsoption "framework_fee" ;
+  n8:entscheidungsoption "needs_review" ;
+  n8:entscheidungsoption "unknown" .
+
+# Prüfgates
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/gate.capacity_review> a n8:Pruefgate ;
+  n8:nacNodeId "gate.capacity_review" ;
+  skos:prefLabel "Prüfgate: Geschäftsfähigkeit Prüfung"@de ;
+  n8:quellstatus "open" ;
+  n8:verantwortlicheRolle "notary" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/gate.binding_effect_review> a n8:Pruefgate ;
+  n8:nacNodeId "gate.binding_effect_review" ;
+  skos:prefLabel "Prüfgate: Bindungswirkung Wirkung Prüfung"@de ;
+  n8:quellstatus "open" ;
+  n8:verantwortlicheRolle "notary" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/gate.gnotkg_cost_review> a n8:Pruefgate ;
+  n8:nacNodeId "gate.gnotkg_cost_review" ;
+  skos:prefLabel "Prüfgate: GNotKG-Kostenprüfung"@de ;
+  n8:quellstatus "open" ;
+  n8:verantwortlicheRolle "notary" .
+
+# Nachweistypen
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/evidence.capacity_notes> a n8:Nachweistyp ;
+  n8:nacNodeId "evidence.capacity_notes" ;
+  skos:prefLabel "Nachweis: Geschäftsfähigkeit Vermerke"@de ;
+  n8:quellstatus "open" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/evidence.custody_registration> a n8:Nachweistyp ;
+  n8:nacNodeId "evidence.custody_registration" ;
+  skos:prefLabel "Nachweis: Verwahrung Registrierung"@de ;
+  n8:quellstatus "open" .
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/evidence.gnotkg_cost_note> a n8:Nachweistyp ;
+  n8:nacNodeId "evidence.gnotkg_cost_note" ;
+  skos:prefLabel "Nachweis: GNotKG-Kostenentwurf und Kostenprüfung"@de ;
+  n8:quellstatus "open" .
+
+# Beziehungen aus dem NaC-Vorlagengraphen; keine BPMN-Sequenzflüsse.
+
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/capacity.flags> n8:blockiertBisGeprueft <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/gate.capacity_review> .
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/prior.dispositions> n8:erfordert <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/gate.binding_effect_review> .
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/dispositions.wishes> n8:fuellt <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/doc.disposition_draft> .
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/cost.business_value> n8:informiert <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/decision.gnotkg_cost_path> .
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/decision.gnotkg_cost_path> n8:blockiertBisVollstaendig <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/gate.gnotkg_cost_review> .
+<https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/gate.gnotkg_cost_review> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/testament-erbvertrag/node/evidence.gnotkg_cost_note> .
