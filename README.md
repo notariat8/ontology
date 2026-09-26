@@ -26,6 +26,18 @@ flowchart LR
 
 Die lokale und GitHub-CI-Prüfung lautet nach Installation von [requirements.txt](requirements.txt): `python scripts/validate_catalog.py`, `python scripts/validate_cases.py` und `python scripts/render_case_docs.py --check`. Sie prüft Turtle-Syntax, exakt 20 Fallmodule, ihre fachlichen Knotentypen, Beziehungen und die Synchronität der Mermaid-Seiten. Mit `--nac-root <Pfad-zum-NaC-Checkout>` können Katalog und Fallmodule zusätzlich gegen den gepinnten NaC-Stand geprüft werden. Die fachliche Prüfung bleibt ein eigener Review-Schritt.
 
+## Im Browser bearbeiten
+
+Der [Fall-Editor](editor/index.html) bietet für die 20 Fälle Formulare für Beschreibung, Rechtsquellen, Bausteine und Beziehungen sowie eine direkte Graphansicht. Turtle-Syntax muss dafür nicht geschrieben werden. Der Editor läuft **nur auf dem eigenen Rechner** und ist kein öffentlich gehosteter Dienst. Auf Windows nach Installation von Python:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe scripts/case_editor.py
+```
+
+Der Browser öffnet `http://127.0.0.1:8765/`. Mit **Änderung beginnen** wird bei Bedarf ein Git-Arbeitszweig angelegt. **Änderung speichern** schreibt das Turtle-Modul und die daraus erzeugte Mermaid-Seite; es veröffentlicht noch nichts. Danach werden beide Dateien als Pull Request mit Quellenstand und fachlicher Begründung geprüft. Neue Bausteine tragen eine `local.`-Kennung und bleiben als lokale Entwürfe von den importierten NaC-Knoten unterscheidbar. Der NaC-Abgleich mit `--nac-root` kann nach fachlichen Erweiterungen erwartungsgemäß eine Abweichung melden; der konkrete NaC-Commit und diese Abweichung müssen im Pull Request benannt werden. Keine Mandatsdaten in den Editor eingeben.
+
 Die Ontologie beschreibt **was** eine Vorgangsart ist und welche Angabenfragen, Dokumenttypen, Entscheidungen, Prüfgates und Nachweistypen ihre Vorlage enthält. Die Fallmodule übernehmen deren gerichtete Beziehungen aus NaC und sind hier die Pflegequelle. NaC-BPMN beschreibt **wie** ein bestimmter Ablauf verläuft. Mermaid wird aus Turtle erzeugt. SHACL soll später Qualitätsregeln für Turtle-Daten prüfen. Laufende Akten, Personendaten und Dokumentinhalte gehören nicht in dieses GitHub-Repository.
 
 ## Zuständigkeit und Pflege

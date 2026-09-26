@@ -31,14 +31,22 @@ RELATIONS = {
 }
 
 
+def node_id(graph: Graph, node) -> str:
+    value = graph.value(node, N8.nacNodeId) or graph.value(node, N8.lokaleNodeId)
+    return str(value) if value is not None else ""
+
+
 def mermaid_label(value: str) -> str:
     return value.replace('"', "#quot;").replace("\n", " ").replace("|", "/")
 
 
-def render(slug: str) -> str:
+def render(slug: str, case_graph: Graph | None = None) -> str:
     graph = Graph()
     graph.parse(ROOT / "catalog/nac-usecases.ttl", format="turtle")
-    graph.parse(ROOT / "cases" / slug / "ontology.ttl", format="turtle")
+    if case_graph is None:
+        graph.parse(ROOT / "cases" / slug / "ontology.ttl", format="turtle")
+    else:
+        graph += case_graph
     case = N8[f"vorgangsart-{slug}"]
     title = str(graph.value(case, SKOS.prefLabel))
     summary = str(graph.value(case, DCT.description))
@@ -47,7 +55,7 @@ def render(slug: str) -> str:
     nodes = set(graph.objects(case, N8.hatBaustein))
     by_type = {}
     for node_type, heading, style in CATEGORIES:
-        by_type[heading] = (style, sorted((n for n in nodes if (n, RDF.type, node_type) in graph), key=lambda n: str(graph.value(n, N8.nacNodeId))))
+        by_type[heading] = (style, sorted((n for n in nodes if (n, RDF.type, node_type) in graph), key=lambda n: node_id(graph, n)))
     order = [n for _, group in by_type.values() for n in group]
     ids = {node: f"n{index}" for index, node in enumerate(order, 1)}
     lines = [
@@ -57,7 +65,7 @@ def render(slug: str) -> str:
         "",
         f"[Turtle-Quelle](ontology.ttl) · [NaC-Vorlagengraph]({source}) · [NaC-BPMN]({bpmn})",
         "",
-        "Dieser Fachgraph beschreibt **Vorlagenbegriffe** aus NaC. `open` in der Quelle bedeutet eine offene Modellierungsfrage, keinen Status einer echten Akte. Die Pfeile zeigen fachliche Beziehungen aus dem NaC-Graphen; den zeitlichen Ablauf beschreibt das verlinkte BPMN-Modell. Eine notarielle Prüfung dieser Übernahme steht noch aus.",
+        "Ausgangspunkt dieses Fachgraphen sind **Vorlagenbegriffe** aus NaC; lokale Ergänzungen tragen eine `local.`-Kennung. `open` in der NaC-Quelle bedeutet eine offene Modellierungsfrage, keinen Status einer echten Akte. Die Pfeile zeigen fachliche Beziehungen; den zeitlichen Ablauf beschreibt das verlinkte BPMN-Modell. Eine notarielle Prüfung dieser Übernahme steht noch aus.",
         "",
         "## Fallgraph",
         "",
@@ -100,7 +108,7 @@ def render(slug: str) -> str:
         "",
         "## Pflege",
         "",
-        "Fachbegriffe und Beziehungen in [ontology.ttl](ontology.ttl) ändern. Danach `python scripts/render_case_docs.py --write` ausführen und den Git-Diff von Turtle und dieser Seite gemeinsam reviewen.",
+        "Fachbegriffe und Beziehungen mit dem [Browser-Editor](../../README.md#im-browser-bearbeiten) oder in [ontology.ttl](ontology.ttl) ändern. Der Editor erzeugt diese Seite beim Speichern. Bei manueller Turtle-Pflege `python scripts/render_case_docs.py --write` ausführen und beide Änderungen gemeinsam reviewen.",
         "",
     ])
     return "\n".join(lines)
@@ -121,7 +129,7 @@ def render_index(slugs: list[str]) -> str:
         lines.append(f"| {label} | [Turtle]({slug}/ontology.ttl) | [Mermaid]({slug}/README.md) |")
     lines.extend([
         "",
-        "Die Turtle-Dateien sind die Pflegequelle. Nach einer Änderung erzeugt `python scripts/render_case_docs.py --write` die Mermaid-Seiten erneut. `python scripts/validate_cases.py` prüft die 20 Dateien und ihre Sichten.",
+        "Die Turtle-Dateien sind die Pflegequelle. Der [Browser-Editor](../README.md#im-browser-bearbeiten) bearbeitet sie über Formulare und erzeugt die Mermaid-Seiten automatisch. Bei manueller Turtle-Pflege `python scripts/render_case_docs.py --write` ausführen. `python scripts/validate_cases.py` prüft die 20 Dateien und ihre Sichten.",
         "",
     ])
     return "\n".join(lines)

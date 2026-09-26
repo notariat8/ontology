@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NaC-Fallontologie · Editor</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">N8</span><div><strong>NaC-Fallontologie</strong><small>Fachlicher Editor · 20 kanonische Fälle</small></div></div>
+    <div class="top-actions"><span id="branch" class="branch"></span><button id="start-branch" type="button">Änderung beginnen</button><button id="save" class="primary" type="button">Änderung speichern</button></div>
+  </header>
+  <main>
+    <div id="notice" class="notice" role="status" aria-live="polite">Lade Fälle …</div>
+    <section class="intro">
+      <div><p class="eyebrow">FALL AUSWÄHLEN</p><select id="case-select" aria-label="Vorgangsart auswählen"></select></div>
+      <p>Hier bearbeitest du Vorlagenbegriffe. Es werden keine Akten, Personen oder Dokumentinhalte gespeichert. Die Änderung bleibt lokal, bis sie als Pull Request zur Prüfung eingereicht wird.</p>
+    </section>
+    <section class="card overview">
+      <div class="section-head"><div><p class="eyebrow">VORGANGSART</p><h1 id="case-title"></h1></div><a id="nac-source" target="_blank" rel="noopener noreferrer">NaC-Quelle ↗</a></div>
+      <label for="summary">Kurzbeschreibung</label><textarea id="summary" rows="3"></textarea>
+      <label for="sources">Rechtsquellen <span class="hint">eine HTTPS-Adresse pro Zeile</span></label><textarea id="sources" rows="3"></textarea>
+    </section>
+    <section class="card">
+      <div class="section-head"><div><p class="eyebrow">ÜBERSICHT</p><h2>Fachgraph</h2></div><span class="hint">Knoten anklicken, um ihn zu bearbeiten</span></div>
+      <div class="graph-wrap"><svg id="graph" role="img" aria-label="Fachgraph des gewählten Falls"></svg></div>
+    </section>
+    <div class="columns">
+      <section class="card">
+        <div class="section-head"><div><p class="eyebrow">BAUSTEINE</p><h2>Fragen, Dokumente und Gates</h2></div><button id="add-node" type="button">+ Baustein</button></div>
+        <div id="node-list" class="node-list"></div>
+      </section>
+      <section class="card detail">
+        <div class="section-head"><div><p class="eyebrow">BEARBEITEN</p><h2 id="detail-title">Baustein auswählen</h2></div><button id="delete-node" class="danger" type="button" hidden>Entfernen</button></div>
+        <div id="node-form" class="node-form"><p class="empty">Wähle links einen Baustein oder klicke im Fachgraphen darauf.</p></div>
+      </section>
+    </div>
+    <section class="card">
+      <div class="section-head"><div><p class="eyebrow">BEZIEHUNGEN</p><h2>Verbindungen zwischen Bausteinen</h2></div></div>
+      <div class="edge-add">
+        <select id="edge-from" aria-label="Ausgangsbaustein"></select>
+        <select id="edge-type" aria-label="Beziehungstyp"></select>
+        <select id="edge-to" aria-label="Zielbaustein"></select>
+        <button id="add-edge" type="button">+ Beziehung</button>
+      </div>
+      <div id="edge-list" class="edge-list"></div>
+    </section>
+    <p class="footer-note">Turtle ist die Pflegequelle. Beim Speichern wird die Mermaid-Leseseite neu erzeugt. Eine notarielle Fachfreigabe erfolgt erst im dokumentierten Review.</p>
+  </main>
+</body>
+</html>
