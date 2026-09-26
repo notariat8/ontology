@@ -2,7 +2,7 @@
 
 Textgetreue Übernahme der bereitgestellten Word-Arbeitsanweisung, als NaC-Standardvorlage bezeichnet. Fachliche Prüfung der Ontologie ausstehend.
 
-Quelle: `Ablaufplan_Erbausschlagung_Notarbuero.docx` · SHA-256 `8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b` · Rechtsstand laut Vorlage: 26.09.2026.
+Quelle: `Ablaufplan_Erbausschlagung_Notarbuero.docx` · Autorin laut Word-Metadaten: Hannah-Silvia Heise · SHA-256 `8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b` · Rechtsstand laut Vorlage: 26.09.2026. Textfassung unter [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) nach ausdrücklicher Freigabe des Auftraggebers; Überschriften, Listenzeichen und Tabellen wurden für Markdown formatiert, eingebettete Bilder nicht übernommen.
 
 Die Kennzeichnung `☐` ist ein Arbeitsschritt der Vorlage, kein Bearbeitungsstatus eines echten Vorgangs.
 

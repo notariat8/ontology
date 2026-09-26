@@ -5,3 +5,11 @@ Based on NaC: Notariat as Code by funktion8 / ofunk (https://github.com/notariat
 Dieser Katalog übernimmt die 20 kanonischen NaC-Vorgangsarten als referenzierten
 Stand. Die Lizenzzuordnung für dieses Repository steht in LICENSES/README.md.
 Die Lizenzierung begründet keine Markenrechte und keine fachliche Freigabe.
+
+Die Textfassung in sources/erbausschlagung/ablaufplan.md basiert auf der vom
+Auftraggeber bereitgestellten Datei Ablaufplan_Erbausschlagung_Notarbuero.docx.
+Autorin laut Word-Metadaten: Hannah-Silvia Heise. Die Textübernahme in dieses
+Repository unter CC-BY-4.0 wurde vom Auftraggeber am 26.09.2026 ausdrücklich
+gestattet. Formatierung wurde für Markdown angepasst; eingebettete Bilder
+wurden nicht übernommen. Die fachliche Prüfung der abgeleiteten Ontologie
+steht aus.
