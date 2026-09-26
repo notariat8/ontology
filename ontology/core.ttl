@@ -40,8 +40,13 @@ n8:hatBaustein a owl:ObjectProperty ;
   rdfs:label "hat Fallbaustein"@de .
 n8:nacNodeId a owl:DatatypeProperty ; rdfs:range xsd:string ;
   rdfs:label "NaC-Knoten-ID"@de .
+n8:lokaleNodeId a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "lokale Knoten-ID"@de ;
+  rdfs:comment "Kennung eines hier ergänzten Entwurfsbausteins ohne NaC-Vorlagen-ID; beginnt mit local."@de .
 n8:quellstatus a owl:DatatypeProperty ; rdfs:range xsd:string ;
   rdfs:label "Vorlagenstatus laut NaC-Graph"@de .
+n8:pflegeStatus a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "Pflegestatus eines lokalen Entwurfsbausteins"@de .
 n8:offeneFrage a owl:DatatypeProperty ; rdfs:range xsd:string ;
   rdfs:label "offene Fachfrage"@de .
 n8:verantwortlicheRolle a owl:DatatypeProperty ; rdfs:range xsd:string ;

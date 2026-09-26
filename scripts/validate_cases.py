@@ -8,7 +8,7 @@ import sys
 from rdflib import Graph, Namespace, RDF, URIRef
 
 from bootstrap_from_nac import CATEGORIES, EDGES, source_json
-from render_case_docs import render
+from render_case_docs import node_id as get_node_id, render
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,10 +39,17 @@ def check_one(slug: str, source_ref: str, nac_root: Path | None) -> tuple[int, i
             raise ValueError(f"{slug}: empty {key}")
         actual_by_category[key] = {}
         for node in typed:
-            node_id = list(graph.objects(node, N8.nacNodeId))
+            nac_ids = list(graph.objects(node, N8.nacNodeId))
+            local_ids = list(graph.objects(node, N8.lokaleNodeId))
+            node_id = nac_ids + local_ids
             label = [v for v in graph.objects(node, SKOS.prefLabel) if v.language == "de"]
-            if len(node_id) != 1 or len(label) != 1 or len(list(graph.objects(node, N8.quellstatus))) != 1:
+            statuses = list(graph.objects(node, N8.quellstatus)) + list(graph.objects(node, N8.pflegeStatus))
+            if len(node_id) != 1 or len(label) != 1 or len(statuses) != 1:
                 raise ValueError(f"{slug}: incomplete typed node {node}")
+            if local_ids and not str(local_ids[0]).startswith("local."):
+                raise ValueError(f"{slug}: local node ID must start with local.")
+            if local_ids and not list(graph.objects(node, N8.pflegeStatus)):
+                raise ValueError(f"{slug}: local node must have a local maintenance status")
             if str(node) != f"https://notariat8.github.io/ontology/id/case/{slug}/node/{node_id[0]}":
                 raise ValueError(f"{slug}: node IRI is not scoped to its case and source ID: {node}")
             if str(node_id[0]) in all_ids:
@@ -58,7 +65,7 @@ def check_one(slug: str, source_ref: str, nac_root: Path | None) -> tuple[int, i
         if predicate in EDGE_PREDICATES:
             if start not in nodes or target not in nodes:
                 raise ValueError(f"{slug}: dangling or cross-case relationship")
-            edges.add((str(graph.value(start, N8.nacNodeId)), str(predicate), str(graph.value(target, N8.nacNodeId))))
+            edges.add((get_node_id(graph, start), str(predicate), get_node_id(graph, target)))
     if not edges:
         raise ValueError(f"{slug}: no case relationships")
     if not page.is_file() or page.read_text(encoding="utf-8") != render(slug):
