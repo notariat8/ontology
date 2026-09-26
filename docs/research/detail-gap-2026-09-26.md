@@ -18,6 +18,18 @@ gekennzeichnet und nach einer SOP oder fachlichen Fallprüfung gefragt
 werden müssen, statt den katalogtreuen Import als fachlich vollständig
 zu behandeln.
 
+NaC hatte am gepinnten Commit bereits ein
+[Deep-Process-Routing](https://github.com/notariat8/NaC/blob/862c87e1e378657f0066faed1bd36b830be2146d/docs/de/architecture/notarial-deep-process-candidate-routing.md)
+und ein [First-Wave-Deep-Model](https://github.com/notariat8/NaC/blob/862c87e1e378657f0066faed1bd36b830be2146d/docs/de/architecture/first-wave-process-deep-model.md).
+Dieses nennt acht generische Prozessphasen für vier erste Fälle:
+Online-GmbH-Gründung, Immobilienkaufvertrag, Handelsregisteranmeldung
+und Vorsorgevollmacht/Patientenverfügung. Erbausschlagung gehörte
+[nicht zu dieser ersten Welle](https://github.com/notariat8/NaC/blob/862c87e1e378657f0066faed1bd36b830be2146d/docs/de/architecture/first-wave-bpmn-outline.md).
+Auch dieses Modell beansprucht keine interne notarielle SOP und
+mutiert die vorhandenen BPMN-Dateien nicht. Die vorherige Recherche
+hätte diese Unterscheidung zwischen Phasenvertrag und ausführlicher
+Arbeitsanweisung deutlicher ausweisen müssen.
+
 Der Erbausschlagungsplan liefert eine wiederverwendbare **Struktur**:
 Auftrag, Sachverhalt, materielle Prüfung, Frist/Zuständigkeit,
 Form/Belehrung, Vertretung/Genehmigung, Vollzug, Nachbearbeitung,
@@ -66,4 +78,5 @@ notarieller Prüfung als fachlicher Entwurf erstellt. Der
 Erbausschlagungsplan ist die Strukturvorlage, aber kein fachlicher
 Textbaustein für andere Rechtsgebiete. Als Erstes sollten je Fall
 Auftragsvarianten, entscheidende Unterlagen, fachliche Ausnahmen,
-Vollzugswege und prüfbare Nachweise von NaC/Notaren erhoben werden.
+Vollzugswege und prüfbare Nachweise von NaC/Notaren mit dem
+[Erhebungsbogen](sop-erhebungsbogen.md) erhoben werden.

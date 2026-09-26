@@ -27,6 +27,7 @@ flowchart LR
 | [sources/erbausschlagung/ablaufplan.md](sources/erbausschlagung/ablaufplan.md) | Vollständige lesbare Fassung des bereitgestellten NaC-Standardablaufplans |
 | [docs/erbausschlagung/import-notes.md](docs/erbausschlagung/import-notes.md) | Herkunft, Abdeckung, Modellgrenze und ausstehende fachliche Prüfung |
 | [docs/research/detail-gap-2026-09-26.md](docs/research/detail-gap-2026-09-26.md) | Recherche und Ausbaugrenze der übrigen 19 Fälle |
+| [docs/research/sop-erhebungsbogen.md](docs/research/sop-erhebungsbogen.md) | Vorlage für die fallbezogene Vertiefung mit notarieller Prüfung |
 
 Die lokale und GitHub-CI-Prüfung lautet nach Installation von [requirements.txt](requirements.txt): `python scripts/validate_catalog.py`, `python scripts/validate_cases.py` und `python scripts/render_case_docs.py --check`. Sie prüft Turtle-Syntax, exakt 20 Fallmodule, ihre fachlichen Knotentypen, Beziehungen und die Synchronität der Mermaid-Seiten. Mit `--nac-root <Pfad-zum-NaC-Checkout>` können Katalog und Fallmodule zusätzlich gegen den gepinnten NaC-Stand geprüft werden. Die fachliche Prüfung bleibt ein eigener Review-Schritt.
 

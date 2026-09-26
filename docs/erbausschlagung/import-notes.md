@@ -29,7 +29,8 @@ Vollzugsauftrag sind als fachliche Entscheidung mit unterschiedlichen
 Nachweisen modelliert. Der zeitliche Kontrollfluss bleibt im NaC-BPMN;
 dessen gegenwärtig lineares Modell bildet diese Verzweigung noch nicht ab.
 Ein NaC-Änderungsvorschlag dafür ist nötig und darf nicht durch das
-Mermaid-Fachdiagramm vorgetäuscht werden.
+Mermaid-Fachdiagramm vorgetäuscht werden. Der konkrete Abgleich steht in
+[NaC-Issue #758](https://github.com/notariat8/NaC/issues/758).
 
 Die textgetreue Vorlage bleibt daneben notwendig: Sie enthält Rollen,
 Eskalationsanweisungen, Fristenorganisation und Arbeitshinweise, die in
