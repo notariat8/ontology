@@ -1,0 +1,43 @@
+@prefix n8: <https://notariat8.github.io/ontology/id/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://notariat8.github.io/ontology/id/> a owl:Ontology ;
+  rdfs:label "Notariats-Ontologie für NaC"@de ;
+  rdfs:comment "Fachvokabular für Typen notarieller Vorgänge; keine Akten- oder Laufzeitdaten."@de .
+
+n8:Vorgangsart a owl:Class ;
+  rdfs:subClassOf skos:Concept ;
+  rdfs:label "Vorgangsart"@de ;
+  rdfs:comment "Kanonischer Typ eines notariellen Geschäftsvorfalls, nicht der konkrete Mandatsvorgang."@de .
+
+n8:Fachbereich a owl:Class ;
+  rdfs:subClassOf skos:Concept ;
+  rdfs:label "Fachbereich"@de .
+
+n8:hatBusinessCaseTypeId a owl:DatatypeProperty ;
+  rdfs:domain n8:Vorgangsart ;
+  rdfs:range xsd:string ;
+  rdfs:label "NaC BusinessCaseTypeId"@de .
+
+n8:hatNaCUsecase a owl:ObjectProperty ;
+  rdfs:domain n8:Vorgangsart ;
+  rdfs:label "NaC-Usecase"@de .
+
+n8:hatBpmnModell a owl:ObjectProperty ;
+  rdfs:domain n8:Vorgangsart ;
+  rdfs:label "BPMN-Modell"@de .
+
+n8:hatFachbereich a owl:ObjectProperty ;
+  rdfs:domain n8:Vorgangsart ;
+  rdfs:range n8:Fachbereich ;
+  rdfs:label "Fachbereich"@de .
+
+n8:pruefstatus a owl:DatatypeProperty ;
+  rdfs:domain n8:Vorgangsart ;
+  rdfs:range xsd:string ;
+  rdfs:label "fachlicher Prüfstatus"@de ;
+  rdfs:comment "Katalogstatus; keine juristische Wirksamkeitsentscheidung."@de .

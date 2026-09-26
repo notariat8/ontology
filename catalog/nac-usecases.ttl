@@ -1,0 +1,209 @@
+@prefix n8: <https://notariat8.github.io/ontology/id/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Snapshot der 20 kanonischen NaC-Usecases (lokaler Stand d92b47e, 2026-09-26).
+# Dies sind Katalogmetadaten, keine Mandatsdaten und kein Rechtsvollständigkeitsnachweis.
+n8:nac-vorgangsarten a skos:ConceptScheme ;
+  skos:prefLabel "NaC-Vorgangsarten (Snapshot 2026-09-26)"@de .
+
+n8:bereich-immobilien a n8:Fachbereich ;
+  skos:prefLabel "Immobilien- und Grundbuchrecht"@de .
+
+n8:bereich-gesellschaft a n8:Fachbereich ;
+  skos:prefLabel "Gesellschaftsrecht"@de .
+
+n8:bereich-register a n8:Fachbereich ;
+  skos:prefLabel "Registeranmeldungen"@de .
+
+n8:bereich-beglaubigung a n8:Fachbereich ;
+  skos:prefLabel "Beglaubigungen"@de .
+
+n8:bereich-erbrecht a n8:Fachbereich ;
+  skos:prefLabel "Erbrecht und Nachlass"@de .
+
+n8:bereich-vorsorge a n8:Fachbereich ;
+  skos:prefLabel "Vorsorge und Vollmacht"@de .
+
+n8:bereich-familie a n8:Fachbereich ;
+  skos:prefLabel "Familienrecht"@de .
+
+n8:vorgangsart-immobilienkaufvertrag a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Immobilienkaufvertrag"@de ;
+  n8:hatBusinessCaseTypeId "immobilienkaufvertrag" ;
+  n8:hatFachbereich n8:bereich-immobilien ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/immobilienkaufvertrag> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/immobilienkaufvertrag.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-grundschuld-hypothekenbestellung a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Grundschuld / Hypothekenbestellung"@de ;
+  n8:hatBusinessCaseTypeId "grundschuld-hypothekenbestellung" ;
+  n8:hatFachbereich n8:bereich-immobilien ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/grundschuld-hypothekenbestellung> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/grundschuld-hypothekenbestellung.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-online-gmbh-gruendung a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "GmbH-/UG-Gründung (online)"@de ;
+  n8:hatBusinessCaseTypeId "online-gmbh-gruendung" ;
+  n8:hatFachbereich n8:bereich-gesellschaft ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/online-gmbh-gruendung> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/online-gmbh-gruendung.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-handelsregisteranmeldung a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Handelsregisteranmeldung"@de ;
+  n8:hatBusinessCaseTypeId "handelsregisteranmeldung" ;
+  n8:hatFachbereich n8:bereich-register ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/handelsregisteranmeldung> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/handelsregisteranmeldung.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-unterschriftsbeglaubigung a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Beglaubigung von Unterschriften"@de ;
+  n8:hatBusinessCaseTypeId "unterschriftsbeglaubigung" ;
+  n8:hatFachbereich n8:bereich-beglaubigung ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/unterschriftsbeglaubigung> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/unterschriftsbeglaubigung.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-testament-erbvertrag a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Testament / Erbvertrag"@de ;
+  n8:hatBusinessCaseTypeId "testament-erbvertrag" ;
+  n8:hatFachbereich n8:bereich-erbrecht ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/testament-erbvertrag> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/testament-erbvertrag.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-erbscheinsantrag-nachlass a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Erbscheinsantrag / Nachlassangelegenheiten"@de ;
+  n8:hatBusinessCaseTypeId "erbscheinsantrag-nachlass" ;
+  n8:hatFachbereich n8:bereich-erbrecht ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/erbscheinsantrag-nachlass> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/erbscheinsantrag-nachlass.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-vorsorgevollmacht-patientenverfuegung a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Vorsorgevollmacht und Patientenverfügung"@de ;
+  n8:hatBusinessCaseTypeId "vorsorgevollmacht-patientenverfuegung" ;
+  n8:hatFachbereich n8:bereich-vorsorge ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/vorsorgevollmacht-patientenverfuegung> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/vorsorgevollmacht-patientenverfuegung.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-schenkungsvertrag-uebertragungsvertrag a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Schenkungsvertrag / Übertragungsvertrag"@de ;
+  n8:hatBusinessCaseTypeId "schenkungsvertrag-uebertragungsvertrag" ;
+  n8:hatFachbereich n8:bereich-immobilien ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/schenkungsvertrag-uebertragungsvertrag> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/schenkungsvertrag-uebertragungsvertrag.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-ehevertrag-scheidungsfolgenvereinbarung a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Ehevertrag / Scheidungsfolgenvereinbarung"@de ;
+  n8:hatBusinessCaseTypeId "ehevertrag-scheidungsfolgenvereinbarung" ;
+  n8:hatFachbereich n8:bereich-familie ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/ehevertrag-scheidungsfolgenvereinbarung> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/ehevertrag-scheidungsfolgenvereinbarung.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-loeschungsbewilligung-grundbuchloeschung a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Löschungsbewilligung / Grundbuchlöschung"@de ;
+  n8:hatBusinessCaseTypeId "loeschungsbewilligung-grundbuchloeschung" ;
+  n8:hatFachbereich n8:bereich-immobilien ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/loeschungsbewilligung-grundbuchloeschung> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/loeschungsbewilligung-grundbuchloeschung.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-teilungserklaerung-weg a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Teilungserklärung nach WEG"@de ;
+  n8:hatBusinessCaseTypeId "teilungserklaerung-weg" ;
+  n8:hatFachbereich n8:bereich-immobilien ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/teilungserklaerung-weg> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/teilungserklaerung-weg.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-bautraegervertrag a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Bauträgervertrag"@de ;
+  n8:hatBusinessCaseTypeId "bautraegervertrag" ;
+  n8:hatFachbereich n8:bereich-immobilien ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/bautraegervertrag> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/bautraegervertrag.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-gesellschafterbeschluss-gmbh-ug a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Gesellschafterbeschluss bei GmbH/UG"@de ;
+  n8:hatBusinessCaseTypeId "gesellschafterbeschluss-gmbh-ug" ;
+  n8:hatFachbereich n8:bereich-gesellschaft ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/gesellschafterbeschluss-gmbh-ug> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/gesellschafterbeschluss-gmbh-ug.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-geschaeftsanteilsuebertragung-gmbh a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Geschäftsanteilsübertragung GmbH"@de ;
+  n8:hatBusinessCaseTypeId "geschaeftsanteilsuebertragung-gmbh" ;
+  n8:hatFachbereich n8:bereich-gesellschaft ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/geschaeftsanteilsuebertragung-gmbh> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/geschaeftsanteilsuebertragung-gmbh.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-vereinsregisteranmeldung a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Vereinsregisteranmeldung"@de ;
+  n8:hatBusinessCaseTypeId "vereinsregisteranmeldung" ;
+  n8:hatFachbereich n8:bereich-register ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/vereinsregisteranmeldung> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/vereinsregisteranmeldung.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-erbausschlagung a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Erbausschlagung"@de ;
+  n8:hatBusinessCaseTypeId "erbausschlagung" ;
+  n8:hatFachbereich n8:bereich-erbrecht ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/erbausschlagung> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/erbausschlagung.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-pflichtteilsverzicht-erbverzicht a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Pflichtteilsverzicht / Erbverzicht"@de ;
+  n8:hatBusinessCaseTypeId "pflichtteilsverzicht-erbverzicht" ;
+  n8:hatFachbereich n8:bereich-erbrecht ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/pflichtteilsverzicht-erbverzicht> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/pflichtteilsverzicht-erbverzicht.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-adoption-familienrechtliche-erklaerungen a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Adoption / familienrechtliche Erklärungen"@de ;
+  n8:hatBusinessCaseTypeId "adoption-familienrechtliche-erklaerungen" ;
+  n8:hatFachbereich n8:bereich-familie ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/adoption-familienrechtliche-erklaerungen> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/adoption-familienrechtliche-erklaerungen.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
+
+n8:vorgangsart-vollmacht-immobilien-gesellschaftsgeschaefte a n8:Vorgangsart ;
+  skos:inScheme n8:nac-vorgangsarten ;
+  skos:prefLabel "Vollmacht für Immobilien- oder Gesellschaftsgeschäfte"@de ;
+  n8:hatBusinessCaseTypeId "vollmacht-immobilien-gesellschaftsgeschaefte" ;
+  n8:hatFachbereich n8:bereich-vorsorge ;
+  n8:hatNaCUsecase <https://github.com/notariat8/NaC/tree/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/usecases/vollmacht-immobilien-gesellschaftsgeschaefte> ;
+  n8:hatBpmnModell <https://github.com/notariat8/NaC/blob/d92b47e0a67b6e5bc2f4387742c84ddfe9d2518b/bpmn/usecases/vollmacht-immobilien-gesellschaftsgeschaefte.bpmn> ;
+  n8:pruefstatus "aus NaC übernommen; fachlich nicht erneut geprüft" .
