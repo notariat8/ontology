@@ -1,0 +1,216 @@
+# SPDX-License-Identifier: CC-BY-4.0
+# Edit this Turtle file for fachliche Pflege; Mermaid is derived from it.
+@prefix n8: <https://notariat8.github.io/ontology/id/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+n8:vorgangsart-ehevertrag-scheidungsfolgenvereinbarung
+  dcterms:description "Ehevertrag oder Scheidungsfolgenvereinbarung mit Gueterstand, Ausgleich, Versorgungsausgleich, Unterhalt, Vermögenszuordnung und Fairness-Prüfung."@de ;
+  dcterms:source <https://github.com/notariat8/NaC/blob/862c87e1e378657f0066faed1bd36b830be2146d/usecases/ehevertrag-scheidungsfolgenvereinbarung/knowledge-graph.graph.json> ;
+  dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+  dcterms:references <https://www.gesetze-im-internet.de/beurkg/> ;
+  dcterms:references <https://www.gesetze-im-internet.de/bgb/__1410.html> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/spouses.identity> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/marriage.context> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/property.regime> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/asset.disclosure> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/maintenance.rules> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/pension.equalization> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/child.family.flags> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/asset.transfer> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/cost.business_value> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/doc.agreement_draft> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/doc.asset_schedule_reference> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/decision.instrument_type> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/decision.fairness_risk> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/decision.gnotkg_cost_path> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/gate.fairness_review> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/gate.simultaneous_presence> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/gate.gnotkg_cost_review> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/evidence.fairness_notes> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/evidence.execution_and_followup> ;
+  n8:hatBaustein <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/evidence.gnotkg_cost_note> .
+
+# Angabenfragen
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/spouses.identity> a n8:Angabenfrage ;
+  n8:nacNodeId "spouses.identity" ;
+  skos:prefLabel "Ehegatten Identität"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Ehegatten Identität benötigt?"@de ;
+  n8:verantwortlicheRolle "notary_clerk" ;
+  n8:datenschutzklasse "personal_data" ;
+  n8:erforderlichFuer "identity_gate" ;
+  n8:erforderlichFuer "appointment" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/marriage.context> a n8:Angabenfrage ;
+  n8:nacNodeId "marriage.context" ;
+  skos:prefLabel "Ehe Kontext"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Ehe Kontext benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "family_data" ;
+  n8:erforderlichFuer "legal_review" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/property.regime> a n8:Angabenfrage ;
+  n8:nacNodeId "property.regime" ;
+  skos:prefLabel "Grundstück Regime"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Grundstück Regime benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "financial_data" ;
+  n8:erforderlichFuer "drafting" ;
+  n8:erforderlichFuer "fairness_review" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/asset.disclosure> a n8:Angabenfrage ;
+  n8:nacNodeId "asset.disclosure" ;
+  skos:prefLabel "Vermögen Offenlegung"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Vermögen Offenlegung benötigt?"@de ;
+  n8:verantwortlicheRolle "spouses" ;
+  n8:datenschutzklasse "financial_data" ;
+  n8:erforderlichFuer "fairness_review" ;
+  n8:erforderlichFuer "drafting" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/maintenance.rules> a n8:Angabenfrage ;
+  n8:nacNodeId "maintenance.rules" ;
+  skos:prefLabel "Unterhalt Regeln"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Unterhalt Regeln benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "sensitive_family_financial_data" ;
+  n8:erforderlichFuer "fairness_review" ;
+  n8:erforderlichFuer "drafting" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/pension.equalization> a n8:Angabenfrage ;
+  n8:nacNodeId "pension.equalization" ;
+  skos:prefLabel "Versorgungsausgleich equalization"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Versorgungsausgleich equalization benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "financial_data" ;
+  n8:erforderlichFuer "legal_review" ;
+  n8:erforderlichFuer "drafting" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/child.family.flags> a n8:Angabenfrage ;
+  n8:nacNodeId "child.family.flags" ;
+  skos:prefLabel "Kind Familie Prüfflaggen"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Kind Familie Prüfflaggen benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "sensitive_family_data" ;
+  n8:erforderlichFuer "fairness_review" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/asset.transfer> a n8:Angabenfrage ;
+  n8:nacNodeId "asset.transfer" ;
+  skos:prefLabel "Vermögen Übertragung"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Angaben, Nachweise und Prüfpunkte werden für Vermögen Übertragung benötigt?"@de ;
+  n8:verantwortlicheRolle "notary_clerk" ;
+  n8:datenschutzklasse "financial_or_property_data" ;
+  n8:erforderlichFuer "attachments" ;
+  n8:erforderlichFuer "execution" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/cost.business_value> a n8:Angabenfrage ;
+  n8:nacNodeId "cost.business_value" ;
+  skos:prefLabel "Geschäftswert für GNotKG-Kostenprüfung"@de ;
+  n8:quellstatus "open" ;
+  n8:offeneFrage "Welche Geschäftswertangaben, Wertvorschriften und Nachweise werden für die GNotKG-Kostenprüfung benötigt?"@de ;
+  n8:verantwortlicheRolle "notary" ;
+  n8:datenschutzklasse "financial_data" ;
+  n8:erforderlichFuer "gnotkg_cost_review" ;
+  n8:erforderlichFuer "cost_note" .
+
+# Dokumenttypen
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/doc.agreement_draft> a n8:Dokumenttyp ;
+  n8:nacNodeId "doc.agreement_draft" ;
+  skos:prefLabel "Dokument: Vereinbarung Entwurf"@de ;
+  n8:quellstatus "open" ;
+  n8:dokumentquelle "nach Prüfung erzeugter Workflow-Entwurf"@de ;
+  n8:enthaeltPersonendaten true .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/doc.asset_schedule_reference> a n8:Dokumenttyp ;
+  n8:nacNodeId "doc.asset_schedule_reference" ;
+  skos:prefLabel "Dokument: Vermögen Plan Referenz"@de ;
+  n8:quellstatus "open" ;
+  n8:dokumentquelle "freigegebener Nachweisspeicher"@de ;
+  n8:enthaeltPersonendaten true .
+
+# Entscheidungen
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/decision.instrument_type> a n8:Entscheidungspunkt ;
+  n8:nacNodeId "decision.instrument_type" ;
+  skos:prefLabel "Entscheidung: Instrument Art"@de ;
+  n8:quellstatus "open" ;
+  n8:entscheidungsoption "pre_marriage" ;
+  n8:entscheidungsoption "marriage_contract" ;
+  n8:entscheidungsoption "divorce_consequence" ;
+  n8:entscheidungsoption "unknown" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/decision.fairness_risk> a n8:Entscheidungspunkt ;
+  n8:nacNodeId "decision.fairness_risk" ;
+  skos:prefLabel "Entscheidung: Fairness Risiko"@de ;
+  n8:quellstatus "open" ;
+  n8:entscheidungsoption "low" ;
+  n8:entscheidungsoption "medium" ;
+  n8:entscheidungsoption "high" ;
+  n8:entscheidungsoption "blocked" ;
+  n8:entscheidungsoption "unknown" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/decision.gnotkg_cost_path> a n8:Entscheidungspunkt ;
+  n8:nacNodeId "decision.gnotkg_cost_path" ;
+  skos:prefLabel "Entscheidung: GNotKG-Kostenweg"@de ;
+  n8:quellstatus "open" ;
+  n8:entscheidungsoption "table_a" ;
+  n8:entscheidungsoption "table_b" ;
+  n8:entscheidungsoption "fixed_fee" ;
+  n8:entscheidungsoption "framework_fee" ;
+  n8:entscheidungsoption "needs_review" ;
+  n8:entscheidungsoption "unknown" .
+
+# Prüfgates
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/gate.fairness_review> a n8:Pruefgate ;
+  n8:nacNodeId "gate.fairness_review" ;
+  skos:prefLabel "Prüfgate: Fairness Prüfung"@de ;
+  n8:quellstatus "open" ;
+  n8:verantwortlicheRolle "notary" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/gate.simultaneous_presence> a n8:Pruefgate ;
+  n8:nacNodeId "gate.simultaneous_presence" ;
+  skos:prefLabel "Prüfgate: Gleichzeitig Anwesenheit"@de ;
+  n8:quellstatus "open" ;
+  n8:verantwortlicheRolle "notary_clerk" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/gate.gnotkg_cost_review> a n8:Pruefgate ;
+  n8:nacNodeId "gate.gnotkg_cost_review" ;
+  skos:prefLabel "Prüfgate: GNotKG-Kostenprüfung"@de ;
+  n8:quellstatus "open" ;
+  n8:verantwortlicheRolle "notary" .
+
+# Nachweistypen
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/evidence.fairness_notes> a n8:Nachweistyp ;
+  n8:nacNodeId "evidence.fairness_notes" ;
+  skos:prefLabel "Nachweis: Fairness Vermerke"@de ;
+  n8:quellstatus "open" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/evidence.execution_and_followup> a n8:Nachweistyp ;
+  n8:nacNodeId "evidence.execution_and_followup" ;
+  skos:prefLabel "Nachweis: Vollzug and Nachbereitung"@de ;
+  n8:quellstatus "open" .
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/evidence.gnotkg_cost_note> a n8:Nachweistyp ;
+  n8:nacNodeId "evidence.gnotkg_cost_note" ;
+  skos:prefLabel "Nachweis: GNotKG-Kostenentwurf und Kostenprüfung"@de ;
+  n8:quellstatus "open" .
+
+# Beziehungen aus dem NaC-Vorlagengraphen; keine BPMN-Sequenzflüsse.
+
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/asset.disclosure> n8:blockiertBisGeprueft <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/gate.fairness_review> .
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/spouses.identity> n8:erfordert <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/gate.simultaneous_presence> .
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/asset.transfer> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/evidence.execution_and_followup> .
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/cost.business_value> n8:informiert <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/decision.gnotkg_cost_path> .
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/decision.gnotkg_cost_path> n8:blockiertBisVollstaendig <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/gate.gnotkg_cost_review> .
+<https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/gate.gnotkg_cost_review> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/ehevertrag-scheidungsfolgenvereinbarung/node/evidence.gnotkg_cost_note> .

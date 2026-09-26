@@ -20,6 +20,52 @@ n8:Fachbereich a owl:Class ;
   rdfs:subClassOf skos:Concept ;
   rdfs:label "Fachbereich"@de .
 
+n8:Fallbaustein a owl:Class ;
+  rdfs:label "fachlicher Fallbaustein"@de ;
+  rdfs:comment "Abstrakter Typ aus einem NaC-Usecase-Graphen; keine konkrete Akte."@de .
+
+n8:Angabenfrage a owl:Class ; rdfs:subClassOf n8:Fallbaustein ;
+  rdfs:label "offene Angabenfrage"@de .
+n8:Dokumenttyp a owl:Class ; rdfs:subClassOf n8:Fallbaustein ;
+  rdfs:label "Dokumenttyp"@de .
+n8:Entscheidungspunkt a owl:Class ; rdfs:subClassOf n8:Fallbaustein ;
+  rdfs:label "Entscheidungspunkt"@de .
+n8:Pruefgate a owl:Class ; rdfs:subClassOf n8:Fallbaustein ;
+  rdfs:label "Prüfgate"@de .
+n8:Nachweistyp a owl:Class ; rdfs:subClassOf n8:Fallbaustein ;
+  rdfs:label "Nachweistyp"@de .
+
+n8:hatBaustein a owl:ObjectProperty ;
+  rdfs:domain n8:Vorgangsart ; rdfs:range n8:Fallbaustein ;
+  rdfs:label "hat Fallbaustein"@de .
+n8:nacNodeId a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "NaC-Knoten-ID"@de .
+n8:quellstatus a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "Vorlagenstatus laut NaC-Graph"@de .
+n8:offeneFrage a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "offene Fachfrage"@de .
+n8:verantwortlicheRolle a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "Rolle laut NaC-Graph"@de .
+n8:datenschutzklasse a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "Datenschutzklasse laut NaC-Graph"@de .
+n8:erforderlichFuer a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "benannter Kontext laut NaC-Graph"@de .
+n8:entscheidungsoption a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "Entscheidungsoption laut NaC-Graph"@de .
+n8:dokumentquelle a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "Dokumentquelle laut NaC-Graph"@de .
+n8:enthaeltPersonendaten a owl:DatatypeProperty ; rdfs:range xsd:boolean ;
+  rdfs:label "enthält potenziell Personendaten"@de .
+
+n8:erfordert a owl:ObjectProperty ; rdfs:label "erfordert laut NaC-Graph"@de .
+n8:informiert a owl:ObjectProperty ; rdfs:label "informiert laut NaC-Graph"@de .
+n8:blockiertBisVollstaendig a owl:ObjectProperty ; rdfs:label "blockiert bis vollständig"@de .
+n8:blockiertBisGeprueft a owl:ObjectProperty ; rdfs:label "blockiert bis geprüft"@de .
+n8:erfordertEntscheidung a owl:ObjectProperty ; rdfs:label "erfordert Entscheidung"@de .
+n8:belegtDurch a owl:ObjectProperty ; rdfs:label "belegt durch"@de .
+n8:fuellt a owl:ObjectProperty ; rdfs:label "füllt"@de .
+n8:bestimmt a owl:ObjectProperty ; rdfs:label "bestimmt"@de .
+
 n8:hatBusinessCaseTypeId a owl:DatatypeProperty ;
   rdfs:domain n8:Vorgangsart ;
   rdfs:range xsd:string ;

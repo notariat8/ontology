@@ -1,6 +1,6 @@
 # Notariats-Ontologie für NaC
 
-Dieses Repository entwickelt einen **versionierten Fachwortschatz für deutsche Notariate**. Es ist derzeit privat; eine öffentliche Webadresse wird später festgelegt. Es beschreibt Vorgangsarten und ihre Beziehungen in [Turtle](ontology/core.ttl) und [Turtle-Katalogdaten](catalog/nac-usecases.ttl). Ein Diagramm gibt Menschen den Einstieg. Die [Forschungs- und Architekturentscheidung](docs/architekturentscheidung-2026-09-26.md) erklärt den Bezug zu NaC.
+Dieses Repository pflegt eine **fallbezogene Ontologie für deutsche Notariate**. Es ist derzeit privat; eine öffentliche Webadresse wird später festgelegt. Für jeden der 20 NaC-Fälle gibt es eine [Turtle-Ontologie und eine Mermaid-Sicht](cases/README.md). Das gemeinsame [Vokabular](ontology/core.ttl) definiert die Bausteine und Beziehungen. Die [Forschungs- und Architekturentscheidung](docs/architekturentscheidung-2026-09-26.md) erklärt den Bezug zu NaC.
 
 **Verbindlicher Startumfang:** genau die [20 kanonischen NaC-Vorgangsarten](catalog/nac-baseline.json). Die zwei historischen NaC-Aliase zählen nicht dazu. Zusätzliche Arten werden in diesem Stand nicht aufgenommen. Das ist keine vollständige Taxonomie aller denkbaren notariellen Tätigkeiten und keine rechtliche Freigabe.
 
@@ -21,15 +21,18 @@ flowchart LR
 | [ontology/core.ttl](ontology/core.ttl) | Fachklassen und Eigenschaften; maschinenlesbares Vokabular |
 | [catalog/nac-usecases.ttl](catalog/nac-usecases.ttl) | NaC-Basiskatalog mit stabilen `BusinessCaseTypeId`-Werten |
 | [catalog/nac-baseline.json](catalog/nac-baseline.json) | Festgeschriebener 20-ID-Abgleich mit NaC |
+| [cases/README.md](cases/README.md) | Einstieg zu allen 20 fallbezogenen TTL-Dateien und Mermaid-Diagrammen |
 | [docs/architekturentscheidung-2026-09-26.md](docs/architekturentscheidung-2026-09-26.md) | Quellen, Alternativen, Grenzen, Integrationsplan |
 
-Die lokale und GitHub-CI-Prüfung lautet nach Installation von [requirements.txt](requirements.txt): `python scripts/validate_catalog.py`. Sie prüft Turtle-Syntax, Katalogstruktur und die exakten 20 IDs. Mit `python scripts/validate_catalog.py --nac-root <Pfad-zum-NaC-Checkout>` prüft sie zusätzlich die Usecase- und BPMN-Dateien im NaC-Checkout. Die fachliche Prüfung bleibt ein eigener Review-Schritt.
+Die lokale und GitHub-CI-Prüfung lautet nach Installation von [requirements.txt](requirements.txt): `python scripts/validate_catalog.py`, `python scripts/validate_cases.py` und `python scripts/render_case_docs.py --check`. Sie prüft Turtle-Syntax, exakt 20 Fallmodule, ihre fachlichen Knotentypen, Beziehungen und die Synchronität der Mermaid-Seiten. Mit `--nac-root <Pfad-zum-NaC-Checkout>` können Katalog und Fallmodule zusätzlich gegen den gepinnten NaC-Stand geprüft werden. Die fachliche Prüfung bleibt ein eigener Review-Schritt.
 
-Die Ontologie beschreibt **was** eine Vorgangsart ist und welche Konzepte dazugehören. NaC-BPMN beschreibt **wie** ein bestimmter Ablauf verläuft. Mermaid ist nur die Lesesicht. SHACL soll später Pflichtangaben und Qualitätsregeln für Turtle-Daten prüfen. Laufende Akten, Personendaten und Dokumentinhalte gehören nicht in dieses GitHub-Repository.
+Die Ontologie beschreibt **was** eine Vorgangsart ist und welche Angabenfragen, Dokumenttypen, Entscheidungen, Prüfgates und Nachweistypen ihre Vorlage enthält. Die Fallmodule übernehmen deren gerichtete Beziehungen aus NaC und sind hier die Pflegequelle. NaC-BPMN beschreibt **wie** ein bestimmter Ablauf verläuft. Mermaid wird aus Turtle erzeugt. SHACL soll später Qualitätsregeln für Turtle-Daten prüfen. Laufende Akten, Personendaten und Dokumentinhalte gehören nicht in dieses GitHub-Repository.
 
 ## Zuständigkeit und Pflege
 
 NaC pflegt den führenden Usecase-Katalog über GitOps. Änderungen an diesem RDF-Katalog erfolgen über Issue, Branch, Pull Request, Prüfung und dokumentierte Freigabe. Notarinnen und Notare übernehmen die fachliche Reviewer-Rolle für Begriffe, Rechtsquellen und fachliche Beziehungen; die technische Pflege und der NaC-Abgleich liegen im GitOps-Prozess. Die konkreten Reviewer-Konten sind noch nicht benannt. Der [PR-Vordruck](.github/pull_request_template.md) hält die Nachweise fest.
+
+Für einen Fall die jeweilige [Turtle-Datei](cases/README.md) ändern und mit `python scripts/render_case_docs.py --write` die Mermaid-Sicht aktualisieren. Der erstmalige Import aus NaC ist in [bootstrap_from_nac.py](scripts/bootstrap_from_nac.py) reproduzierbar dokumentiert; das Skript überschreibt bestehende Fallontologien absichtlich nicht. Die aus NaC übernommenen `open`-Angaben sind **Vorlagenfragen**, keine Daten oder Status realer Mandate. Die 20 Module wurden noch nicht notariell fachgeprüft.
 
 Die in Turtle verwendete IRI-Basis `https://notariat8.github.io/ontology/id/` ist derzeit ein **technischer Bezeichner aus dem ersten Stand**, keine beschlossene Webadresse oder nachgewiesene Website. Die Entscheidung über Auflösung und Hosting wird später getroffen. Bis dahin sind die Git-Dateien der Abrufpfad; eine Änderung der IRI-Basis wäre eine bewusste Migration.
 
