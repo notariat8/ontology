@@ -63,6 +63,18 @@ class VocabularyEditorTests(unittest.TestCase):
             self.assertEqual(len(changes), 1, identifier)
             self.assertEqual(len(model(updated)["terms"]), len(original["terms"]), identifier)
 
+    def test_multiline_definition_remains_editable(self):
+        proposed = model(CORE)
+        item = next(item for item in proposed["terms"] if item["id"] == "Dokumenttyp")
+        item["comment"] = "Erste Zeile.\nZweite Zeile."
+        updated, _, _ = prepare_change(CORE, proposed)
+        self.assertIn('Erste Zeile.\\nZweite Zeile.', updated)
+        again = model(updated)
+        self.assertEqual(next(item for item in again["terms"] if item["id"] == "Dokumenttyp")["comment"], item["comment"])
+        next(item for item in again["terms"] if item["id"] == "Dokumenttyp")["comment"] += " Weitere Erläuterung."
+        second, _, _ = prepare_change(updated, again)
+        self.assertEqual(len(model(second)["terms"]), 34)
+
 
 if __name__ == "__main__":
     unittest.main()

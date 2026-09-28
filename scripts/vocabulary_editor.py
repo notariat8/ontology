@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 
 from rdflib import Graph, Literal, RDF, RDFS, OWL, URIRef
@@ -168,7 +169,7 @@ def _statement(item: dict, graph: Graph) -> str:
     rendered = []
     for predicate, value in pairs:
         predicate_name = "a" if predicate == RDF.type else "rdfs:" + str(predicate).rsplit("#", 1)[1]
-        value_name = value.n3() if isinstance(value, Literal) else ("owl:" + str(value).rsplit("#", 1)[1] if predicate == RDF.type else _name(value))
+        value_name = (json.dumps(str(value), ensure_ascii=False) + "@de") if isinstance(value, Literal) else ("owl:" + str(value).rsplit("#", 1)[1] if predicate == RDF.type else _name(value))
         rendered.append(f"  {predicate_name} {value_name}")
     return f"n8:{item['id']} " + " ;\n".join(part.strip() if index == 0 else part for index, part in enumerate(rendered)) + " .\n"
 
