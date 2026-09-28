@@ -14,7 +14,7 @@ from rdflib.compare import to_isomorphic
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from case_editor_model import DCT, N8, ROOT, case_uri, graph_from_model, load_case, prepare_change
+from case_editor_model import DCT, N8, RDFS, ROOT, case_uri, graph_from_model, load_case, prepare_change
 import case_editor
 import case_editor_model
 import render_case_docs
@@ -55,6 +55,8 @@ class CaseEditorTests(unittest.TestCase):
             "label": "Neue Fachfrage",
             "status": "local-draft",
             "question": "Was ist zu klären?",
+            "section": "II",
+            "detail": "Fachliche Erläuterung zum Baustein.",
             "owner_role": "notary",
             "privacy_class": "",
             "document_source": "",
@@ -70,6 +72,8 @@ class CaseEditorTests(unittest.TestCase):
         self.assertIsNone(candidate.value(subject, N8.nacNodeId))
         self.assertEqual(str(candidate.value(subject, N8.pflegeStatus)), "local-draft")
         self.assertIsNone(candidate.value(subject, N8.quellstatus))
+        self.assertEqual(str(candidate.value(subject, N8.quellabschnitt)), "II")
+        self.assertEqual(str(candidate.value(subject, RDFS.comment)), "Fachliche Erläuterung zum Baustein.")
         ttl, page, changed = prepare_change(SLUG, self.model, self.model["revision"])
         self.assertTrue(changed)
         self.assertIn("Neue Fachfrage", page)

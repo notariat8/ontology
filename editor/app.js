@@ -273,7 +273,7 @@ async function init() {
     $("sources").addEventListener("input",event=>{state.current.sources=event.target.value.split("\n").map(v=>v.trim()).filter(Boolean);dirty();});
     $("add-node").addEventListener("click",()=>{
       let counter=1;while(state.current.nodes.some(node=>node.id===`local.${counter}`)) counter++;
-      const node={id:`local.${counter}`,category:"required_information",label:"Neuer Baustein",status:"local-draft",question:"",owner_role:"",privacy_class:"",document_source:"",contains_personal_data:null,required_for:[],options:[]};
+      const node={id:`local.${counter}`,category:"required_information",label:"Neuer Baustein",status:"local-draft",question:"",section:"",detail:"",owner_role:"",privacy_class:"",document_source:"",contains_personal_data:null,required_for:[],options:[]};
       state.current.nodes.push(node);dirty();renderAll();selectNode(node.id);
     });
     $("delete-node").addEventListener("click",()=>{

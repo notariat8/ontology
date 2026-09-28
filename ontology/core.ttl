@@ -47,6 +47,9 @@ n8:quellstatus a owl:DatatypeProperty ; rdfs:range xsd:string ;
   rdfs:label "Vorlagenstatus laut NaC-Graph"@de .
 n8:pflegeStatus a owl:DatatypeProperty ; rdfs:range xsd:string ;
   rdfs:label "Pflegestatus eines lokalen Entwurfsbausteins"@de .
+n8:quellabschnitt a owl:DatatypeProperty ; rdfs:range xsd:string ;
+  rdfs:label "Abschnitt der fachlichen Quellvorlage"@de ;
+  rdfs:comment "Kapitelverweis auf eine dokumentierte Vorlage, kein Ablaufschritt oder Laufzeitstatus."@de .
 n8:offeneFrage a owl:DatatypeProperty ; rdfs:range xsd:string ;
   rdfs:label "offene Fachfrage"@de .
 n8:verantwortlicheRolle a owl:DatatypeProperty ; rdfs:range xsd:string ;
