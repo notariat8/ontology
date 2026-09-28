@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", purpose: "case", user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null };
+let state = { token: "", branch: "", purpose: "case", user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null, caseHistory: null, historyTarget: "" };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -135,6 +135,53 @@ function renderOverview() {
     button.addEventListener("click",()=>{$("node-category").value=key;setView("bausteine");renderNodes();});
     stats.append(button);
   });
+}
+async function loadCaseHistory() {
+  const slug=state.current.slug;
+  const root=$("history-list");root.replaceChildren(element("p","Änderungen werden geladen …","empty"));
+  const history=await api("/api/cases/"+encodeURIComponent(slug)+"/history");
+  if(state.current.slug!==slug)return;
+  state.caseHistory=history;root.replaceChildren();
+  if(!history.entries.length){root.append(element("p","Noch keine gespeicherte Änderung gefunden.","empty"));return;}
+  history.entries.forEach(item=>{
+    const row=element("div",undefined,"history-item");
+    const info=element("div");
+    info.append(element("strong",item.message || "Änderung der Fallvorlage"));
+    const date=item.date ? new Date(item.date).toLocaleDateString("de-DE") : "Datum unbekannt";
+    info.append(element("small",`${date} · ${item.author} · ${item.sha.slice(0,10)}`));
+    const actions=element("div",undefined,"history-actions");
+    const link=element("a","Auf GitHub ansehen ↗");link.href=item.url;link.target="_blank";link.rel="noopener noreferrer";
+    const button=element("button","Fassung prüfen");button.type="button";
+    button.disabled=state.branch!=="main";
+    button.addEventListener("click",()=>previewCaseHistory(item).catch(error=>notice(error.message,"error")));
+    actions.append(link,button);row.append(info,actions);root.append(row);
+  });
+  if(state.branch!=="main")root.prepend(element("p","Eine frühere Fassung kann erst nach Abschluss des laufenden Arbeitszweigs übernommen werden.","context-help"));
+}
+async function previewCaseHistory(item) {
+  if(!state.caseHistory || state.branch!=="main")throw new Error("Bitte Fall und Historie neu laden.");
+  const result=await api("/api/cases/"+encodeURIComponent(state.current.slug)+"/restore-preview",{
+    target_sha:item.sha,expected_main:state.caseHistory.main_ref
+  });
+  state.historyTarget=item.sha;
+  $("history-preview").hidden=false;
+  $("history-target").textContent=`Frühere Fassung ${item.sha.slice(0,10)} von ${item.author}. Der aktuelle Fall wird dadurch nicht direkt geändert.`;
+  const list=$("history-changes");list.replaceChildren();
+  result.changes.forEach(change=>list.append(element("li",change)));
+  if(!result.changed)list.append(element("li","Diese Fassung entspricht bereits dem aktuellen Fall."));
+  $("history-apply").disabled=!result.changed;
+}
+async function applyCaseHistory() {
+  try{
+    if(!state.caseHistory || !state.historyTarget || state.branch!=="main")throw new Error("Bitte die frühere Fassung erneut prüfen.");
+    const slug=state.current.slug;
+    const result=await api("/api/cases/"+encodeURIComponent(slug)+"/restore",{
+      target_sha:state.historyTarget,expected_main:state.caseHistory.main_ref
+    });
+    state.branch=result.branch;state.purpose="case";refreshBranch();
+    await loadCase(slug);setView("pruefung");
+    notice("Frühere Fassung als neuer Arbeitsentwurf gespeichert. Bitte Grund und Quellenstand angeben und zur notariellen Prüfung einreichen.","success");
+  }catch(error){notice(error.message,"error");}
 }
 async function loadReviewQueue() {
   const root=$("review-list");root.replaceChildren(element("p","Änderungen werden geladen …","empty"));
@@ -354,6 +401,7 @@ async function loadCase(slug) {
   $("edit-overview").textContent="Beschreibung und Quellen bearbeiten";
   $("review-link").hidden=true;
   $("turtle-details").open=false;
+  $("case-history").open=false;state.caseHistory=null;state.historyTarget="";$("history-preview").hidden=true;
   $("turtle-content").textContent="Beim Öffnen wird der aktuelle Stand geladen.";
   setView("fall");
   $("case-title").textContent = state.current.title;
@@ -644,6 +692,8 @@ async function init() {
     for(const [key,label] of Object.entries(relations)){const option=element("option",label);option.value=key;$("edge-type").append(option);}
     $("case-select").addEventListener("change",event=>loadCase(event.target.value).catch(error=>notice(error.message,"error")));
     $("case-search").addEventListener("input",renderCaseList);
+    $("case-history").addEventListener("toggle",()=>{if($("case-history").open)loadCaseHistory().catch(error=>notice(error.message,"error"));});
+    $("history-apply").addEventListener("click",applyCaseHistory);
     $("case-index-query").addEventListener("input",()=>{renderCaseIndex();if($("case-index-query").value.trim().length>=2)loadCaseIndex().catch(()=>{});});
     $("vocab-search").addEventListener("input",renderVocabulary);
     $("vocab-impact-refresh").addEventListener("click",()=>loadVocabularyImpact().catch(error=>notice(error.message,"error")));

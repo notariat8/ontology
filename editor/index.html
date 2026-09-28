@@ -47,6 +47,14 @@
       <label for="summary">Kurzbeschreibung</label><textarea id="summary" rows="3"></textarea>
       <label for="sources">Rechtsquellen <span class="hint">eine HTTPS-Adresse pro Zeile</span></label><textarea id="sources" rows="3"></textarea>
       </div>
+      <details id="case-history" class="case-history"><summary>Änderungsverlauf und frühere Fassung</summary>
+        <p class="context-help">Die letzten Änderungen der Fallvorlage auf GitHub. Eine frühere Fassung kann als neuer Entwurf zur notariellen Prüfung vorgeschlagen werden.</p>
+        <div id="history-list" class="history-list"></div>
+        <div id="history-preview" class="history-preview" hidden>
+          <h3>Änderung vor der Übernahme prüfen</h3><p id="history-target"></p><ul id="history-changes"></ul>
+          <button id="history-apply" type="button">Als neuen Prüfentwurf übernehmen</button>
+        </div>
+      </details>
       <button class="next-step" type="button" data-go-view="bausteine">Inhalte dieses Falls öffnen →</button>
     </section>
     <section class="card" data-view="verbindungen" hidden>

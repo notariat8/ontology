@@ -21,6 +21,43 @@ from vocabulary_editor import model as vocabulary_model
 
 
 class CloudEditorTests(unittest.TestCase):
+    def test_historical_case_becomes_a_separate_review_branch(self):
+        main, target = "a" * 40, "b" * 40
+        self.server.sessions["restore-session"] = {
+            "token": "fake", "user": "reviewer", "csrf": "restore-csrf", "branch": "main", "created": time.time(),
+        }
+        cookie = {"Cookie": "nac_session=restore-session"}
+        headers = {**cookie, "Origin": "https://editor.example.org", "X-Editor-Token": "restore-csrf", "Content-Type": "application/json"}
+
+        class FakeStore:
+            def __init__(self, *_):
+                pass
+
+            def case_history(self, slug):
+                return {"main_ref": main, "case": slug, "entries": [{"sha": target, "message": "Frühere Fassung"}]}
+
+            def preview_case_restore(self, slug, target_sha, expected_main):
+                assert (slug, target_sha, expected_main) == ("erbausschlagung", target, main)
+                return {"changed": True, "changes": ["Fachfrage geändert"], "main_ref": main, "target_sha": target}
+
+            def restore_case(self, slug, target_sha, expected_main, branch):
+                assert (slug, target_sha, expected_main) == ("erbausschlagung", target, main)
+                return {"branch": branch, "expected_ref": "c" * 40, "changes": ["Fachfrage geändert"]}
+
+        payload = json.dumps({"target_sha": target, "expected_main": main})
+        with patch("cloud_editor.GitHubStore", FakeStore):
+            status, _, body = self.request("GET", "/api/cases/erbausschlagung/history", headers=cookie)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body)["entries"][0]["sha"], target)
+            status, _, body = self.request("POST", "/api/cases/erbausschlagung/restore-preview", body=payload, headers=headers)
+            self.assertEqual(status, 200)
+            self.assertTrue(json.loads(body)["changed"])
+            status, _, body = self.request("POST", "/api/cases/erbausschlagung/restore", body=payload, headers=headers)
+            self.assertEqual(status, 200)
+            self.assertTrue(json.loads(body)["branch"].startswith("codex/ontology-editor-reviewer-"))
+            self.assertEqual(self.server.sessions["restore-session"]["branch"], json.loads(body)["branch"])
+            self.assertEqual(self.request("POST", "/api/cases/erbausschlagung/restore", body=payload, headers=headers)[0], 400)
+
     def test_vocabulary_has_separate_branch_and_maintainer_gate(self):
         self.server.config["ONTOLOGY_MAINTAINERS"] = "maintainer"
         self.server.sessions["vocabulary-session"] = {
@@ -173,6 +210,8 @@ class CloudEditorTests(unittest.TestCase):
         status, _, _ = self.request("GET", "/api/cases/immobilienkaufvertrag/turtle")
         self.assertEqual(status, 401)
         status, _, _ = self.request("GET", "/api/case-index")
+        self.assertEqual(status, 401)
+        status, _, _ = self.request("GET", "/api/cases/erbausschlagung/history")
         self.assertEqual(status, 401)
         status, _, _ = self.request("POST", "/api/start-branch", body="{}")
         self.assertEqual(status, 401)

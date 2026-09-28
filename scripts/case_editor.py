@@ -22,6 +22,7 @@ import webbrowser
 from rdflib import Graph
 
 from case_editor_model import ROOT, case_path, load_case, prepare_change, revision, slugs, validate_model
+from case_restore import prepare_historical_case
 from case_index import build_case_index
 from vocabulary_editor import model as vocabulary_model, prepare_change as prepare_vocabulary_change
 from vocabulary_impact import impact_index
@@ -51,6 +52,41 @@ def start_branch(purpose: str = "case") -> str:
     branch = f"codex/ontology-{'vocabulary' if purpose == 'vocabulary' else 'editor'}-{stamp}"
     subprocess.run(["git", "switch", "-c", branch], cwd=ROOT, check=True, capture_output=True, text=True)
     return branch
+
+
+def local_case_history(slug: str) -> dict:
+    case_path(slug)
+    main_ref = subprocess.check_output(["git", "rev-parse", "main"], cwd=ROOT, text=True).strip()
+    path = f"cases/{slug}/ontology.ttl"
+    output = subprocess.check_output(["git", "log", "-n", "20", "main", "--format=%H%x1f%an%x1f%aI%x1f%s", "--", path], cwd=ROOT, text=True)
+    entries = []
+    for line in output.splitlines():
+        sha, author, date, message = line.split("\x1f", 3)
+        entries.append({"sha": sha, "author": author, "date": date, "message": message, "url": f"https://github.com/notariat8/ontology/commit/{sha}"})
+    return {"main_ref": main_ref, "case": slug, "entries": entries}
+
+
+def preview_local_case_restore(slug: str, data: dict) -> tuple[dict, dict]:
+    if git_branch() != "main":
+        raise ValueError("Bitte die laufende Änderung zuerst zur Prüfung einreichen")
+    history = local_case_history(slug)
+    if data.get("expected_main") != history["main_ref"]:
+        raise ValueError("Der Katalog wurde inzwischen geändert. Fall und Historie neu laden.")
+    target = data.get("target_sha", "")
+    if target not in {item["sha"] for item in history["entries"]}:
+        raise ValueError("Die frühere Fassung ist nicht in der angezeigten Fallhistorie")
+    historical = subprocess.check_output(["git", "show", f"{target}:cases/{slug}/ontology.ttl"], cwd=ROOT).decode("utf-8")
+    proposal = prepare_historical_case(slug, historical, ROOT, describe_changes)
+    return history, proposal
+
+
+def restore_local_case(slug: str, data: dict) -> dict:
+    history, proposal = preview_local_case_restore(slug, data)
+    if not proposal["changed"]:
+        raise ValueError("Die frühere Fassung entspricht bereits dem aktuellen Fall")
+    branch = start_branch("case")
+    result = write_change(slug, proposal["model"])
+    return {"branch": branch, "expected_ref": history["main_ref"], "changed": result["changed"], "changes": proposal["changes"]}
 
 
 def write_change(slug: str, data: dict) -> dict:
@@ -285,6 +321,8 @@ class EditorHandler(BaseHTTPRequestHandler):
             elif path.startswith("/api/cases/") and path.endswith("/turtle") and path.count("/") == 4:
                 slug = path.split("/")[3]
                 self._json(200, {"turtle": case_path(slug).read_text(encoding="utf-8")})
+            elif path.startswith("/api/cases/") and path.endswith("/history") and path.count("/") == 4:
+                self._json(200, local_case_history(path.split("/")[3]))
             elif path == "/api/vocabulary":
                 self._json(200, vocabulary_model((ROOT / "ontology/core.ttl").read_text(encoding="utf-8")))
             elif path == "/api/vocabulary/impact":
@@ -328,6 +366,12 @@ class EditorHandler(BaseHTTPRequestHandler):
             elif self.path.startswith("/api/cases/") and self.path.endswith("/preview"):
                 slug = self.path.split("/")[3]
                 self._json(200, preview_change(slug, data))
+            elif self.path.startswith("/api/cases/") and self.path.endswith("/restore-preview"):
+                slug = self.path.split("/")[3]
+                history, proposal = preview_local_case_restore(slug, data)
+                self._json(200, {"changed": proposal["changed"], "changes": proposal["changes"], "main_ref": history["main_ref"], "target_sha": data["target_sha"]})
+            elif self.path.startswith("/api/cases/") and self.path.endswith("/restore"):
+                self._json(200, restore_local_case(self.path.split("/")[3], data))
             elif self.path.startswith("/api/cases/") and self.path.endswith("/review"):
                 slug = self.path.split("/")[3]
                 self._json(200, submit_review(slug, data))

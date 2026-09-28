@@ -26,6 +26,7 @@ from rdflib.compare import to_isomorphic
 
 from case_editor_model import ROOT, _graph_to_model, case_path, graph_from_model, load_case, prepare_change, slugs
 from case_editor import describe_changes, preview_change
+from case_restore import prepare_historical_case
 from case_index import build_case_index
 from render_case_docs import render
 from vocabulary_editor import model as vocabulary_model, prepare_change as prepare_vocabulary_change
@@ -148,6 +149,10 @@ class GitHubStore:
         return result["html_url"]
 
     def _commit_files(self, branch: str, parent: str, files: dict[str, str], message: str) -> None:
+        new_sha = self._create_commit(parent, files, message)
+        self.request("PATCH", "/git/refs/heads/" + quote(branch, safe="/"), {"sha": new_sha, "force": False})
+
+    def _create_commit(self, parent: str, files: dict[str, str], message: str) -> str:
         commit = self.request("GET", "/git/commits/" + parent)
         tree = self.request("POST", "/git/trees", {
             "base_tree": commit["tree"]["sha"],
@@ -156,7 +161,58 @@ class GitHubStore:
         new_commit = self.request("POST", "/git/commits", {
             "message": message, "tree": tree["sha"], "parents": [parent]
         })
-        self.request("PATCH", "/git/refs/heads/" + quote(branch, safe="/"), {"sha": new_commit["sha"], "force": False})
+        return new_commit["sha"]
+
+    def case_history(self, slug: str, main_ref: str | None = None) -> dict:
+        case_path(slug)
+        main_ref = main_ref or self.ref("main")
+        if not SHA.fullmatch(main_ref):
+            raise ValueError("Ungültiger Katalog-Commit")
+        path = f"cases/{slug}/ontology.ttl"
+        commits = self.request("GET", "/commits?sha=" + main_ref + "&path=" + quote(path, safe="/") + "&per_page=20")
+        entries = []
+        for item in commits:
+            sha = item.get("sha", "")
+            if not SHA.fullmatch(sha):
+                raise ValueError("GitHub lieferte einen ungültigen historischen Commit")
+            metadata = item.get("commit") or {}
+            author = metadata.get("author") or {}
+            entries.append({
+                "sha": sha,
+                "message": (metadata.get("message") or "").split("\n", 1)[0],
+                "author": (item.get("author") or {}).get("login") or author.get("name") or "unbekannt",
+                "date": author.get("date") or "",
+                "url": f"https://github.com/{self.owner}/{self.repo}/commit/{sha}",
+            })
+        return {"main_ref": main_ref, "case": slug, "entries": entries}
+
+    def _historical_case(self, slug: str, target_sha: str, main_ref: str) -> dict:
+        if not SHA.fullmatch(target_sha) or target_sha not in {entry["sha"] for entry in self.case_history(slug, main_ref)["entries"]}:
+            raise ValueError("Die frühere Fassung ist nicht in der angezeigten Fallhistorie")
+        historical = self.read_file(f"cases/{slug}/ontology.ttl", target_sha)
+        with self.model_root(slug, main_ref) as root:
+            return prepare_historical_case(slug, historical, root, describe_changes)
+
+    def preview_case_restore(self, slug: str, target_sha: str, expected_main: str) -> dict:
+        if not SHA.fullmatch(expected_main) or self.ref("main") != expected_main:
+            raise ValueError("Der Katalog wurde inzwischen geändert. Fall und Historie neu laden.")
+        proposal = self._historical_case(slug, target_sha, expected_main)
+        return {"changed": proposal["changed"], "changes": proposal["changes"], "main_ref": expected_main, "target_sha": target_sha}
+
+    def restore_case(self, slug: str, target_sha: str, expected_main: str, branch: str) -> dict:
+        if not BRANCH.fullmatch(branch) or not branch.startswith("codex/ontology-editor-"):
+            raise ValueError("Ungültiger Arbeitszweig")
+        if not SHA.fullmatch(expected_main) or self.ref("main") != expected_main:
+            raise ValueError("Der Katalog wurde inzwischen geändert. Fall und Historie neu laden.")
+        proposal = self._historical_case(slug, target_sha, expected_main)
+        if not proposal["changed"]:
+            raise ValueError("Die frühere Fassung entspricht bereits dem aktuellen Fall")
+        new_sha = self._create_commit(expected_main, {
+            f"cases/{slug}/ontology.ttl": proposal["turtle"],
+            f"cases/{slug}/README.md": proposal["page"],
+        }, f"Propose historical case version for {slug}")
+        self.request("POST", "/git/refs", {"ref": "refs/heads/" + branch, "sha": new_sha})
+        return {"branch": branch, "expected_ref": new_sha, "changes": proposal["changes"]}
 
     def _check_pr_files(self, branch: str, expected: set[str]) -> None:
         comparison = self.request("GET", "/compare/main..." + quote(branch, safe="/"))

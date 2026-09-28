@@ -277,6 +277,10 @@ class CloudHandler(BaseHTTPRequestHandler):
                 session = self._session()
                 branch = session["branch"] if session.get("purpose", "case") == "case" else "main"
                 self._json(200, self._store(session).load_case(path.path.rsplit("/", 1)[1], branch))
+            elif path.path.startswith("/api/cases/") and path.path.endswith("/history") and path.path.count("/") == 4:
+                session = self._session()
+                slug = path.path.split("/")[3]
+                self._json(200, self._store(session).case_history(slug))
             elif path.path.startswith("/api/cases/") and path.path.endswith("/turtle") and path.path.count("/") == 4:
                 session = self._session()
                 slug = path.path.split("/")[3]
@@ -370,6 +374,18 @@ class CloudHandler(BaseHTTPRequestHandler):
                     url = store.create_pr(slug, session["branch"], data.get("reason", ""), data.get("source", ""))
                     session["branch"] = "main"
                     self._json(200, {"url": url, "branch": "main"})
+                elif action == "restore-preview":
+                    if session["branch"] != "main":
+                        raise ValueError("Bitte die laufende Änderung zuerst zur Prüfung einreichen")
+                    self._json(200, store.preview_case_restore(slug, data.get("target_sha", ""), data.get("expected_main", "")))
+                elif action == "restore":
+                    if session["branch"] != "main":
+                        raise ValueError("Bitte die laufende Änderung zuerst zur Prüfung einreichen")
+                    branch = f"codex/ontology-editor-{session['user']}-{datetime.now(timezone.utc):%Y%m%d%H%M%S}-{secrets.token_hex(3)}"
+                    result = store.restore_case(slug, data.get("target_sha", ""), data.get("expected_main", ""), branch)
+                    session["branch"] = branch
+                    session["purpose"] = "case"
+                    self._json(200, result)
                 else:
                     self._json(404, {"error": "Nicht gefunden"})
             else:

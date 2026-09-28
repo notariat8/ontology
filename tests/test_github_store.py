@@ -16,6 +16,17 @@ from vocabulary_editor import model as vocabulary_model, prepare_change as prepa
 
 
 class GitHubStoreTests(unittest.TestCase):
+    def test_case_history_is_limited_to_one_case_and_pinned_main(self):
+        store = GitHubStore("notariat8", "ontology", "fake-token")
+        main, older = "a" * 40, "b" * 40
+        record = {"sha": older, "commit": {"message": "Fachfrage angepasst\nDetails", "author": {"name": "Notariat", "date": "2026-09-28T10:00:00Z"}}}
+        with patch.object(store, "request", return_value=[record]) as request:
+            history = store.case_history("erbausschlagung", main)
+        request.assert_called_once_with("GET", f"/commits?sha={main}&path=cases/erbausschlagung/ontology.ttl&per_page=20")
+        self.assertEqual(history["main_ref"], main)
+        self.assertEqual(history["entries"][0]["message"], "Fachfrage angepasst")
+        self.assertEqual(history["entries"][0]["url"], f"https://github.com/notariat8/ontology/commit/{older}")
+
     def test_case_and_vocabulary_reads_use_the_resolved_commit(self):
         store = GitHubStore("notariat8", "ontology", "fake-token")
         head = "a" * 40
