@@ -13,6 +13,15 @@
 .case-item.active{background:#e5f4f3;color:#076b72;font-weight:750}
 .sidebar-note{font-size:12px;line-height:1.45;color:#6e8189;border-top:1px solid var(--line);padding-top:13px;margin:12px 0 0}
 .mobile-case-picker{display:none}
+.case-index-search{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 18px;margin-bottom:14px}
+.case-index-search summary{cursor:pointer;font-weight:700;color:#087076}
+.case-index-search label{font-size:13px}
+.case-index-search .context-help{font-size:12px;margin:7px 0 10px}
+.case-index-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:350px;overflow:auto}
+.case-index-result{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;min-width:0}
+.case-index-result strong{font-size:13px}.case-index-result small{font-size:11px;color:#617780}
+.case-index-result span{font-size:12px;color:#35505b;line-height:1.4}
+@media(max-width:760px){.case-index-results{grid-template-columns:1fr}}
 .overview-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin:22px 0 28px}
 .stat-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:#f5f9f9;border-color:#dce8e9;min-height:88px;padding:13px 14px;text-align:left}
 .stat-card strong{font-size:24px;line-height:1;color:#086e75}

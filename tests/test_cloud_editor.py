@@ -30,6 +30,7 @@ class CloudEditorTests(unittest.TestCase):
         headers = {**cookie, "Origin": "https://editor.example.org", "X-Editor-Token": "csrf-vocab", "Content-Type": "application/json"}
         source = (Path(__file__).resolve().parents[1] / "ontology/core.ttl").read_text(encoding="utf-8")
         impact_calls = []
+        case_index_calls = []
         main_sha = ["a" * 40]
 
         class FakeStore:
@@ -50,6 +51,10 @@ class CloudEditorTests(unittest.TestCase):
             def vocabulary_impact(self, main_ref):
                 impact_calls.append(main_ref)
                 return {"source_ref": main_ref, "case_count": 20, "terms": {"Angabenfrage": [{"slug": "immobilienkaufvertrag", "count": 9}]}}
+
+            def case_index(self, main_ref):
+                case_index_calls.append(main_ref)
+                return {"source_ref": main_ref, "case_count": 20, "entries": [{"slug": "immobilienkaufvertrag", "node_id": "one", "label": "Eintrag"}]}
 
             def preview_vocabulary(self, branch, data):
                 return {"changed": True, "changes": ["Bezeichnung geändert"]}
@@ -86,6 +91,11 @@ class CloudEditorTests(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body)["source_ref"], "b" * 40)
             self.assertEqual(impact_calls, ["a" * 40, "b" * 40])
+            status, _, body = self.request("GET", "/api/case-index", headers=cookie)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body)["source_ref"], "b" * 40)
+            self.assertEqual(self.request("GET", "/api/case-index", headers=cookie)[0], 200)
+            self.assertEqual(case_index_calls, ["b" * 40])
             status, _, _ = self.request("POST", "/api/cases/immobilienkaufvertrag/save", body=json.dumps(load_case("immobilienkaufvertrag")), headers=headers)
             self.assertEqual(status, 400)
             status, _, _ = self.request("POST", "/api/vocabulary/preview", body=json.dumps(proposed), headers=headers)
@@ -152,6 +162,8 @@ class CloudEditorTests(unittest.TestCase):
         status, _, _ = self.request("GET", "/api/status")
         self.assertEqual(status, 401)
         status, _, _ = self.request("GET", "/api/cases/immobilienkaufvertrag/turtle")
+        self.assertEqual(status, 401)
+        status, _, _ = self.request("GET", "/api/case-index")
         self.assertEqual(status, 401)
         status, _, _ = self.request("POST", "/api/start-branch", body="{}")
         self.assertEqual(status, 401)

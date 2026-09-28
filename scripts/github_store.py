@@ -26,6 +26,7 @@ from rdflib.compare import to_isomorphic
 
 from case_editor_model import ROOT, _graph_to_model, case_path, graph_from_model, load_case, prepare_change, slugs
 from case_editor import describe_changes, preview_change
+from case_index import build_case_index
 from render_case_docs import render
 from vocabulary_editor import model as vocabulary_model, prepare_change as prepare_vocabulary_change
 from vocabulary_impact import impact_index
@@ -168,16 +169,26 @@ class GitHubStore:
         result["expected_ref"] = head
         return result
 
+    def _case_snapshot(self, main_ref: str) -> tuple[str, dict[str, str]]:
+        if not SHA.fullmatch(main_ref):
+            raise ValueError("Ungültiger Katalog-Commit")
+        paths = ["catalog/nac-usecases.ttl", *(f"cases/{slug}/ontology.ttl" for slug in slugs())]
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            texts = dict(zip(paths, pool.map(lambda path: self.read_file(path, main_ref), paths)))
+        return texts["catalog/nac-usecases.ttl"], {slug: texts[f"cases/{slug}/ontology.ttl"] for slug in slugs()}
+
+    def case_index(self, main_ref: str | None = None) -> dict:
+        main_ref = main_ref or self.ref("main")
+        catalog, cases = self._case_snapshot(main_ref)
+        return build_case_index(catalog, cases, main_ref)
+
     def vocabulary_impact(self, main_ref: str | None = None) -> dict:
         main_ref = main_ref or self.ref("main")
         if not SHA.fullmatch(main_ref):
             raise ValueError("Ungültiger Katalog-Commit für die Auswirkungsübersicht")
-        paths = ["catalog/nac-usecases.ttl", *(f"cases/{slug}/ontology.ttl" for slug in slugs())]
-        with ThreadPoolExecutor(max_workers=5) as pool:
-            texts = dict(zip(paths, pool.map(lambda path: self.read_file(path, main_ref), paths)))
+        catalog, cases = self._case_snapshot(main_ref)
         core = self.read_file("ontology/core.ttl", main_ref)
-        cases = {slug: texts[f"cases/{slug}/ontology.ttl"] for slug in slugs()}
-        return impact_index(core, texts["catalog/nac-usecases.ttl"], cases, main_ref)
+        return impact_index(core, catalog, cases, main_ref)
 
     def preview_vocabulary(self, branch: str, data: dict) -> dict:
         if self.ref(branch) != data.get("expected_ref"):

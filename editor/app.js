@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", purpose: "case", user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "" };
+let state = { token: "", branch: "", purpose: "case", user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -80,6 +80,41 @@ function renderCaseList() {
     root.append(button);
   });
   if(!count) root.append(element("p","Keine Vorgangsart gefunden.","empty"));
+}
+function renderCaseIndex() {
+  const root=$("case-index-results");root.replaceChildren();
+  const query=$("case-index-query").value.trim().toLocaleLowerCase("de");
+  if(query.length<2){$("case-index-status").textContent="Mindestens zwei Zeichen eingeben. Die Suche zeigt fachliche Bausteine aus dem aktuellen Katalogstand.";return;}
+  if(!state.caseIndex){$("case-index-status").textContent="Bausteine werden geladen …";return;}
+  const words=query.split(/\s+/).filter(Boolean);
+  const matches=state.caseIndex.entries.filter(item=>{
+    const content=[item.case_title,item.label,item.question,item.detail,item.node_id].join(" ").toLocaleLowerCase("de");
+    return words.every(word=>content.includes(word));
+  });
+  const source=state.caseIndex.source_ref;
+  $("case-index-status").textContent=`${matches.length} Treffer in ${state.caseIndex.case_count} Fällen · Katalogstand ${/^[0-9a-f]{40}$/.test(source) ? source.slice(0,12) : source}`;
+  matches.slice(0,40).forEach(item=>{
+    const button=element("button",undefined,"case-index-result");button.type="button";
+    button.append(element("strong",item.label),element("small",`${item.case_title} · ${groups.find(group=>group[0]===item.category)?.[1] || item.category}`));
+    if(item.question)button.append(element("span",item.question));
+    button.addEventListener("click",async()=>{
+      try{
+        await loadCase(item.slug);
+        if(state.current.slug!==item.slug)return;
+        $("node-search").value="";$("node-category").value="";
+        selectNode(item.node_id);
+      }catch(error){notice(error.message,"error");}
+    });
+    root.append(button);
+  });
+  if(matches.length>40)root.append(element("p","Die ersten 40 Treffer werden angezeigt. Suche bitte genauer.","context-help"));
+  if(!matches.length)root.append(element("p","Kein passender Baustein gefunden.","empty"));
+}
+async function loadCaseIndex() {
+  if(!state.caseIndexPromise){
+    state.caseIndexPromise=api("/api/case-index").then(result=>{state.caseIndex=result;renderCaseIndex();return result;}).catch(error=>{state.caseIndexPromise=null;$("case-index-status").textContent="Suche konnte nicht geladen werden: "+error.message;throw error;});
+  }
+  return state.caseIndexPromise;
 }
 function renderOverview() {
   $("summary-read").textContent=state.current.summary;
@@ -571,6 +606,10 @@ async function confirmSave() {
     const subject=vocabulary ? state.vocabulary : state.current;
     subject.revision=result.revision;state.dirty=false;
     if(result.expected_ref) subject.expected_ref=result.expected_ref;
+    if(result.changed && !vocabulary){
+      state.caseIndex=null;state.caseIndexPromise=null;
+      if($("case-index-query").value.trim().length>=2)loadCaseIndex().catch(()=>{});
+    }
     $("change-preview").close();
     notice(result.changed ? (vocabulary ? "Gemeinsames Turtle-Vokabular gespeichert. Reiche die Änderung nun zur Fachprüfung ein." : "Turtle und Mermaid-Seite gespeichert. Als Nächstes die Änderung im Pull Request fachlich prüfen lassen.") : "Keine Änderungen zu speichern.","success");
   } catch (error) {notice(error.message,"error");}
@@ -605,6 +644,7 @@ async function init() {
     for(const [key,label] of Object.entries(relations)){const option=element("option",label);option.value=key;$("edge-type").append(option);}
     $("case-select").addEventListener("change",event=>loadCase(event.target.value).catch(error=>notice(error.message,"error")));
     $("case-search").addEventListener("input",renderCaseList);
+    $("case-index-query").addEventListener("input",()=>{renderCaseIndex();if($("case-index-query").value.trim().length>=2)loadCaseIndex().catch(()=>{});});
     $("vocab-search").addEventListener("input",renderVocabulary);
     $("vocab-impact-refresh").addEventListener("click",()=>loadVocabularyImpact().catch(error=>notice(error.message,"error")));
     $("vocab-edit").addEventListener("click",()=>editVocabulary().catch(error=>notice(error.message,"error")));

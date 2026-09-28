@@ -24,6 +24,11 @@
     </aside>
     <div class="workspace-main">
     <section class="mobile-case-picker"><label for="case-select">Vorgangsart</label><select id="case-select" aria-label="Vorgangsart auswählen"></select></section>
+    <details class="case-index-search"><summary>Bausteine in allen 20 Fällen suchen</summary>
+      <label for="case-index-query">Frage, Dokument oder Begriff</label><input id="case-index-query" type="search" placeholder="z. B. Erbschein, Identität oder Vollmacht" autocomplete="off">
+      <p id="case-index-status" class="context-help">Mindestens zwei Zeichen eingeben. Die Suche zeigt fachliche Bausteine aus dem aktuellen Katalogstand.</p>
+      <div id="case-index-results" class="case-index-results" aria-live="polite"></div>
+    </details>
     <nav class="workbench-nav" aria-label="Arbeitsbereiche">
       <button type="button" data-view-button="fall" aria-current="page">Fall verstehen</button>
       <button type="button" data-view-button="bausteine">Inhalte pflegen</button>

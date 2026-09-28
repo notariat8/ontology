@@ -81,6 +81,7 @@ class CloudServer(ThreadingHTTPServer):
         self.sessions: dict[str, dict] = {}
         self.pending: dict[str, dict] = {}
         self.impact_cache: tuple[str, dict] | None = None
+        self.case_index_cache: tuple[str, dict] | None = None
         self.lock = threading.RLock()
         self.owner, self.repo = config["GITHUB_REPOSITORY"].split("/")
 
@@ -226,6 +227,19 @@ class CloudHandler(BaseHTTPRequestHandler):
             elif path.path == "/api/cases":
                 self._session()
                 self._json(200, self._catalog())
+            elif path.path == "/api/case-index":
+                session = self._session()
+                store = self._store(session)
+                main_ref = store.ref("main")
+                with self.server.lock:
+                    cached = self.server.case_index_cache
+                if cached and cached[0] == main_ref:
+                    index = cached[1]
+                else:
+                    index = store.case_index(main_ref)
+                    with self.server.lock:
+                        self.server.case_index_cache = (main_ref, index)
+                self._json(200, index)
             elif path.path == "/api/reviews":
                 session = self._session()
                 self._json(200, self._store(session).list_case_reviews())

@@ -22,6 +22,7 @@ import webbrowser
 from rdflib import Graph
 
 from case_editor_model import ROOT, case_path, load_case, prepare_change, revision, slugs, validate_model
+from case_index import build_case_index
 from vocabulary_editor import model as vocabulary_model, prepare_change as prepare_vocabulary_change
 from vocabulary_impact import impact_index
 
@@ -276,6 +277,9 @@ class EditorHandler(BaseHTTPRequestHandler):
                 catalog = Graph().parse(ROOT / "catalog/nac-usecases.ttl", format="turtle")
                 n8 = Namespace("https://notariat8.github.io/ontology/id/")
                 self._json(200, [{"slug": slug, "title": str(catalog.value(n8[f"vorgangsart-{slug}"], SKOS.prefLabel))} for slug in slugs()])
+            elif path == "/api/case-index":
+                read = lambda relative: (ROOT / relative).read_text(encoding="utf-8")
+                self._json(200, build_case_index(read("catalog/nac-usecases.ttl"), {slug: read(f"cases/{slug}/ontology.ttl") for slug in slugs()}, "lokaler Arbeitsstand"))
             elif path.startswith("/api/cases/") and path.count("/") == 3:
                 self._json(200, load_case(path.rsplit("/", 1)[1]))
             elif path.startswith("/api/cases/") and path.endswith("/turtle") and path.count("/") == 4:

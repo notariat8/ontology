@@ -25,6 +25,8 @@ Die Sitzung liegt **flüchtig im Speicher eines einzelnen Dienstprozesses** und 
 
 Der Containerport darf nur aus dem internen Netz des HTTPS-Proxys erreichbar sein. In Proxy-Zugriffslogs dürfen die Abfrageparameter von `/callback` nicht erscheinen, weil sie einen einmaligen GitHub-Anmeldecode enthalten. Der Anwendungsserver protokolliert dort nur den Pfad. Host- und Proxy-Logs dürfen keine Sitzungscookies oder GitHub-Tokens enthalten.
 
+Die fallübergreifende Bausteinsuche liest die 20 Turtle-Module und den Katalog aus demselben `main`-Commit. Der Dienst hält diesen Index pro Commit im flüchtigen Speicher; der Browser durchsucht die geladenen Treffer lokal. Änderungen auf einem noch nicht eingereichten Arbeitszweig erscheinen erst nach dem Merge in diesem gemeinsamen Suchstand.
+
 ## Bearbeitungsweg
 
 1. Der Browser meldet die Person über die GitHub App an. Nur ihre zugänglichen Repository-Daten lassen sich laden.
