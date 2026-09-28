@@ -205,8 +205,8 @@ class CloudHandler(BaseHTTPRequestHandler):
             "nac_oauth_state=; Path=/callback; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
         ])
 
-    def _catalog(self) -> list[dict]:
-        graph = Graph().parse(ROOT / "catalog/nac-usecases.ttl", format="turtle")
+    def _catalog(self, catalog_text: str) -> list[dict]:
+        graph = Graph().parse(data=catalog_text, format="turtle")
         n8 = Namespace("https://notariat8.github.io/ontology/id/")
         return [{"slug": slug, "title": str(graph.value(n8[f"vorgangsart-{slug}"], SKOS.prefLabel))} for slug in slugs()]
 
@@ -225,8 +225,10 @@ class CloudHandler(BaseHTTPRequestHandler):
                 session = self._session()
                 self._json(200, {"token": session["csrf"], "branch": session["branch"], "purpose": session.get("purpose", "case"), "user": session["user"], "notary_reviewer": session["user"].lower() in self._notaries(), "ontology_maintainer": session["user"].lower() in self._maintainers()})
             elif path.path == "/api/cases":
-                self._session()
-                self._json(200, self._catalog())
+                session = self._session()
+                store = self._store(session)
+                main_ref = store.ref("main")
+                self._json(200, self._catalog(store.read_file("catalog/nac-usecases.ttl", main_ref)))
             elif path.path == "/api/case-index":
                 session = self._session()
                 store = self._store(session)

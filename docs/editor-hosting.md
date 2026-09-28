@@ -30,7 +30,7 @@ Die fallübergreifende Bausteinsuche liest die 20 Turtle-Module und den Katalog 
 ## Bearbeitungsweg
 
 1. Der Browser meldet die Person über die GitHub App an. Nur ihre zugänglichen Repository-Daten lassen sich laden.
-2. **Änderung beginnen** erstellt einen eigenen Branch aus dem aktuellen `main`-Commit. Der Fall wird von GitHub auf diesem Branch gelesen.
+2. **Änderung beginnen** erstellt einen eigenen Branch aus dem aktuellen `main`-Commit. Fall und Katalog werden für Lesen, Vorschau und Speichern jeweils über denselben aufgelösten Branch-Commit gelesen. Auch das gemeinsame Vokabular wird an einen konkreten Commit gebunden.
 3. Vorschau und Speichern prüfen die Turtle-Daten mit demselben Modell. Das Speichern erstellt einen Git-Commit mit genau `cases/<slug>/ontology.ttl` und der daraus erzeugten `README.md`. Ein konkurrierender Branch-Commit führt zu einem Konflikt statt zu einem erzwungenen Überschreiben.
 4. **Zur Fachprüfung einreichen** übergibt Begründung und Quellenstand an GitHub und öffnet einen zur Prüfung bereiten Pull Request. Die bestehenden Actions prüfen den Gesamtstand.
 5. Der **Prüfkorb** zeigt die fachlichen Unterschiede zwischen dem gemeinsamen Ausgangscommit und dem PR-Stand. Die Ansicht prüft zusätzlich, ob der PR nur einen Fall enthält, ob alle RDF-Änderungen erklärt werden und ob die Mermaid-Leseseite zu Turtle passt. Ein anderes eingetragenes Notarkonto kann eine begründete Fachfreigabe abgeben; andere Editoren können Änderungen anfordern. Die Entscheidung wird als GitHub-Review auf dem konkret geprüften Commit dokumentiert. Der Editor führt keinen Merge aus.

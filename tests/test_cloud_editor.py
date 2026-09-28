@@ -31,6 +31,7 @@ class CloudEditorTests(unittest.TestCase):
         source = (Path(__file__).resolve().parents[1] / "ontology/core.ttl").read_text(encoding="utf-8")
         impact_calls = []
         case_index_calls = []
+        catalog_reads = []
         main_sha = ["a" * 40]
 
         class FakeStore:
@@ -55,6 +56,10 @@ class CloudEditorTests(unittest.TestCase):
             def case_index(self, main_ref):
                 case_index_calls.append(main_ref)
                 return {"source_ref": main_ref, "case_count": 20, "entries": [{"slug": "immobilienkaufvertrag", "node_id": "one", "label": "Eintrag"}]}
+
+            def read_file(self, path, ref):
+                catalog_reads.append((path, ref))
+                return (Path(__file__).resolve().parents[1] / path).read_text(encoding="utf-8")
 
             def preview_vocabulary(self, branch, data):
                 return {"changed": True, "changes": ["Bezeichnung geändert"]}
@@ -96,6 +101,10 @@ class CloudEditorTests(unittest.TestCase):
             self.assertEqual(json.loads(body)["source_ref"], "b" * 40)
             self.assertEqual(self.request("GET", "/api/case-index", headers=cookie)[0], 200)
             self.assertEqual(case_index_calls, ["b" * 40])
+            status, _, body = self.request("GET", "/api/cases", headers=cookie)
+            self.assertEqual(status, 200)
+            self.assertEqual(len(json.loads(body)), 20)
+            self.assertEqual(catalog_reads, [("catalog/nac-usecases.ttl", "b" * 40)])
             status, _, _ = self.request("POST", "/api/cases/immobilienkaufvertrag/save", body=json.dumps(load_case("immobilienkaufvertrag")), headers=headers)
             self.assertEqual(status, 400)
             status, _, _ = self.request("POST", "/api/vocabulary/preview", body=json.dumps(proposed), headers=headers)

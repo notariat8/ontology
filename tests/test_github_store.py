@@ -16,6 +16,25 @@ from vocabulary_editor import model as vocabulary_model, prepare_change as prepa
 
 
 class GitHubStoreTests(unittest.TestCase):
+    def test_case_and_vocabulary_reads_use_the_resolved_commit(self):
+        store = GitHubStore("notariat8", "ontology", "fake-token")
+        head = "a" * 40
+        reads = []
+
+        def read_file(path, ref):
+            reads.append((path, ref))
+            return (ROOT / path).read_text(encoding="utf-8")
+
+        with (patch.object(store, "ref", return_value=head), patch.object(store, "read_file", side_effect=read_file)):
+            case = store.load_case("immobilienkaufvertrag", "codex/ontology-editor-test")
+            self.assertEqual(case["expected_ref"], head)
+            self.assertFalse(store.preview("immobilienkaufvertrag", "codex/ontology-editor-test", case)["changed"])
+            vocabulary = store.load_vocabulary("codex/ontology-vocabulary-test")
+            self.assertEqual(vocabulary["expected_ref"], head)
+            self.assertFalse(store.preview_vocabulary("codex/ontology-vocabulary-test", vocabulary)["changed"])
+        self.assertEqual({ref for _, ref in reads}, {head})
+        self.assertEqual({path for path, _ in reads}, {"cases/immobilienkaufvertrag/ontology.ttl", "catalog/nac-usecases.ttl", "ontology/core.ttl"})
+
     def test_case_index_reads_all_cases_at_one_main_commit(self):
         from case_editor_model import slugs
         store = GitHubStore("notariat8", "ontology", "fake-token")
@@ -98,9 +117,15 @@ class GitHubStoreTests(unittest.TestCase):
                 return {"html_url": "https://github.com/notariat8/ontology/pull/17#pullrequestreview-1"}
             raise AssertionError((method, path))
 
-        with (patch.object(store, "ref", side_effect=["parent", "new-commit"]), patch.object(store, "read_file", side_effect=[original, changed_ttl]), patch.object(store, "request", side_effect=request)):
+        refs = []
+        def read_for_save(path, ref):
+            refs.append(ref)
+            return original if ref == "parent" else changed_ttl
+
+        with (patch.object(store, "ref", side_effect=["parent", "new-commit"]), patch.object(store, "read_file", side_effect=read_for_save), patch.object(store, "request", side_effect=request)):
             result = store.save_vocabulary("codex/ontology-vocabulary-test", model)
         self.assertTrue(result["changed"])
+        self.assertEqual(refs, ["parent", "new-commit"])
         self.assertEqual({item["path"] for item in written}, {"ontology/core.ttl"})
         with patch.object(store, "request", side_effect=request):
             self.assertEqual(store.list_case_reviews()[0]["case"], "vocabulary")
@@ -130,9 +155,14 @@ class GitHubStoreTests(unittest.TestCase):
                 return {}
             raise AssertionError((method, path))
 
+        model_refs = []
+        def root_at_ref(slug, ref):
+            model_refs.append(ref)
+            return nullcontext(ROOT)
+
         with (
             patch.object(store, "ref", side_effect=["parent", "new-commit"]),
-            patch.object(store, "model_root", side_effect=lambda *_: nullcontext(ROOT)),
+            patch.object(store, "model_root", side_effect=root_at_ref),
             patch.object(store, "request", side_effect=request),
         ):
             result = store.save("immobilienkaufvertrag", "codex/ontology-editor-test", model)
@@ -143,6 +173,7 @@ class GitHubStoreTests(unittest.TestCase):
             "cases/immobilienkaufvertrag/README.md",
         })
         self.assertEqual(result["expected_ref"], "new-commit")
+        self.assertEqual(model_refs, ["parent", "new-commit"])
         self.assertTrue(result["changed"])
 
     def test_stale_branch_cannot_save(self):

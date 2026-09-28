@@ -93,29 +93,31 @@ class GitHubStore:
         return sha
 
     @contextmanager
-    def model_root(self, slug: str, branch: str):
+    def model_root(self, slug: str, commit_ref: str):
         case_path(slug)  # Enforce the pinned 20-case scope before any remote path.
-        source = self.read_file(f"cases/{slug}/ontology.ttl", branch)
+        source = self.read_file(f"cases/{slug}/ontology.ttl", commit_ref)
+        catalog = self.read_file("catalog/nac-usecases.ttl", commit_ref)
         with TemporaryDirectory(prefix="nac-editor-") as location:
             root = Path(location)
             (root / "catalog").mkdir()
             (root / "cases" / slug).mkdir(parents=True)
-            for filename in ("nac-baseline.json", "nac-usecases.ttl"):
-                shutil.copy2(ROOT / "catalog" / filename, root / "catalog" / filename)
+            shutil.copy2(ROOT / "catalog/nac-baseline.json", root / "catalog/nac-baseline.json")
+            (root / "catalog/nac-usecases.ttl").write_text(catalog, encoding="utf-8")
             (root / "cases" / slug / "ontology.ttl").write_text(source, encoding="utf-8")
             yield root
 
     def load_case(self, slug: str, branch: str) -> dict:
         head = self.ref(branch)
-        with self.model_root(slug, branch) as root:
+        with self.model_root(slug, head) as root:
             model = load_case(slug, root)
         model["expected_ref"] = head
         return model
 
     def preview(self, slug: str, branch: str, data: dict) -> dict:
-        if self.ref(branch) != data.get("expected_ref"):
+        head = self.ref(branch)
+        if head != data.get("expected_ref"):
             raise ValueError("Der Arbeitszweig wurde inzwischen geändert. Fall neu laden.")
-        with self.model_root(slug, branch) as root:
+        with self.model_root(slug, head) as root:
             return preview_change(slug, data, root)
 
     def save(self, slug: str, branch: str, data: dict) -> dict:
@@ -124,7 +126,7 @@ class GitHubStore:
         parent = self.ref(branch)
         if parent != data.get("expected_ref"):
             raise ValueError("Der Arbeitszweig wurde inzwischen geändert. Fall neu laden.")
-        with self.model_root(slug, branch) as root:
+        with self.model_root(slug, parent) as root:
             ttl, page, changed = prepare_change(slug, data, data.get("revision", ""), root)
         if not changed:
             return {"changed": False, "revision": data["revision"], "expected_ref": parent}
@@ -165,7 +167,7 @@ class GitHubStore:
 
     def load_vocabulary(self, branch: str) -> dict:
         head = self.ref(branch)
-        result = vocabulary_model(self.read_file("ontology/core.ttl", branch))
+        result = vocabulary_model(self.read_file("ontology/core.ttl", head))
         result["expected_ref"] = head
         return result
 
@@ -191,9 +193,10 @@ class GitHubStore:
         return impact_index(core, catalog, cases, main_ref)
 
     def preview_vocabulary(self, branch: str, data: dict) -> dict:
-        if self.ref(branch) != data.get("expected_ref"):
+        head = self.ref(branch)
+        if head != data.get("expected_ref"):
             raise ValueError("Der Arbeitszweig wurde inzwischen geändert. Vokabular neu laden.")
-        _, changes, changed = prepare_vocabulary_change(self.read_file("ontology/core.ttl", branch), data)
+        _, changes, changed = prepare_vocabulary_change(self.read_file("ontology/core.ttl", head), data)
         return {"changed": changed, "changes": changes}
 
     def save_vocabulary(self, branch: str, data: dict) -> dict:
@@ -202,7 +205,7 @@ class GitHubStore:
         parent = self.ref(branch)
         if parent != data.get("expected_ref"):
             raise ValueError("Der Arbeitszweig wurde inzwischen geändert. Vokabular neu laden.")
-        original = self.read_file("ontology/core.ttl", branch)
+        original = self.read_file("ontology/core.ttl", parent)
         ttl, _, changed = prepare_vocabulary_change(original, data)
         if changed:
             self._commit_files(branch, parent, {"ontology/core.ttl": ttl}, "Propose shared ontology vocabulary change")
