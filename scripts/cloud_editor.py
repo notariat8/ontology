@@ -83,6 +83,11 @@ class CloudServer(ThreadingHTTPServer):
 class CloudHandler(BaseHTTPRequestHandler):
     server: CloudServer
 
+    def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
+        # The OAuth callback query contains a one-time code. Application
+        # request logs record only the path; the proxy needs the same policy.
+        self.log_message("%s %s %s %s", self.command, urlparse(self.path).path, code, size)
+
     def _send(self, status: int, body: bytes, kind: str, extra: dict[str, str] | None = None) -> None:
         self.send_response(status)
         self.send_header("Content-Type", kind + "; charset=utf-8")

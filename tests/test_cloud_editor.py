@@ -11,15 +11,23 @@ import threading
 import time
 import unittest
 from urllib.parse import parse_qs, urlparse
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from cloud_editor import CloudServer, require_config
+from cloud_editor import CloudHandler, CloudServer, require_config
 from case_editor_model import load_case
 
 
 class CloudEditorTests(unittest.TestCase):
+    def test_oauth_code_is_not_written_to_request_log(self):
+        handler = Mock()
+        handler.command = "GET"
+        handler.path = "/callback?code=one-time-secret&state=state-value"
+        CloudHandler.log_request(handler, 302)
+        self.assertNotIn("one-time-secret", str(handler.log_message.call_args))
+        self.assertIn("/callback", str(handler.log_message.call_args))
+
     def test_notary_reviewer_must_be_a_configured_editor(self):
         config = {
             "GITHUB_APP_CLIENT_ID": "example", "GITHUB_APP_CLIENT_SECRET": "example-secret",

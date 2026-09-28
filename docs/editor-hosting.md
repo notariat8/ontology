@@ -22,6 +22,8 @@ Die GitHub App braucht auf **diesem einen Repository** `Contents: read and write
 
 Die Sitzung liegt **flüchtig im Speicher eines einzelnen Dienstprozesses** und endet spätestens nach acht Stunden oder beim Neustart. Daher zunächst **genau eine Instanz** betreiben; mehrere Instanzen erfordern einen gemeinsamen, geschützten Sitzungsspeicher. Der Host muss HTTPS terminieren, Anfragen an den Container weiterleiten und seine Geheimnisse verwalten. Für einen privaten Katalog dürfen weder Fall-Dateien noch generierte Suchdaten über einen öffentlichen Static-Host ausgeliefert werden.
 
+Der Containerport darf nur aus dem internen Netz des HTTPS-Proxys erreichbar sein. In Proxy-Zugriffslogs dürfen die Abfrageparameter von `/callback` nicht erscheinen, weil sie einen einmaligen GitHub-Anmeldecode enthalten. Der Anwendungsserver protokolliert dort nur den Pfad. Host- und Proxy-Logs dürfen keine Sitzungscookies oder GitHub-Tokens enthalten.
+
 ## Bearbeitungsweg
 
 1. Der Browser meldet die Person über die GitHub App an. Nur ihre zugänglichen Repository-Daten lassen sich laden.

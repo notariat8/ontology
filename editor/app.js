@@ -102,13 +102,14 @@ function renderOverview() {
 async function loadReviewQueue() {
   const root=$("review-list");root.replaceChildren(element("p","Änderungen werden geladen …","empty"));
   const reviews=await api("/api/reviews");root.replaceChildren();
-  if(!reviews.length){root.append(element("p","Derzeit liegt keine einzelne Falländerung zur Prüfung vor.","empty"));return;}
+  if(!reviews.length){root.append(element("p","Derzeit liegt keine einzelne Falländerung zur Prüfung vor.","empty"));notice("Prüfkorb geladen.","quiet");return;}
   reviews.forEach(item=>{
     const card=element("button",undefined,"review-item"+(state.reviewDetail?.number===item.number ? " active" : ""));card.type="button";
     const caseTitle=state.cases.find(entry=>entry.slug===item.case)?.title || item.case;
     card.append(element("strong",caseTitle),element("span",`#${item.number} · von ${item.author} · ${item.draft ? "noch in Arbeit" : "zur Prüfung"}`));
     card.addEventListener("click",()=>loadReview(item.number).catch(error=>notice(error.message,"error")));root.append(card);
   });
+  notice("Prüfkorb geladen.","quiet");
 }
 async function loadReview(number) {
   const detail=await api("/api/reviews/"+number);state.reviewDetail=detail;
@@ -160,6 +161,7 @@ async function beginBranch() {
 }
 function setView(view) {
   state.view=view;
+  document.body.classList.toggle("review-mode",view==="fachpruefung");
   if(view==="verbindungen" && state.current){renderRelationContext();fillNodeSelects();renderGraph();}
   if(view==="fachpruefung" && state.user)loadReviewQueue().catch(error=>notice(error.message,"error"));
   if(state.current) window.history.replaceState(null,"",`?case=${encodeURIComponent(state.current.slug)}#${view}`);

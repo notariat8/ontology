@@ -32,6 +32,8 @@ Der [gehostete Editor](docs/editor-hosting.md) ist als einzelner Cloud-Dienst mi
 
 Der [Fall-Editor](editor/index.html) bietet für die 20 Fälle eine lesbare Fallübersicht, eine Suche nach Fachbausteinen, eine fokussierte Beziehungsansicht und eine geprüfte Änderungsvorschau. Turtle-Syntax muss dafür nicht geschrieben werden. Die gleiche Oberfläche läuft lokal und im gehosteten Dienst; die Cloud-Bereitstellung mit echten GitHub-Konten steht noch aus. Auf Windows nach Installation von Python:
 
+Die aus NaC übernommenen technischen Entscheidungswerte haben noch keine fachlich geprüften Anzeigenamen. Der Editor kennzeichnet diese Lücke; die Modell- und Freigabeentscheidung steht in [Issue #8](https://github.com/notariat8/ontology/issues/8).
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
