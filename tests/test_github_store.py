@@ -12,9 +12,70 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from case_editor_model import ROOT, load_case, prepare_change
 from github_store import GitHubStore
+from vocabulary_editor import model as vocabulary_model, prepare_change as prepare_vocabulary_change
 
 
 class GitHubStoreTests(unittest.TestCase):
+    def test_pull_request_file_scope_rejects_extra_or_removed_files(self):
+        store = GitHubStore("notariat8", "ontology", "fake-token")
+        branch = "codex/ontology-vocabulary-test"
+        with patch.object(store, "request", return_value={"total_commits": 1, "files": [{"filename": "ontology/core.ttl", "status": "modified"}]}):
+            store._check_pr_files(branch, {"ontology/core.ttl"})
+        for files in ([{"filename": "ontology/core.ttl", "status": "removed"}], [{"filename": "ontology/core.ttl", "status": "modified"}, {"filename": "README.md", "status": "modified"}]):
+            with patch.object(store, "request", return_value={"total_commits": 1, "files": files}):
+                with self.assertRaisesRegex(ValueError, "weitere Änderungen"):
+                    store._check_pr_files(branch, {"ontology/core.ttl"})
+
+    def test_vocabulary_write_and_notary_review(self):
+        original = (ROOT / "ontology/core.ttl").read_text(encoding="utf-8")
+        model = vocabulary_model(original)
+        next(item for item in model["terms"] if item["id"] == "Dokumenttyp")["comment"] = "Abstrakte Art eines benötigten Dokuments."
+        model["expected_ref"] = "parent"
+        changed_ttl, changes, changed = prepare_vocabulary_change(original, model)
+        self.assertTrue(changed)
+        store = GitHubStore("notariat8", "ontology", "fake-token")
+        base, head = "a" * 40, "b" * 40
+        pr = {"number": 17, "title": "Gemeinsames Vokabular", "state": "open", "base": {"ref": "main", "sha": base}, "head": {"sha": head, "repo": {"full_name": "notariat8/ontology"}}, "changed_files": 1, "draft": False, "user": {"login": "author"}, "html_url": "https://github.com/notariat8/ontology/pull/17", "body": "Grund und Quelle", "updated_at": "2026-09-28T00:00:00Z"}
+        written = []
+
+        def request(method, path, payload=None):
+            if (method, path) == ("GET", "/git/commits/parent"):
+                return {"tree": {"sha": "old-tree"}}
+            if (method, path) == ("POST", "/git/trees"):
+                written.extend(payload["tree"])
+                return {"sha": "new-tree"}
+            if (method, path) == ("POST", "/git/commits"):
+                return {"sha": "new-commit"}
+            if method == "PATCH":
+                return {}
+            if (method, path) == ("GET", "/pulls?state=open&base=main&per_page=100"):
+                return [{"number": 17}]
+            if (method, path) == ("GET", "/pulls/17"):
+                return pr
+            if (method, path) == ("GET", "/pulls/17/files?per_page=100"):
+                return [{"filename": "ontology/core.ttl"}]
+            if (method, path) == ("GET", f"/compare/{base}...{head}"):
+                return {"merge_base_commit": {"sha": base}}
+            if method == "GET" and path.startswith("/contents/ontology/core.ttl?ref="):
+                content = original if path.endswith(base) else changed_ttl
+                return {"encoding": "base64", "content": base64.b64encode(content.encode()).decode()}
+            if (method, path) == ("POST", "/pulls/17/reviews"):
+                return {"html_url": "https://github.com/notariat8/ontology/pull/17#pullrequestreview-1"}
+            raise AssertionError((method, path))
+
+        with (patch.object(store, "ref", side_effect=["parent", "new-commit"]), patch.object(store, "read_file", side_effect=[original, changed_ttl]), patch.object(store, "request", side_effect=request)):
+            result = store.save_vocabulary("codex/ontology-vocabulary-test", model)
+        self.assertTrue(result["changed"])
+        self.assertEqual({item["path"] for item in written}, {"ontology/core.ttl"})
+        with patch.object(store, "request", side_effect=request):
+            self.assertEqual(store.list_case_reviews()[0]["case"], "vocabulary")
+            detail = store.review_detail(17)
+            self.assertEqual(detail["problem"], "")
+            self.assertEqual(detail["changes"], changes)
+            with self.assertRaisesRegex(PermissionError, "Notarkonten"):
+                store.submit_case_review(17, head, "APPROVE", "Fachlich gründlich geprüft", "reviewer", set())
+            self.assertIn("pullrequestreview", store.submit_case_review(17, head, "APPROVE", "Fachlich gründlich geprüft", "reviewer", {"reviewer"}, {"terms": True, "sources": True, "relations": True}))
+
     def test_save_writes_only_case_turtle_and_generated_page(self):
         store = GitHubStore("notariat8", "ontology", "fake-token")
         model = load_case("immobilienkaufvertrag")

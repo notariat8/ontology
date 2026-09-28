@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", user: "", notaryReviewer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall" };
+let state = { token: "", branch: "", purpose: "case", user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -61,9 +61,11 @@ function nodeLabel(id) {
 }
 function refreshBranch() {
   $("branch").textContent = "Arbeitszweig: " + (state.branch || "kein Branch");
-  $("start-branch").hidden = state.branch !== "main";
-  $("save").disabled = state.branch === "main";
-  for(const id of ["add-node","add-edge","submit-review"]) $(id).disabled=state.branch==="main";
+  $("start-branch").hidden = state.branch !== "main" || (state.view==="vokabular" && !state.ontologyMaintainer);
+  $("save").disabled = state.branch === "main" || (state.view==="vokabular" ? state.purpose!=="vocabulary" : state.purpose!=="case");
+  for(const id of ["add-node","add-edge","submit-review"]) $(id).disabled=state.branch==="main" || state.purpose!=="case";
+  $("vocab-add").hidden=!state.ontologyMaintainer || (state.branch!=="main" && state.purpose!=="vocabulary");
+  $("vocab-submit").disabled=state.branch==="main" || state.purpose!=="vocabulary";
 }
 function renderCaseList() {
   const root=$("case-list");root.replaceChildren();
@@ -102,10 +104,10 @@ function renderOverview() {
 async function loadReviewQueue() {
   const root=$("review-list");root.replaceChildren(element("p","Änderungen werden geladen …","empty"));
   const reviews=await api("/api/reviews");root.replaceChildren();
-  if(!reviews.length){root.append(element("p","Derzeit liegt keine einzelne Falländerung zur Prüfung vor.","empty"));notice("Prüfkorb geladen.","quiet");return;}
+  if(!reviews.length){root.append(element("p","Derzeit liegt keine einzelne Änderung zur Prüfung vor.","empty"));notice("Prüfkorb geladen.","quiet");return;}
   reviews.forEach(item=>{
     const card=element("button",undefined,"review-item"+(state.reviewDetail?.number===item.number ? " active" : ""));card.type="button";
-    const caseTitle=state.cases.find(entry=>entry.slug===item.case)?.title || item.case;
+    const caseTitle=item.case==="vocabulary" ? "Gemeinsames Vokabular" : state.cases.find(entry=>entry.slug===item.case)?.title || item.case;
     card.append(element("strong",caseTitle),element("span",`#${item.number} · von ${item.author} · ${item.draft ? "noch in Arbeit" : "zur Prüfung"}`));
     card.addEventListener("click",()=>loadReview(item.number).catch(error=>notice(error.message,"error")));root.append(card);
   });
@@ -114,7 +116,7 @@ async function loadReviewQueue() {
 async function loadReview(number) {
   const detail=await api("/api/reviews/"+number);state.reviewDetail=detail;
   $("review-detail").hidden=false;$("review-title").textContent=detail.title;
-  $("review-meta").textContent=`Fall: ${state.cases.find(item=>item.slug===detail.case)?.title || detail.case} · erstellt von ${detail.author} · ${detail.draft ? "noch in Arbeit" : "zur Prüfung bereit"}`;
+  $("review-meta").textContent=`${detail.case==="vocabulary" ? "Gemeinsames Vokabular" : "Fall: " + (state.cases.find(item=>item.slug===detail.case)?.title || detail.case)} · erstellt von ${detail.author} · ${detail.draft ? "noch in Arbeit" : "zur Prüfung bereit"}`;
   $("review-pr-link").href=detail.url;
   const body=$("review-body");body.replaceChildren();
   const sections=(detail.body || "").split(/^## /m);
@@ -153,23 +155,115 @@ async function submitCaseReview(event) {
     notice(event==="APPROVE" ? "Fachliche Freigabe in GitHub dokumentiert." : "Änderungswunsch in GitHub dokumentiert.","success");
   }catch(error){notice(error.message,"error");}
 }
-async function beginBranch() {
+async function beginBranch(purpose="case") {
   if(state.dirty) throw new Error("Bitte ungespeicherte Änderungen vor einem neuen Arbeitszweig prüfen.");
-  const result=await api("/api/start-branch",{});state.branch=result.branch;refreshBranch();
-  await loadCase(state.current.slug);
+  const result=await api("/api/start-branch",{purpose});state.branch=result.branch;state.purpose=result.purpose || purpose;refreshBranch();
+  if(purpose==="vocabulary") await loadVocabulary(true);
+  else await loadCase(state.current.slug);
   notice("Änderung begonnen. Du bearbeitest jetzt deinen eigenen Arbeitszweig.","success");
 }
+const vocabularyKinds={class:"Begriffsklasse",object_property:"Verbindung",datatype_property:"Merkmal"};
+function selectedTerm(){return state.vocabulary?.terms.find(item=>item.id===state.vocabSelected);}
+async function loadVocabulary(force=false){
+  if(state.dirty && force)throw new Error("Bitte offene Änderungen zuerst speichern.");
+  if(!state.vocabulary || force){state.vocabulary=await api("/api/vocabulary");state.vocabSelected=state.vocabulary.terms[0]?.id || null;state.vocabEditing=false;state.vocabNew=false;}
+  renderVocabulary();
+  if(state.view==="vokabular")notice("Gemeinsame Begriffe geladen. Wähle einen Begriff, um seine fachliche Bedeutung zu lesen.","quiet");
+}
+function vocabularyReference(value){
+  if(!value)return "";
+  if(value==="skos:Concept")return "Allgemeiner Fachbegriff";
+  const datatypes={"xsd:string":"Text","xsd:boolean":"Ja oder Nein","xsd:integer":"Ganze Zahl","xsd:date":"Datum","xsd:dateTime":"Datum und Uhrzeit","xsd:anyURI":"Webadresse"};
+  if(datatypes[value])return datatypes[value];
+  if(value.startsWith("n8:"))return state.vocabulary.terms.find(item=>item.id===value.slice(3))?.label || value;
+  return value;
+}
+function renderVocabulary(updateForm=true){
+  if(!state.vocabulary)return;
+  const root=$("vocab-list");root.replaceChildren();
+  const query=$("vocab-search").value.trim().toLocaleLowerCase("de");
+  const terms=state.vocabulary.terms.filter(item=>!query || (item.label+" "+item.id+" "+item.comment).toLocaleLowerCase("de").includes(query));
+  const headings={class:"Begriffsklassen",object_property:"Verbindungen",datatype_property:"Merkmale"};
+  for(const kind of ["class","object_property","datatype_property"]){
+    const matches=terms.filter(item=>item.kind===kind).sort((a,b)=>a.label.localeCompare(b.label,"de"));
+    if(!matches.length)continue;
+    root.append(element("h4",headings[kind]));
+    matches.forEach(item=>{
+      const button=element("button",item.label,"vocab-item"+(item.id===state.vocabSelected?" active":""));button.type="button";
+      button.append(element("small",item.id));button.addEventListener("click",()=>{state.vocabSelected=item.id;state.vocabEditing=false;state.vocabNew=false;renderVocabulary();});root.append(button);
+    });
+  }
+  if(!terms.length)root.append(element("p","Kein Begriff gefunden.","empty"));
+  if(updateForm)renderVocabularyDetail();
+}
+function option(select,value,label){const item=element("option",label);item.value=value;select.append(item);}
+function setVocabularyOptions(term){
+  const classes=state.vocabulary.terms.filter(item=>item.kind==="class").sort((a,b)=>a.label.localeCompare(b.label,"de"));
+  const choices=[["","Keine Angabe"],["skos:Concept","Allgemeiner Fachbegriff"],...classes.map(item=>["n8:"+item.id,item.label])];
+  for(const id of ["vocab-parent","vocab-domain","vocab-range"]){
+    const select=$(id);select.replaceChildren();
+    const entries=id==="vocab-range" && term.kind==="datatype_property" ? [["","Keine Angabe"],...["string","boolean","integer","date","dateTime","anyURI"].map(name=>["xsd:"+name,name])] : choices;
+    entries.forEach(([value,label])=>option(select,value,label));
+    select.value=term[id.replace("vocab-","")] || "";
+  }
+  for(const [id,hidden] of [["vocab-parent",term.kind!=="class"],["vocab-domain",term.kind==="class"],["vocab-range",term.kind==="class"]]){
+    $(id).hidden=hidden;$(id).previousElementSibling.hidden=hidden;
+  }
+}
+function renderVocabularyDetail(){
+  const term=selectedTerm(), read=$("vocab-read");read.replaceChildren();
+  $("vocab-form").hidden=!state.vocabEditing;
+  $("vocab-edit").hidden=!term || !state.ontologyMaintainer || state.vocabEditing || (state.branch!=="main" && state.purpose!=="vocabulary");
+  if(!term){$("vocab-title").textContent="Begriff auswählen";return;}
+  $("vocab-title").textContent=term.label;
+  if(!state.vocabEditing){
+    read.append(element("span",vocabularyKinds[term.kind],"node-meta"));
+    const facts=[["Erläuterung",term.comment],["Oberklasse",term.parent],["Gilt für",term.domain],["Ziel oder Datentyp",term.range]];
+    facts.filter(([,value])=>value).forEach(([name,value])=>{const box=element("div",undefined,"node-fact");box.append(element("strong",name),element("p",name==="Erläuterung"?value:vocabularyReference(value)));read.append(box);});
+    read.append(element("p","Kennung: "+term.id,"node-provenance"));
+    return;
+  }
+  $("vocab-id").value=term.id;$("vocab-id").readOnly=!state.vocabNew;
+  $("vocab-kind").value=term.kind;$("vocab-kind").disabled=!state.vocabNew;
+  $("vocab-label").value=term.label;$("vocab-comment").value=term.comment;
+  setVocabularyOptions(term);
+}
+async function editVocabulary(newTerm=false){
+  if(!state.ontologyMaintainer)throw new Error("Vokabularpflege ist nur für eingetragene Ontologie-Maintainer möglich.");
+  const selected=state.vocabSelected;
+  if(state.branch==="main")await beginBranch("vocabulary");
+  if(state.purpose!=="vocabulary")throw new Error("Bitte die laufende Falländerung zuerst zur Prüfung einreichen.");
+  if(selected && state.vocabulary.terms.some(item=>item.id===selected))state.vocabSelected=selected;
+  if(newTerm){
+    let index=1;while(state.vocabulary.terms.some(item=>item.id===`NeuerBegriff${index}`))index++;
+    const term={id:`NeuerBegriff${index}`,kind:"class",label:"Neuer Begriff",comment:"",parent:"",domain:"",range:""};
+    state.vocabulary.terms.push(term);state.vocabSelected=term.id;state.vocabNew=true;dirty();
+  }else state.vocabNew=false;
+  state.vocabEditing=true;renderVocabulary();
+}
+async function submitVocabulary(){
+  try{
+    if(state.dirty)throw new Error("Bitte zuerst die Änderung speichern.");
+    const result=await api("/api/vocabulary/review",{reason:$("vocab-reason").value,source:$("vocab-source").value});
+    $("vocab-pr-link").href=result.url;$("vocab-pr-link").hidden=false;
+    state.branch=result.branch;state.purpose=result.purpose;state.vocabulary=null;await loadVocabulary(true);refreshBranch();
+    notice("Vokabularänderung zur notariellen Fachprüfung eingereicht.","success");
+  }catch(error){notice(error.message,"error");}
+}
 function setView(view) {
+  if(state.dirty && (view==="vokabular") !== (state.view==="vokabular")) {notice("Bitte zuerst die offenen Änderungen speichern.","error");return;}
   state.view=view;
-  document.body.classList.toggle("review-mode",view==="fachpruefung");
+  document.body.classList.toggle("review-mode",view==="fachpruefung" || view==="vokabular");
   if(view==="verbindungen" && state.current){renderRelationContext();fillNodeSelects();renderGraph();}
   if(view==="fachpruefung" && state.user)loadReviewQueue().catch(error=>notice(error.message,"error"));
+  if(view==="vokabular" && !state.vocabulary)loadVocabulary().catch(error=>notice(error.message,"error"));
   if(state.current) window.history.replaceState(null,"",`?case=${encodeURIComponent(state.current.slug)}#${view}`);
   document.querySelectorAll("[data-view]").forEach(panel=>{panel.hidden=panel.dataset.view!==view;});
   document.querySelectorAll("[data-view-button]").forEach(button=>{
     if(button.dataset.viewButton===view) button.setAttribute("aria-current","page");
     else button.removeAttribute("aria-current");
   });
+  refreshBranch();
 }
 async function loadCase(slug) {
   if (state.dirty && !window.confirm("Ungespeicherte Änderungen verwerfen und anderen Fall öffnen?")) {
@@ -420,7 +514,10 @@ function renderEdges() {
 async function save() {
   try {
     if (state.branch === "main") throw new Error("Bitte zuerst „Änderung beginnen“ wählen.");
-    const result=await api("/api/cases/" + state.current.slug + "/preview",state.current);
+    const vocabulary=state.view==="vokabular";
+    if((vocabulary && state.purpose!=="vocabulary") || (!vocabulary && state.purpose!=="case"))throw new Error("Dieser Arbeitszweig gehört zu einem anderen Arbeitsbereich.");
+    const result=await api(vocabulary ? "/api/vocabulary/preview" : "/api/cases/" + state.current.slug + "/preview",vocabulary ? state.vocabulary : state.current);
+    $("preview-description").textContent=vocabulary ? "Diese Änderungen werden im gemeinsamen Turtle-Vokabular gespeichert. Die notarielle Freigabe erfolgt anschließend im Pull Request." : "Diese fachlichen Änderungen werden in Turtle und in der daraus erzeugten Leseseite gespeichert. Die notarielle Freigabe erfolgt anschließend im Pull Request.";
     const list=$("preview-list");list.replaceChildren();
     result.changes.forEach(change=>list.append(element("li",change)));
     if(!result.changed) list.append(element("li","Keine fachliche Änderung erkannt."));
@@ -430,11 +527,13 @@ async function save() {
 }
 async function confirmSave() {
   try {
-    const result=await api("/api/cases/" + state.current.slug + "/save",state.current);
-    state.current.revision=result.revision;state.dirty=false;
-    if(result.expected_ref) state.current.expected_ref=result.expected_ref;
+    const vocabulary=state.view==="vokabular";
+    const result=await api(vocabulary ? "/api/vocabulary/save" : "/api/cases/" + state.current.slug + "/save",vocabulary ? state.vocabulary : state.current);
+    const subject=vocabulary ? state.vocabulary : state.current;
+    subject.revision=result.revision;state.dirty=false;
+    if(result.expected_ref) subject.expected_ref=result.expected_ref;
     $("change-preview").close();
-    notice(result.changed ? "Turtle und Mermaid-Seite gespeichert. Als Nächstes die Änderung im Pull Request fachlich prüfen lassen." : "Keine Änderungen zu speichern.","success");
+    notice(result.changed ? (vocabulary ? "Gemeinsames Turtle-Vokabular gespeichert. Reiche die Änderung nun zur Fachprüfung ein." : "Turtle und Mermaid-Seite gespeichert. Als Nächstes die Änderung im Pull Request fachlich prüfen lassen.") : "Keine Änderungen zu speichern.","success");
   } catch (error) {notice(error.message,"error");}
 }
 async function submitReview() {
@@ -459,7 +558,7 @@ async function init() {
   try {
     const initialView=window.location.hash.slice(1);
     const requestedCase=new URLSearchParams(window.location.search).get("case");
-    const status=await api("/api/status");state.token=status.token;state.branch=status.branch;refreshBranch();
+    const status=await api("/api/status");state.token=status.token;state.branch=status.branch;state.purpose=status.purpose || "case";state.ontologyMaintainer=!!status.ontology_maintainer;refreshBranch();
     if(status.user){state.user=status.user;state.notaryReviewer=!!status.notary_reviewer;$("session-user").textContent=status.user;$("logout").hidden=false;$("review-nav").hidden=false;}
     $("logout").addEventListener("click",async()=>{try{await api("/api/logout",{});window.location.assign("/login");}catch(error){notice(error.message,"error");}});
     const cases=await api("/api/cases");state.cases=cases;
@@ -467,6 +566,15 @@ async function init() {
     for(const [key,label] of Object.entries(relations)){const option=element("option",label);option.value=key;$("edge-type").append(option);}
     $("case-select").addEventListener("change",event=>loadCase(event.target.value).catch(error=>notice(error.message,"error")));
     $("case-search").addEventListener("input",renderCaseList);
+    $("vocab-search").addEventListener("input",renderVocabulary);
+    $("vocab-edit").addEventListener("click",()=>editVocabulary().catch(error=>notice(error.message,"error")));
+    $("vocab-add").addEventListener("click",()=>editVocabulary(true).catch(error=>notice(error.message,"error")));
+    $("vocab-submit").addEventListener("click",submitVocabulary);
+    for(const [id,key] of [["vocab-label","label"],["vocab-comment","comment"],["vocab-parent","parent"],["vocab-domain","domain"],["vocab-range","range"]]){
+      $(id).addEventListener("input",event=>{const term=selectedTerm();if(!term)return;term[key]=event.target.value;dirty();if(key==="label"){$("vocab-title").textContent=term.label;renderVocabulary(false);}});
+    }
+    $("vocab-id").addEventListener("input",event=>{const term=selectedTerm();if(!term || !state.vocabNew)return;term.id=event.target.value;state.vocabSelected=term.id;dirty();renderVocabulary(false);});
+    $("vocab-kind").addEventListener("change",event=>{const term=selectedTerm();if(!term || !state.vocabNew)return;term.kind=event.target.value;term.parent="";term.domain="";term.range="";dirty();renderVocabulary();});
     $("node-search").addEventListener("input",renderNodes);
     $("node-category").addEventListener("change",renderNodes);
     document.querySelectorAll("[data-view-button]").forEach(button=>button.addEventListener("click",()=>setView(button.dataset.viewButton)));
@@ -515,7 +623,7 @@ async function init() {
       state.current.edges.push(edge);dirty();renderEdges();renderGraph();
     });
     $("start-branch").addEventListener("click",async()=>{
-      try{await beginBranch();}
+      try{await beginBranch(state.view==="vokabular" ? "vocabulary" : "case");}
       catch(error){notice(error.message,"error");}
     });
     $("save").addEventListener("click",save);
@@ -529,10 +637,15 @@ async function init() {
       try{const result=await api("/api/cases/" + state.current.slug + "/turtle");$("turtle-content").textContent=result.turtle;}
       catch(error){$("turtle-content").textContent=error.message;}
     });
+    $("vocab-turtle-details").addEventListener("toggle",async()=>{
+      if(!$("vocab-turtle-details").open)return;
+      try{const result=await api("/api/vocabulary/turtle");$("vocab-turtle").textContent=result.turtle;}
+      catch(error){$("vocab-turtle").textContent=error.message;}
+    });
     for(const id of ["close-preview","cancel-preview"]) $(id).addEventListener("click",()=>$("change-preview").close());
     window.addEventListener("beforeunload",event=>{if(state.dirty){event.preventDefault();event.returnValue="";}});
     await loadCase(cases.some(item=>item.slug===requestedCase) ? requestedCase : cases[0].slug);
-    if(["fall","bausteine","verbindungen","pruefung"].includes(initialView) || (initialView==="fachpruefung" && state.user)) setView(initialView);
+    if(["fall","bausteine","verbindungen","pruefung","vokabular"].includes(initialView) || (initialView==="fachpruefung" && state.user)) setView(initialView);
   } catch(error){notice(error.message,"error");}
 }
 init();

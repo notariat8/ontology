@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """GitHub-backed storage for one shared NaC ontology repository.
 
-Only case Turtle and its generated reading page are committed. Each operation
+Case changes commit Turtle plus their generated reading page; vocabulary
+changes commit only core Turtle. Each operation
 uses an isolated temporary model root, so concurrent editors never switch a
 shared Git checkout or overwrite each other's work in server memory.
 """
@@ -25,10 +26,11 @@ from rdflib.compare import to_isomorphic
 from case_editor_model import ROOT, _graph_to_model, case_path, graph_from_model, load_case, prepare_change, slugs
 from case_editor import describe_changes, preview_change
 from render_case_docs import render
+from vocabulary_editor import model as vocabulary_model, prepare_change as prepare_vocabulary_change
 
 
 NAME = re.compile(r"[A-Za-z0-9_.-]+\Z")
-BRANCH = re.compile(r"codex/ontology-editor-[A-Za-z0-9_.-]+\Z")
+BRANCH = re.compile(r"codex/ontology-(?:editor|vocabulary)-[A-Za-z0-9_.-]+\Z")
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 
 
@@ -114,7 +116,7 @@ class GitHubStore:
             return preview_change(slug, data, root)
 
     def save(self, slug: str, branch: str, data: dict) -> dict:
-        if branch == "main":
+        if not branch.startswith("codex/ontology-editor-"):
             raise ValueError("Auf main kann nicht gespeichert werden")
         parent = self.ref(branch)
         if parent != data.get("expected_ref"):
@@ -123,29 +125,74 @@ class GitHubStore:
             ttl, page, changed = prepare_change(slug, data, data.get("revision", ""), root)
         if not changed:
             return {"changed": False, "revision": data["revision"], "expected_ref": parent}
-        commit = self.request("GET", "/git/commits/" + parent)
-        tree = self.request("POST", "/git/trees", {
-            "base_tree": commit["tree"]["sha"],
-            "tree": [
-                {"path": f"cases/{slug}/ontology.ttl", "mode": "100644", "type": "blob", "content": ttl},
-                {"path": f"cases/{slug}/README.md", "mode": "100644", "type": "blob", "content": page},
-            ],
-        })
-        new_commit = self.request("POST", "/git/commits", {
-            "message": f"Propose ontology change for {slug}", "tree": tree["sha"], "parents": [parent]
-        })
-        self.request("PATCH", "/git/refs/heads/" + quote(branch, safe="/"), {"sha": new_commit["sha"], "force": False})
+        self._commit_files(branch, parent, {
+            f"cases/{slug}/ontology.ttl": ttl, f"cases/{slug}/README.md": page,
+        }, f"Propose ontology change for {slug}")
         refreshed = self.load_case(slug, branch)
         return {"changed": True, "revision": refreshed["revision"], "expected_ref": refreshed["expected_ref"]}
 
     def create_pr(self, slug: str, branch: str, reason: str, source: str) -> str:
-        if not BRANCH.fullmatch(branch):
+        if not branch.startswith("codex/ontology-editor-") or not BRANCH.fullmatch(branch):
             raise ValueError("Ungültiger Arbeitszweig")
+        self._check_pr_files(branch, {f"cases/{slug}/ontology.ttl", f"cases/{slug}/README.md"})
         if not isinstance(reason, str) or not isinstance(source, str) or not 15 <= len(reason.strip()) <= 3000 or not 5 <= len(source.strip()) <= 1000:
             raise ValueError("Fachlicher Grund und Quellenstand fehlen")
         title = f"Fachliche Änderung: {self.load_case(slug, branch)['title']}"
         body = f"## Fachlicher Grund\n\n{reason.strip()}\n\n## Quellenstand\n\n{source.strip()}\n\n## Freigabe\n\nNotarielle Fachprüfung ausstehend.\n"
         result = self.request("POST", "/pulls", {"title": title, "head": branch, "base": "main", "body": body, "draft": False})
+        return result["html_url"]
+
+    def _commit_files(self, branch: str, parent: str, files: dict[str, str], message: str) -> None:
+        commit = self.request("GET", "/git/commits/" + parent)
+        tree = self.request("POST", "/git/trees", {
+            "base_tree": commit["tree"]["sha"],
+            "tree": [{"path": path, "mode": "100644", "type": "blob", "content": content} for path, content in files.items()],
+        })
+        new_commit = self.request("POST", "/git/commits", {
+            "message": message, "tree": tree["sha"], "parents": [parent]
+        })
+        self.request("PATCH", "/git/refs/heads/" + quote(branch, safe="/"), {"sha": new_commit["sha"], "force": False})
+
+    def _check_pr_files(self, branch: str, expected: set[str]) -> None:
+        comparison = self.request("GET", "/compare/main..." + quote(branch, safe="/"))
+        files = comparison.get("files", [])
+        actual = {item["filename"] for item in files}
+        if comparison.get("total_commits", 0) < 1 or actual != expected or any(item.get("status") not in {"modified", "added"} for item in files):
+            raise ValueError("Der Arbeitszweig enthält keine passende oder weitere Änderungen")
+
+    def load_vocabulary(self, branch: str) -> dict:
+        head = self.ref(branch)
+        result = vocabulary_model(self.read_file("ontology/core.ttl", branch))
+        result["expected_ref"] = head
+        return result
+
+    def preview_vocabulary(self, branch: str, data: dict) -> dict:
+        if self.ref(branch) != data.get("expected_ref"):
+            raise ValueError("Der Arbeitszweig wurde inzwischen geändert. Vokabular neu laden.")
+        _, changes, changed = prepare_vocabulary_change(self.read_file("ontology/core.ttl", branch), data)
+        return {"changed": changed, "changes": changes}
+
+    def save_vocabulary(self, branch: str, data: dict) -> dict:
+        if not branch.startswith("codex/ontology-vocabulary-") or not BRANCH.fullmatch(branch):
+            raise ValueError("Für das Vokabular ist ein eigener Arbeitszweig erforderlich")
+        parent = self.ref(branch)
+        if parent != data.get("expected_ref"):
+            raise ValueError("Der Arbeitszweig wurde inzwischen geändert. Vokabular neu laden.")
+        original = self.read_file("ontology/core.ttl", branch)
+        ttl, _, changed = prepare_vocabulary_change(original, data)
+        if changed:
+            self._commit_files(branch, parent, {"ontology/core.ttl": ttl}, "Propose shared ontology vocabulary change")
+        refreshed = self.load_vocabulary(branch)
+        return {"changed": changed, "revision": refreshed["revision"], "expected_ref": refreshed["expected_ref"]}
+
+    def create_vocabulary_pr(self, branch: str, reason: str, source: str) -> str:
+        if not branch.startswith("codex/ontology-vocabulary-") or not BRANCH.fullmatch(branch):
+            raise ValueError("Ungültiger Vokabular-Arbeitszweig")
+        if not isinstance(reason, str) or not isinstance(source, str) or not 15 <= len(reason.strip()) <= 3000 or not 5 <= len(source.strip()) <= 1000:
+            raise ValueError("Fachlicher Grund und Quellenstand fehlen")
+        self._check_pr_files(branch, {"ontology/core.ttl"})
+        body = f"## Fachlicher Grund\n\n{reason.strip()}\n\n## Quellenstand\n\n{source.strip()}\n\n## Freigabe\n\nNotarielle Fachprüfung ausstehend.\n"
+        result = self.request("POST", "/pulls", {"title": "Fachliche Änderung: gemeinsames Vokabular", "head": branch, "base": "main", "body": body, "draft": False})
         return result["html_url"]
 
     def _case_pr(self, number: int) -> tuple[dict, str]:
@@ -165,6 +212,21 @@ class GitHubStore:
             raise ValueError("Dieser Pull Request ist kein einzelner NaC-Fall")
         return pr, found[0]
 
+    def _vocabulary_pr(self, number: int) -> dict:
+        if not isinstance(number, int) or not 0 < number < 1_000_000:
+            raise ValueError("Ungültige Pull-Request-Nummer")
+        pr = self.request("GET", f"/pulls/{number}")
+        if pr.get("state") != "open" or pr.get("base", {}).get("ref") != "main":
+            raise ValueError("Dieser Pull Request ist nicht zur Fachprüfung offen")
+        if (pr.get("head", {}).get("repo") or {}).get("full_name", "").lower() != f"{self.owner}/{self.repo}".lower():
+            raise ValueError("Nur Änderungen aus diesem Repository sind im Prüfkorb verfügbar")
+        if pr.get("changed_files") != 1:
+            raise ValueError("Dieser Pull Request enthält weitere Dateien")
+        files = self.request("GET", f"/pulls/{number}/files?per_page=100")
+        if {file["filename"] for file in files} != {"ontology/core.ttl"}:
+            raise ValueError("Dieser Pull Request ändert nicht das gemeinsame Vokabular")
+        return pr
+
     def list_case_reviews(self) -> list[dict]:
         pulls = self.request("GET", "/pulls?state=open&base=main&per_page=100")
         reviews = []
@@ -172,7 +234,10 @@ class GitHubStore:
             try:
                 checked, slug = self._case_pr(pr["number"])
             except ValueError:
-                continue
+                try:
+                    checked, slug = self._vocabulary_pr(pr["number"]), "vocabulary"
+                except ValueError:
+                    continue
             reviews.append({
                 "number": checked["number"], "title": checked["title"], "case": slug,
                 "author": checked["user"]["login"], "draft": checked["draft"],
@@ -181,7 +246,10 @@ class GitHubStore:
         return reviews
 
     def review_detail(self, number: int) -> dict:
-        pr, slug = self._case_pr(number)
+        try:
+            pr, slug = self._case_pr(number)
+        except ValueError:
+            pr, slug = self._vocabulary_pr(number), "vocabulary"
         base, head = pr["base"]["sha"], pr["head"]["sha"]
         if not SHA.fullmatch(base) or not SHA.fullmatch(head):
             raise ValueError("GitHub lieferte keinen gültigen Commit-Stand")
@@ -189,21 +257,27 @@ class GitHubStore:
         merge_base = comparison["merge_base_commit"]["sha"]
         if not SHA.fullmatch(merge_base):
             raise ValueError("GitHub lieferte keinen gültigen Vergleichsstand")
-        path = f"cases/{slug}/ontology.ttl"
+        path = "ontology/core.ttl" if slug == "vocabulary" else f"cases/{slug}/ontology.ttl"
         before_text = self.read_file(path, merge_base)
         after_text = self.read_file(path, head)
         changes = []
         problem = ""
         try:
-            before = Graph().parse(data=before_text, format="turtle")
-            after = Graph().parse(data=after_text, format="turtle")
-            old_model, new_model = _graph_to_model(slug, before), _graph_to_model(slug, after)
-            changes = describe_changes(old_model, new_model)
-            reconstructed = graph_from_model(slug, new_model, before)
-            if to_isomorphic(reconstructed) != to_isomorphic(after):
-                problem = "Zusätzliche RDF-Änderungen sind in dieser Ansicht nicht vollständig erklärt. Bitte in GitHub prüfen."
-            elif self.read_file(f"cases/{slug}/README.md", head) != render(slug, after):
-                problem = "Die Mermaid-Leseseite stimmt nicht mit Turtle überein."
+            if slug == "vocabulary":
+                old_model, new_model = vocabulary_model(before_text), vocabulary_model(after_text)
+                reconstructed, changes, _ = prepare_vocabulary_change(before_text, {**new_model, "revision": old_model["revision"]})
+                if to_isomorphic(Graph().parse(data=reconstructed, format="turtle")) != to_isomorphic(Graph().parse(data=after_text, format="turtle")):
+                    problem = "Zusätzliche RDF-Änderungen sind in dieser Ansicht nicht vollständig erklärt. Bitte in GitHub prüfen."
+            else:
+                before = Graph().parse(data=before_text, format="turtle")
+                after = Graph().parse(data=after_text, format="turtle")
+                old_model, new_model = _graph_to_model(slug, before), _graph_to_model(slug, after)
+                changes = describe_changes(old_model, new_model)
+                reconstructed = graph_from_model(slug, new_model, before)
+                if to_isomorphic(reconstructed) != to_isomorphic(after):
+                    problem = "Zusätzliche RDF-Änderungen sind in dieser Ansicht nicht vollständig erklärt. Bitte in GitHub prüfen."
+                elif self.read_file(f"cases/{slug}/README.md", head) != render(slug, after):
+                    problem = "Die Mermaid-Leseseite stimmt nicht mit Turtle überein."
         except GitHubError:
             raise
         except Exception:

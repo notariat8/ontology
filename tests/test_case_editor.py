@@ -32,6 +32,11 @@ class CaseEditorTests(unittest.TestCase):
         self.model = load_case(SLUG)
         self.original = Graph().parse(ROOT / "cases" / SLUG / "ontology.ttl", format="turtle")
 
+    def test_vocabulary_branch_cannot_write_case(self):
+        with patch.object(case_editor, "git_branch", return_value="codex/ontology-vocabulary-20260928-120000"):
+            with self.assertRaisesRegex(ValueError, "getrennte Arbeitszweige"):
+                case_editor.write_change(SLUG, self.model)
+
     def test_unchanged_form_is_semantically_identical_and_does_not_rewrite(self):
         candidate = graph_from_model(SLUG, self.model, self.original)
         self.assertEqual(to_isomorphic(candidate), to_isomorphic(self.original))

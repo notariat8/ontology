@@ -17,9 +17,69 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from cloud_editor import CloudHandler, CloudServer, require_config
 from case_editor_model import load_case
+from vocabulary_editor import model as vocabulary_model
 
 
 class CloudEditorTests(unittest.TestCase):
+    def test_vocabulary_has_separate_branch_and_maintainer_gate(self):
+        self.server.config["ONTOLOGY_MAINTAINERS"] = "maintainer"
+        self.server.sessions["vocabulary-session"] = {
+            "token": "fake", "user": "maintainer", "csrf": "csrf-vocab", "branch": "main", "created": time.time(),
+        }
+        cookie = {"Cookie": "nac_session=vocabulary-session"}
+        headers = {**cookie, "Origin": "https://editor.example.org", "X-Editor-Token": "csrf-vocab", "Content-Type": "application/json"}
+        source = (Path(__file__).resolve().parents[1] / "ontology/core.ttl").read_text(encoding="utf-8")
+
+        class FakeStore:
+            def __init__(self, *_):
+                pass
+
+            def create_branch(self, branch):
+                return "main-ref"
+
+            def load_vocabulary(self, branch):
+                result = vocabulary_model(source)
+                result["expected_ref"] = "main-ref"
+                return result
+
+            def preview_vocabulary(self, branch, data):
+                return {"changed": True, "changes": ["Bezeichnung geändert"]}
+
+            def save_vocabulary(self, branch, data):
+                return {"changed": True, "revision": data["revision"], "expected_ref": "new-ref"}
+
+            def create_vocabulary_pr(self, branch, reason, source):
+                return "https://github.com/notariat8/ontology/pull/18"
+
+            def load_case(self, slug, branch):
+                result = load_case(slug)
+                result["expected_ref"] = "main-ref"
+                return result
+
+        with patch("cloud_editor.GitHubStore", FakeStore):
+            status, _, body = self.request("GET", "/api/status", headers=cookie)
+            self.assertEqual(status, 200)
+            self.assertTrue(json.loads(body)["ontology_maintainer"])
+            status, _, body = self.request("POST", "/api/start-branch", body='{"purpose":"vocabulary"}', headers=headers)
+            self.assertEqual(status, 200)
+            self.assertIn("ontology-vocabulary-", json.loads(body)["branch"])
+            status, _, body = self.request("GET", "/api/vocabulary", headers=cookie)
+            self.assertEqual(status, 200)
+            proposed = json.loads(body)
+            self.assertEqual(len(proposed["terms"]), 34)
+            status, _, _ = self.request("POST", "/api/cases/immobilienkaufvertrag/save", body=json.dumps(load_case("immobilienkaufvertrag")), headers=headers)
+            self.assertEqual(status, 400)
+            status, _, _ = self.request("POST", "/api/vocabulary/preview", body=json.dumps(proposed), headers=headers)
+            self.assertEqual(status, 200)
+            status, _, _ = self.request("POST", "/api/vocabulary/save", body=json.dumps(proposed), headers=headers)
+            self.assertEqual(status, 200)
+            status, _, body = self.request("POST", "/api/vocabulary/review", body=json.dumps({"reason": "Fachliche Änderung der Begriffe", "source": "NaC-Commit abc123"}), headers=headers)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body)["branch"], "main")
+        self.server.sessions["vocabulary-session"]["user"] = "other"
+        status, _, _ = self.request("POST", "/api/start-branch", body='{"purpose":"vocabulary"}', headers=headers)
+        self.assertEqual(status, 403)
+
     def test_oauth_code_is_not_written_to_request_log(self):
         handler = Mock()
         handler.command = "GET"
@@ -39,6 +99,11 @@ class CloudEditorTests(unittest.TestCase):
                 require_config()
             os.environ["NOTARY_REVIEWERS"] = "reviewer"
             self.assertEqual(require_config()["NOTARY_REVIEWERS"], "reviewer")
+            os.environ["ONTOLOGY_MAINTAINERS"] = "someone-else"
+            with self.assertRaisesRegex(ValueError, "ONTOLOGY_MAINTAINERS"):
+                require_config()
+            os.environ["ONTOLOGY_MAINTAINERS"] = "reviewer"
+            self.assertEqual(require_config()["ONTOLOGY_MAINTAINERS"], "reviewer")
 
     def setUp(self):
         self.server = CloudServer(("127.0.0.1", 0), {

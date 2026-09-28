@@ -29,6 +29,7 @@
       <button type="button" data-view-button="bausteine">Inhalte pflegen</button>
       <button type="button" data-view-button="verbindungen">Verbindungen prüfen</button>
       <button type="button" data-view-button="pruefung">Zur Prüfung geben</button>
+      <button type="button" data-view-button="vokabular">Gemeinsame Begriffe</button>
       <button id="review-nav" type="button" data-view-button="fachpruefung" hidden>Fachprüfung</button>
     </nav>
     <section class="card overview" data-view="fall">
@@ -89,7 +90,7 @@
     </section>
     <section class="card review-workspace" data-view="fachpruefung" hidden>
       <div class="section-head"><div><p class="eyebrow">FACHLICHE PRÜFUNG</p><h2>Änderungen zur Prüfung</h2></div><button id="refresh-reviews" type="button">Liste aktualisieren</button></div>
-      <p class="context-help">Hier stehen einzelne Falländerungen aus GitHub. Die Ansicht zeigt fachliche Unterschiede und den angegebenen Quellenstand. Eine Entscheidung wird mit deinem GitHub-Konto dokumentiert.</p>
+      <p class="context-help">Hier stehen Änderungen an Fällen und gemeinsamen Begriffen aus GitHub. Die Ansicht zeigt fachliche Unterschiede und den angegebenen Quellenstand. Eine Entscheidung wird mit deinem GitHub-Konto dokumentiert.</p>
       <div id="review-list" class="review-list"></div>
       <div id="review-detail" class="review-detail" hidden>
         <div class="section-head"><div><p class="eyebrow">AUSGEWÄHLTE ÄNDERUNG</p><h3 id="review-title"></h3></div><a id="review-pr-link" target="_blank" rel="noopener noreferrer">In GitHub öffnen ↗</a></div>
@@ -107,13 +108,39 @@
         <p id="review-permission" class="context-help"></p><a id="review-result" hidden target="_blank" rel="noopener noreferrer">Dokumentierte Entscheidung öffnen ↗</a>
       </div>
     </section>
-    <p class="footer-note">Turtle ist die Pflegequelle. Beim Speichern wird die Mermaid-Leseseite neu erzeugt. Eine notarielle Fachfreigabe erfolgt erst im dokumentierten Review.</p>
+    <section class="card vocabulary-workspace" data-view="vokabular" hidden>
+      <div class="section-head"><div><p class="eyebrow">GEMEINSAMES VOKABULAR</p><h2>Begriffe und Beziehungen pflegen</h2></div><button id="vocab-add" type="button" hidden>+ Begriff</button></div>
+      <p class="context-help">Hier stehen die Begriffe, Merkmale und Verbindungstypen, die alle 20 Vorgangsarten gemeinsam verwenden. Ihre Änderung wirkt sich auf mehrere Fälle aus und geht zur notariellen Prüfung.</p>
+      <div class="vocabulary-layout">
+        <div><label for="vocab-search">Begriff suchen</label><input id="vocab-search" type="search" placeholder="z. B. Dokumenttyp oder erfordert"><div id="vocab-list" class="vocab-list"></div></div>
+        <div class="vocab-detail"><p class="eyebrow">AUSGEWÄHLTER BEGRIFF</p><h3 id="vocab-title">Begriff auswählen</h3><div id="vocab-read"></div>
+          <button id="vocab-edit" type="button" hidden>Begriff bearbeiten</button>
+          <div id="vocab-form" hidden>
+            <label for="vocab-id">Eindeutige Kennung</label><input id="vocab-id" maxlength="80">
+            <label for="vocab-kind">Art</label><select id="vocab-kind"><option value="class">Begriffsklasse</option><option value="object_property">Verbindung</option><option value="datatype_property">Merkmal</option></select>
+            <label for="vocab-label">Bezeichnung</label><input id="vocab-label" maxlength="150">
+            <label for="vocab-comment">Erläuterung</label><textarea id="vocab-comment" rows="4" maxlength="1000"></textarea>
+            <label for="vocab-parent">Oberklasse</label><select id="vocab-parent"></select>
+            <label for="vocab-domain">Gilt für</label><select id="vocab-domain"></select>
+            <label for="vocab-range">Zielklasse oder Datentyp</label><select id="vocab-range"></select>
+            <p class="context-help">Kennung und Art bestehender Begriffe sind fest. Neue Begriffe erhalten eine dauerhafte Kennung; eine Freigabe erfolgt im Pull Request.</p>
+          </div>
+        </div>
+      </div>
+      <div class="vocab-submission"><h3>Gemeinsame Begriffe zur Prüfung geben</h3><p>Speichere die Änderung und beschreibe anschließend den fachlichen Grund und den Quellenstand.</p>
+        <label for="vocab-reason">Fachlicher Grund</label><textarea id="vocab-reason" rows="3"></textarea>
+        <label for="vocab-source">Quellenstand</label><input id="vocab-source" placeholder="z. B. NaC-Commit und Fachquelle">
+        <button id="vocab-submit" type="button">Zur Fachprüfung einreichen</button><a id="vocab-pr-link" hidden target="_blank" rel="noopener noreferrer">Pull Request öffnen ↗</a>
+      </div>
+      <details id="vocab-turtle-details" class="technical-source"><summary>Gespeicherten Stand als Turtle ansehen</summary><pre id="vocab-turtle">Beim Öffnen wird der aktuelle Stand geladen.</pre></details>
+    </section>
+    <p class="footer-note">Turtle ist die Pflegequelle. Für Falländerungen wird die Mermaid-Leseseite neu erzeugt. Eine notarielle Fachfreigabe erfolgt erst im dokumentierten Review.</p>
     </div>
     </div>
   </main>
   <dialog id="change-preview" aria-labelledby="preview-title">
     <div class="preview-head"><div><p class="eyebrow">VOR DEM SPEICHERN</p><h2 id="preview-title">Änderung prüfen</h2></div><button id="close-preview" type="button" aria-label="Vorschau schließen">Schließen</button></div>
-    <p>Diese fachlichen Änderungen werden in Turtle und in der daraus erzeugten Leseseite gespeichert. Die notarielle Freigabe erfolgt anschließend im Pull Request.</p>
+    <p id="preview-description">Diese fachlichen Änderungen werden in Turtle und in der daraus erzeugten Leseseite gespeichert. Die notarielle Freigabe erfolgt anschließend im Pull Request.</p>
     <ul id="preview-list"></ul>
     <div class="preview-actions"><button id="cancel-preview" type="button">Weiter bearbeiten</button><button id="confirm-save" class="primary" type="button">Änderung speichern</button></div>
   </dialog>

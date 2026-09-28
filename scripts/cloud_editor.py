@@ -43,7 +43,8 @@ def require_config() -> dict[str, str]:
     names = ("GITHUB_APP_CLIENT_ID", "GITHUB_APP_CLIENT_SECRET", "GITHUB_REPOSITORY", "PUBLIC_ORIGIN", "EDITOR_USERS")
     config = {name: os.environ.get(name, "") for name in names}
     config["NOTARY_REVIEWERS"] = os.environ.get("NOTARY_REVIEWERS", "")
-    if any(not value for value in config.values()):
+    config["ONTOLOGY_MAINTAINERS"] = os.environ.get("ONTOLOGY_MAINTAINERS", "")
+    if any(not config[name] for name in names):
         raise ValueError("GitHub-App-Konfiguration und PUBLIC_ORIGIN fehlen")
     origin = urlparse(config["PUBLIC_ORIGIN"])
     if origin.scheme != "https" or not origin.netloc or origin.path not in ("", "/") or origin.query or origin.fragment or origin.username or origin.password:
@@ -58,6 +59,9 @@ def require_config() -> dict[str, str]:
     notaries = {value.strip().lower() for value in config["NOTARY_REVIEWERS"].split(",") if value.strip()}
     if notaries - editors:
         raise ValueError("NOTARY_REVIEWERS muss eine Teilmenge von EDITOR_USERS sein")
+    maintainers = {value.strip().lower() for value in config["ONTOLOGY_MAINTAINERS"].split(",") if value.strip()}
+    if maintainers - editors:
+        raise ValueError("ONTOLOGY_MAINTAINERS muss eine Teilmenge von EDITOR_USERS sein")
     return config
 
 
@@ -131,6 +135,9 @@ class CloudHandler(BaseHTTPRequestHandler):
 
     def _notaries(self) -> set[str]:
         return {name.strip().lower() for name in self.server.config.get("NOTARY_REVIEWERS", "").split(",") if name.strip()}
+
+    def _maintainers(self) -> set[str]:
+        return {name.strip().lower() for name in self.server.config.get("ONTOLOGY_MAINTAINERS", "").split(",") if name.strip()}
 
     def _login(self) -> None:
         state = secrets.token_urlsafe(24)
@@ -214,7 +221,7 @@ class CloudHandler(BaseHTTPRequestHandler):
                 self._send(200, (ASSETS / filename).read_bytes(), kind[filename])
             elif path.path == "/api/status":
                 session = self._session()
-                self._json(200, {"token": session["csrf"], "branch": session["branch"], "user": session["user"], "notary_reviewer": session["user"].lower() in self._notaries()})
+                self._json(200, {"token": session["csrf"], "branch": session["branch"], "purpose": session.get("purpose", "case"), "user": session["user"], "notary_reviewer": session["user"].lower() in self._notaries(), "ontology_maintainer": session["user"].lower() in self._maintainers()})
             elif path.path == "/api/cases":
                 self._session()
                 self._json(200, self._catalog())
@@ -228,15 +235,25 @@ class CloudHandler(BaseHTTPRequestHandler):
                 detail["can_review"] = session["user"].lower() != detail["author"].lower() and not detail["draft"]
                 detail["can_approve"] = session["user"].lower() in self._notaries() and session["user"].lower() != detail["author"].lower() and not detail["draft"] and not detail["problem"]
                 self._json(200, detail)
+            elif path.path == "/api/vocabulary":
+                session = self._session()
+                branch = session["branch"] if session.get("purpose") == "vocabulary" else "main"
+                self._json(200, self._store(session).load_vocabulary(branch))
+            elif path.path == "/api/vocabulary/turtle":
+                session = self._session()
+                branch = session["branch"] if session.get("purpose") == "vocabulary" else "main"
+                self._json(200, {"turtle": self._store(session).read_file("ontology/core.ttl", branch)})
             elif path.path.startswith("/api/cases/") and path.path.count("/") == 3:
                 session = self._session()
-                self._json(200, self._store(session).load_case(path.path.rsplit("/", 1)[1], session["branch"]))
+                branch = session["branch"] if session.get("purpose", "case") == "case" else "main"
+                self._json(200, self._store(session).load_case(path.path.rsplit("/", 1)[1], branch))
             elif path.path.startswith("/api/cases/") and path.path.endswith("/turtle") and path.path.count("/") == 4:
                 session = self._session()
                 slug = path.path.split("/")[3]
                 if slug not in slugs():
                     raise ValueError("Unbekannter Fall")
-                self._json(200, {"turtle": self._store(session).read_file(f"cases/{slug}/ontology.ttl", session["branch"])})
+                branch = session["branch"] if session.get("purpose", "case") == "case" else "main"
+                self._json(200, {"turtle": self._store(session).read_file(f"cases/{slug}/ontology.ttl", branch)})
             else:
                 self._json(404, {"error": "Nicht gefunden"})
         except PermissionError as error:
@@ -276,16 +293,44 @@ class CloudHandler(BaseHTTPRequestHandler):
                             break
                 self._json(200, {"ok": True})
             elif self.path == "/api/start-branch":
+                purpose = data.get("purpose", "case")
+                if purpose not in ("case", "vocabulary"):
+                    raise ValueError("Unbekannter Arbeitsbereich")
+                if purpose == "vocabulary" and session["user"].lower() not in self._maintainers():
+                    raise PermissionError("Vokabularpflege ist nur für eingetragene Ontologie-Maintainer möglich")
+                if session["branch"] != "main" and session.get("purpose", "case") != purpose:
+                    raise ValueError("Bitte den laufenden Arbeitszweig zuerst zur Prüfung einreichen")
                 if session["branch"] == "main":
-                    branch = f"codex/ontology-editor-{session['user']}-{datetime.now(timezone.utc):%Y%m%d%H%M%S}-{secrets.token_hex(3)}"
+                    prefix = "vocabulary" if purpose == "vocabulary" else "editor"
+                    branch = f"codex/ontology-{prefix}-{session['user']}-{datetime.now(timezone.utc):%Y%m%d%H%M%S}-{secrets.token_hex(3)}"
                     store.create_branch(branch)
                     session["branch"] = branch
-                self._json(200, {"branch": session["branch"]})
+                    session["purpose"] = purpose
+                self._json(200, {"branch": session["branch"], "purpose": session.get("purpose", "case")})
             elif self.path.startswith("/api/reviews/") and self.path.endswith("/review") and self.path.count("/") == 4:
                 number = int(self.path.split("/")[3])
                 url = store.submit_case_review(number, data.get("head_sha", ""), data.get("event", ""), data.get("body", ""), session["user"], self._notaries(), data.get("checks"))
                 self._json(200, {"url": url})
+            elif self.path.startswith("/api/vocabulary/") and self.path.count("/") == 3:
+                if session["user"].lower() not in self._maintainers():
+                    raise PermissionError("Vokabularpflege ist nur für eingetragene Ontologie-Maintainer möglich")
+                if session.get("purpose") != "vocabulary" or session["branch"] == "main":
+                    raise ValueError("Bitte einen Vokabular-Arbeitszweig beginnen")
+                action = self.path.rsplit("/", 1)[1]
+                if action == "preview":
+                    self._json(200, store.preview_vocabulary(session["branch"], data))
+                elif action == "save":
+                    self._json(200, store.save_vocabulary(session["branch"], data))
+                elif action == "review":
+                    url = store.create_vocabulary_pr(session["branch"], data.get("reason", ""), data.get("source", ""))
+                    session["branch"] = "main"
+                    session["purpose"] = "case"
+                    self._json(200, {"url": url, "branch": "main", "purpose": "case"})
+                else:
+                    self._json(404, {"error": "Nicht gefunden"})
             elif self.path.startswith("/api/cases/") and self.path.count("/") == 4:
+                if session.get("purpose", "case") != "case":
+                    raise ValueError("Für Falländerungen ist ein eigener Arbeitszweig erforderlich")
                 _, _, _, slug, action = self.path.split("/")
                 if action == "preview":
                     self._json(200, store.preview(slug, session["branch"], data))

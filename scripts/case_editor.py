@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Local browser editor for the 20 NaC case ontologies.
+"""Local browser editor for the 20 NaC cases and their shared vocabulary.
 
 Run: python scripts/case_editor.py
 """
@@ -22,23 +22,31 @@ import webbrowser
 from rdflib import Graph
 
 from case_editor_model import ROOT, case_path, load_case, prepare_change, revision, slugs, validate_model
+from vocabulary_editor import model as vocabulary_model, prepare_change as prepare_vocabulary_change
 
 
 ASSETS = ROOT / "editor"
 MAX_REQUEST = 250_000
 EDITOR_BRANCH = re.compile(r"codex/ontology-editor-[0-9]{8}-[0-9]{6}$")
+VOCABULARY_BRANCH = re.compile(r"codex/ontology-vocabulary-[0-9]{8}-[0-9]{6}$")
 
 
 def git_branch() -> str:
     return subprocess.check_output(["git", "branch", "--show-current"], cwd=ROOT, text=True).strip()
 
 
-def start_branch() -> str:
+def start_branch(purpose: str = "case") -> str:
+    if purpose not in ("case", "vocabulary"):
+        raise ValueError("Unbekannter Arbeitsbereich")
     current = git_branch()
     if current != "main":
+        if purpose == "vocabulary" and not VOCABULARY_BRANCH.fullmatch(current):
+            raise ValueError("Bitte die laufende Falländerung zuerst zur Prüfung einreichen")
+        if purpose == "case" and VOCABULARY_BRANCH.fullmatch(current):
+            raise ValueError("Bitte die laufende Vokabularänderung zuerst zur Prüfung einreichen")
         return current
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    branch = f"codex/ontology-editor-{stamp}"
+    branch = f"codex/ontology-{'vocabulary' if purpose == 'vocabulary' else 'editor'}-{stamp}"
     subprocess.run(["git", "switch", "-c", branch], cwd=ROOT, check=True, capture_output=True, text=True)
     return branch
 
@@ -47,6 +55,8 @@ def write_change(slug: str, data: dict) -> dict:
     path = case_path(slug)
     if git_branch() == "main":
         raise ValueError("Bitte zuerst mit „Änderung beginnen“ einen Arbeitszweig anlegen.")
+    if VOCABULARY_BRANCH.fullmatch(git_branch()):
+        raise ValueError("Falländerungen und gemeinsames Vokabular brauchen getrennte Arbeitszweige")
     ttl, page, changed = prepare_change(slug, data, data.get("revision", ""))
     if not changed:
         return {"changed": False, "revision": revision(path)}
@@ -75,6 +85,60 @@ def write_change(slug: str, data: dict) -> dict:
         for temporary in temp_files:
             temporary.unlink(missing_ok=True)
     return {"changed": True, "revision": revision(path)}
+
+
+def write_vocabulary_change(data: dict) -> dict:
+    if not VOCABULARY_BRANCH.fullmatch(git_branch()):
+        raise ValueError("Für das Vokabular ist ein eigener Arbeitszweig erforderlich")
+    path = ROOT / "ontology/core.ttl"
+    original = path.read_text(encoding="utf-8")
+    ttl, _, changed = prepare_vocabulary_change(original, data)
+    if changed:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", newline="\n", dir=path.parent, prefix=".vocabulary-editor-", suffix=".tmp", delete=False) as handle:
+            handle.write(ttl)
+            temporary = Path(handle.name)
+        try:
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
+    return {"changed": changed, "revision": revision(path)}
+
+
+def submit_vocabulary_review(data: dict) -> dict:
+    branch = git_branch()
+    if not VOCABULARY_BRANCH.fullmatch(branch):
+        raise ValueError("Bitte zuerst einen Vokabular-Arbeitszweig beginnen")
+    reason, source = data.get("reason"), data.get("source")
+    if not isinstance(reason, str) or not 15 <= len(reason.strip()) <= 3000 or not isinstance(source, str) or not 5 <= len(source.strip()) <= 1000:
+        raise ValueError("Fachlicher Grund und Quellenstand fehlen")
+    expected = {"ontology/core.ttl"}
+    pending = set(subprocess.check_output(["git", "diff", "--name-only", "HEAD"], cwd=ROOT, text=True).splitlines())
+    existing = set(subprocess.check_output(["git", "diff", "--name-only", "main...HEAD"], cwd=ROOT, text=True).splitlines())
+    if pending - expected or existing - expected or not (pending or existing):
+        raise ValueError("Der Arbeitszweig enthält keine passende oder weitere Änderungen")
+    if pending:
+        for script, args in (("validate_catalog.py", []), ("validate_cases.py", []), ("render_case_docs.py", ["--check"])):
+            subprocess.run([sys.executable, str(ROOT / "scripts" / script), *args], cwd=ROOT, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "add", "--", "ontology/core.ttl"], cwd=ROOT, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "commit", "-m", "Propose shared ontology vocabulary change"], cwd=ROOT, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "push", "-u", "origin", branch], cwd=ROOT, check=True, capture_output=True, text=True)
+    try:
+        url = subprocess.check_output(["gh", "pr", "view", branch, "--json", "url", "--jq", ".url"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
+        if url.startswith("https://github.com/"):
+            return {"url": url, "branch": branch, "purpose": "vocabulary"}
+    except subprocess.CalledProcessError:
+        pass
+    body = f"## Fachlicher Grund\n\n{reason.strip()}\n\n## Quellenstand\n\n{source.strip()}\n\n## Freigabe\n\nNotarielle Fachprüfung ausstehend.\n"
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".md", delete=False) as handle:
+        handle.write(body)
+        body_file = Path(handle.name)
+    try:
+        url = subprocess.check_output(["gh", "pr", "create", "--base", "main", "--head", branch, "--title", "Fachliche Änderung: gemeinsames Vokabular", "--body-file", str(body_file)], cwd=ROOT, text=True).strip()
+    finally:
+        body_file.unlink(missing_ok=True)
+    if not url.startswith("https://github.com/"):
+        raise ValueError("Pull Request wurde erstellt, aber seine Adresse konnte nicht gelesen werden")
+    return {"url": url, "branch": branch, "purpose": "vocabulary"}
 
 
 def describe_changes(current: dict, proposed: dict) -> list[str]:
@@ -203,7 +267,8 @@ class EditorHandler(BaseHTTPRequestHandler):
         try:
             path = urlparse(self.path).path
             if path == "/api/status":
-                self._json(200, {"token": self.server.token, "branch": git_branch()})
+                branch = git_branch()
+                self._json(200, {"token": self.server.token, "branch": branch, "purpose": "vocabulary" if VOCABULARY_BRANCH.fullmatch(branch) else "case", "ontology_maintainer": True})
             elif path == "/api/cases":
                 from rdflib import Namespace
                 from rdflib.namespace import SKOS
@@ -215,6 +280,10 @@ class EditorHandler(BaseHTTPRequestHandler):
             elif path.startswith("/api/cases/") and path.endswith("/turtle") and path.count("/") == 4:
                 slug = path.split("/")[3]
                 self._json(200, {"turtle": case_path(slug).read_text(encoding="utf-8")})
+            elif path == "/api/vocabulary":
+                self._json(200, vocabulary_model((ROOT / "ontology/core.ttl").read_text(encoding="utf-8")))
+            elif path == "/api/vocabulary/turtle":
+                self._json(200, {"turtle": (ROOT / "ontology/core.ttl").read_text(encoding="utf-8")})
             elif path in ("/", "/index.html", "/app.js", "/style.css"):
                 filename = "index.html" if path == "/" else path.lstrip("/")
                 types = {"index.html": "text/html", "app.js": "text/javascript", "style.css": "text/css"}
@@ -239,7 +308,15 @@ class EditorHandler(BaseHTTPRequestHandler):
                 raise ValueError("Ungültige Anfragegröße oder Inhaltstyp")
             data = json.loads(self.rfile.read(length))
             if self.path == "/api/start-branch":
-                self._json(200, {"branch": start_branch()})
+                purpose = data.get("purpose", "case")
+                self._json(200, {"branch": start_branch(purpose), "purpose": purpose})
+            elif self.path == "/api/vocabulary/preview":
+                _, changes, changed = prepare_vocabulary_change((ROOT / "ontology/core.ttl").read_text(encoding="utf-8"), data)
+                self._json(200, {"changed": changed, "changes": changes})
+            elif self.path == "/api/vocabulary/save":
+                self._json(200, write_vocabulary_change(data))
+            elif self.path == "/api/vocabulary/review":
+                self._json(200, submit_vocabulary_review(data))
             elif self.path.startswith("/api/cases/") and self.path.endswith("/preview"):
                 slug = self.path.split("/")[3]
                 self._json(200, preview_change(slug, data))
