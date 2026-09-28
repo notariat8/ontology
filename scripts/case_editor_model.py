@@ -211,6 +211,8 @@ def graph_from_model(slug: str, data: object, original: Graph, root: Path | None
             original_status = graph.value(uri, N8.quellstatus)
             if original_status is not None and item["status"] != str(original_status):
                 raise ValueError("Der NaC-Vorlagenstatus kann hier nicht geändert werden")
+    if any((uri, N8.nacNodeId, None) in graph for uri in old_nodes - new_nodes):
+        raise ValueError("Bausteine aus der NaC-Vorlage können nicht entfernt werden")
     for predicate in (DCT.description, DCT.references, N8.hatBaustein):
         graph.remove((case, predicate, None))
     graph.add((case, DCT.description, Literal(model["summary"], lang=DE)))

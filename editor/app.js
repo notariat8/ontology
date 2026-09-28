@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", current: null, selected: null, dirty: false, graphFocused: false, view: "fall" };
+let state = { token: "", branch: "", current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall" };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -63,9 +63,52 @@ function refreshBranch() {
   $("branch").textContent = "Arbeitszweig: " + (state.branch || "kein Branch");
   $("start-branch").hidden = state.branch !== "main";
   $("save").disabled = state.branch === "main";
+  for(const id of ["add-node","add-edge","submit-review"]) $(id).disabled=state.branch==="main";
+}
+function renderCaseList() {
+  const root=$("case-list");root.replaceChildren();
+  const query=$("case-search").value.trim().toLocaleLowerCase("de");
+  let count=0;
+  state.cases.forEach(item=>{
+    if(query && !item.title.toLocaleLowerCase("de").includes(query)) return;
+    count++;
+    const button=element("button",item.title,"case-item"+(state.current?.slug===item.slug ? " active" : ""));
+    button.type="button";
+    button.addEventListener("click",()=>loadCase(item.slug).catch(error=>notice(error.message,"error")));
+    root.append(button);
+  });
+  if(!count) root.append(element("p","Keine Vorgangsart gefunden.","empty"));
+}
+function renderOverview() {
+  $("summary-read").textContent=state.current.summary;
+  const sources=$("source-links");sources.replaceChildren();
+  state.current.sources.forEach(source=>{
+    try{
+      const url=new URL(source);
+      if(url.protocol!=="https:") throw new Error("Ungültige Quelle");
+      const link=element("a",url.hostname + url.pathname,"source-link");link.href=url.href;link.target="_blank";link.rel="noopener noreferrer";
+      sources.append(link);
+    }catch{sources.append(element("span","Quelle benötigt eine HTTPS-Adresse","source-invalid"));}
+  });
+  const stats=$("overview-stats");stats.replaceChildren();
+  groups.forEach(([key,label])=>{
+    const count=state.current.nodes.filter(node=>node.category===key).length;
+    const button=element("button",undefined,"stat-card");button.type="button";
+    button.append(element("strong",String(count)),element("span",label));
+    button.addEventListener("click",()=>{$("node-category").value=key;setView("bausteine");renderNodes();});
+    stats.append(button);
+  });
+}
+async function beginBranch() {
+  if(state.dirty) throw new Error("Bitte ungespeicherte Änderungen vor einem neuen Arbeitszweig prüfen.");
+  const result=await api("/api/start-branch",{});state.branch=result.branch;refreshBranch();
+  await loadCase(state.current.slug);
+  notice("Änderung begonnen. Du bearbeitest jetzt deinen eigenen Arbeitszweig.","success");
 }
 function setView(view) {
   state.view=view;
+  if(view==="verbindungen" && state.current){renderRelationContext();fillNodeSelects();renderGraph();}
+  if(state.current) window.history.replaceState(null,"",`?case=${encodeURIComponent(state.current.slug)}#${view}`);
   document.querySelectorAll("[data-view]").forEach(panel=>{panel.hidden=panel.dataset.view!==view;});
   document.querySelectorAll("[data-view-button]").forEach(button=>{
     if(button.dataset.viewButton===view) button.setAttribute("aria-current","page");
@@ -78,8 +121,13 @@ async function loadCase(slug) {
     return;
   }
   state.current = await api("/api/cases/" + encodeURIComponent(slug));
-  state.selected = null;
+  const degree=new Map(state.current.nodes.map(node=>[node.id,0]));
+  state.current.edges.forEach(edge=>{degree.set(edge.from,(degree.get(edge.from)||0)+1);degree.set(edge.to,(degree.get(edge.to)||0)+1);});
+  state.selected = [...state.current.nodes].sort((a,b)=>(degree.get(b.id)||0)-(degree.get(a.id)||0))[0]?.id || null;
+  state.nodeEditing = false;
   state.dirty = false;
+  $("overview-editor").hidden=true;
+  $("edit-overview").textContent="Beschreibung und Quellen bearbeiten";
   $("review-link").hidden=true;
   $("turtle-details").open=false;
   $("turtle-content").textContent="Beim Öffnen wird der aktuelle Stand geladen.";
@@ -88,15 +136,41 @@ async function loadCase(slug) {
   $("summary").value = state.current.summary;
   $("sources").value = state.current.sources.join("\n");
   $("nac-source").href = state.current.nac_source;
+  $("case-select").value=slug;
+  renderCaseList();renderOverview();
   renderAll();
-  notice("Fall geladen. Wähle einen Baustein oder eine Beziehung zur Bearbeitung.");
+  notice("Fall geladen. Inhalte, Verbindungen und Quellen sind in den Arbeitsbereichen sichtbar.","quiet");
 }
 function renderAll() {
   renderGraph();
   renderNodes();
   renderNodeForm();
   renderEdges();
+  renderRelationContext();
   fillNodeSelects();
+}
+function renderRelationContext() {
+  const root=$("relation-context");root.replaceChildren();
+  const node=state.current.nodes.find(item=>item.id===state.selected);
+  if(!node){root.append(element("p","Bitte einen Baustein wählen.","empty"));return;}
+  const panel=element("div",undefined,"relation-focus-card");
+  panel.append(element("p","AUSGEWÄHLTER BAUSTEIN","eyebrow"),element("h3",node.label));
+  const type=groups.find(([key])=>key===node.category)?.[1] || "Baustein";
+  panel.append(element("p",type + (node.question ? " · " + node.question : ""),"relation-question"));
+  root.append(panel);
+  const relevant=state.current.edges.filter(edge=>edge.from===node.id || edge.to===node.id);
+  const heading=element("h3",`Direkte Verbindungen · ${relevant.length}`);root.append(heading);
+  if(!relevant.length){root.append(element("p","Für diesen Baustein sind noch keine direkten Verbindungen erfasst.","empty"));return;}
+  relevant.forEach(edge=>{
+    const other=edge.from===node.id ? edge.to : edge.from;
+    const outgoing=edge.from===node.id;
+    const row=element("div",undefined,"relation-card");
+    row.append(element("span",outgoing ? "Geht von diesem Baustein aus" : "Führt zu diesem Baustein","relation-direction"));
+    row.append(element("strong",relations[edge.type] || edge.type));
+    const button=element("button",nodeLabel(other),"relation-target");button.type="button";
+    button.addEventListener("click",()=>{state.selected=other;renderAll();});
+    row.append(button);root.append(row);
+  });
 }
 function renderGraph() {
   const canvas = $("graph");
@@ -174,14 +248,16 @@ function renderNodes() {
 }
 function selectNode(id) {
   state.selected = id;
+  state.nodeEditing = false;
   setView("bausteine");
-  renderNodes(); renderNodeForm(); renderGraph();
+  renderNodes(); renderNodeForm(); renderGraph(); renderRelationContext(); fillNodeSelects();
 }
 function field(root, label, value, onChange, multiline = false, hint = "") {
   const wrap = element("div");
   const caption = element("label",label + (hint ? " · " + hint : ""));
   const control = element(multiline ? "textarea" : "input");
   control.value = value ?? "";
+  control.disabled=state.branch==="main";
   if (multiline) control.rows = 3;
   control.addEventListener("input",() => {onChange(control.value);dirty();});
   caption.append(control); wrap.append(caption); root.append(wrap);
@@ -189,14 +265,36 @@ function field(root, label, value, onChange, multiline = false, hint = "") {
 }
 function renderNodeForm() {
   const root = $("node-form"); root.replaceChildren();
+  const read = $("node-read"); read.replaceChildren();
   const node = state.current.nodes.find(item => item.id === state.selected);
-  $("delete-node").hidden = !node;
+  root.hidden = !node || !state.nodeEditing;
+  read.hidden = !!node && state.nodeEditing;
+  $("edit-node").hidden = !node;
+  $("edit-node").textContent = state.nodeEditing ? "Lesen" : "Bearbeiten";
+  $("delete-node").hidden = !node || !state.nodeEditing || !node.id.startsWith("local.");
   $("detail-title").textContent = node ? node.label : "Baustein auswählen";
-  if (!node) {root.append(element("p","Wähle links einen Baustein oder klicke im Fachgraphen darauf.","empty"));return;}
-  const id = field(root,"Kennung",node.id,()=>{});
-  id.readOnly = true;
+  if (!node) {read.append(element("p","Wähle links einen Baustein oder klicke im Fachgraphen darauf.","empty"));return;}
+  const type=groups.find(([key])=>key===node.category)?.[1] || "Baustein";
+  read.append(element("p",type + " · " + (node.id.startsWith("local.") ? "Ergänzung in diesem Repository" : "Aus der NaC-Vorlage übernommen"),"node-meta"));
+  const facts=[
+    ["Fachfrage",node.question],
+    ["Abschnitt der Vorlage",node.section],
+    ["Erläuterung",node.detail],
+    ["Verantwortliche Rolle",node.owner_role],
+    ["Datenschutzklasse",node.privacy_class],
+    ["Benötigt für",node.required_for.join(", ")],
+    ["Entscheidungsoptionen",node.options.join(", ")],
+    ["Dokumentquelle",node.document_source]
+  ];
+  let shown=0;
+  for(const [label,value] of facts){if(!value) continue; const block=element("div",undefined,"node-fact");block.append(element("strong",label),element("p",value));read.append(block);shown++;}
+  if(!shown) read.append(element("p","Zu diesem Baustein sind noch keine weiteren fachlichen Angaben erfasst.","empty"));
+  const provenance=element("details",undefined,"node-provenance");provenance.append(element("summary","Technische Herkunft und Kennung"));
+  provenance.append(element("p","Kennung: " + node.id),element("p","Quellstatus: " + (node.status || "nicht angegeben")));
+  read.append(provenance);
+  const id=field(root,"Kennung",node.id,()=>{});id.readOnly=true;
   const label = field(root,"Bezeichnung",node.label,value => {
-    node.label=value; $("detail-title").textContent=value;renderNodes();renderGraph();renderEdges();fillNodeSelects();
+    node.label=value; $("detail-title").textContent=value;renderNodes();renderGraph();renderEdges();renderRelationContext();fillNodeSelects();
   });
   label.maxLength=2000;
   const categoryWrap=element("div");
@@ -204,11 +302,14 @@ function renderNodeForm() {
   const categorySelect=element("select");
   groups.forEach(([key,title])=>{const option=element("option",title);option.value=key;categorySelect.append(option);});
   categorySelect.value=node.category;
+  categorySelect.disabled=state.branch==="main";
   categorySelect.addEventListener("change",()=>{node.category=categorySelect.value;dirty();renderNodes();renderGraph();});
   categoryLabel.append(categorySelect);categoryWrap.append(categoryLabel);root.append(categoryWrap);
   const status=field(root,node.id.startsWith("local.") ? "Pflegestatus des lokalen Entwurfs" : "Status der NaC-Vorlage",node.status,value=>node.status=value);
   if (!node.id.startsWith("local.")) status.readOnly=true;
   field(root,"Offene Fachfrage",node.question,value=>node.question=value,true);
+  field(root,"Abschnitt der Vorlage",node.section,value=>node.section=value);
+  field(root,"Fachliche Erläuterung",node.detail,value=>node.detail=value,true);
   const advanced=element("details",undefined,"advanced-fields");
   advanced.append(element("summary","Weitere Angaben für die Datenpflege"));
   root.append(advanced);
@@ -220,10 +321,12 @@ function renderNodeForm() {
   field(advanced,"Dokumentquelle",node.document_source,value=>node.document_source=value);
   const privacy=element("label","Kann Personendaten enthalten?");
   const select=element("select");
+  select.disabled=state.branch==="main";
   [["","Keine Angabe"],["true","Ja"],["false","Nein"]].forEach(([value,text])=>{const option=element("option",text);option.value=value;select.append(option);});
   select.value=node.contains_personal_data === null ? "" : String(node.contains_personal_data);
   select.addEventListener("change",()=>{node.contains_personal_data=select.value === "" ? null : select.value === "true";dirty();});
   privacy.append(select);advanced.append(privacy);
+  $("delete-node").disabled=state.branch==="main";
 }
 function fillNodeSelects() {
   for (const id of ["edge-from","edge-to"]) {
@@ -231,6 +334,9 @@ function fillNodeSelects() {
     state.current.nodes.forEach(node=>{const option=element("option",node.label);option.value=node.id;select.append(option);});
     if (state.current.nodes.some(node=>node.id===prior)) select.value=prior;
   }
+  const focus=$("graph-focus");focus.replaceChildren();
+  state.current.nodes.forEach(node=>{const option=element("option",node.label);option.value=node.id;focus.append(option);});
+  focus.value=state.selected || "";
 }
 function renderEdges() {
   const root=$("edge-list");root.replaceChildren();
@@ -240,6 +346,7 @@ function renderEdges() {
     row.append(element("span",relations[edge.type],"edge-type"));
     row.append(element("span",nodeLabel(edge.to)));
     const remove=element("button","Entfernen","danger");remove.type="button";
+    remove.disabled=state.branch==="main";
     remove.addEventListener("click",()=>{state.current.edges.splice(index,1);dirty();renderEdges();renderGraph();});
     row.append(remove);root.append(row);
   });
@@ -278,11 +385,16 @@ async function submitReview() {
 }
 async function init() {
   try {
+    const initialView=window.location.hash.slice(1);
+    const requestedCase=new URLSearchParams(window.location.search).get("case");
     const status=await api("/api/status");state.token=status.token;state.branch=status.branch;refreshBranch();
-    const cases=await api("/api/cases");
+    if(status.user){$("session-user").textContent=status.user;$("logout").hidden=false;}
+    $("logout").addEventListener("click",async()=>{try{await api("/api/logout",{});window.location.assign("/login");}catch(error){notice(error.message,"error");}});
+    const cases=await api("/api/cases");state.cases=cases;
     cases.forEach(item=>{const option=element("option",item.title);option.value=item.slug;$("case-select").append(option);});
     for(const [key,label] of Object.entries(relations)){const option=element("option",label);option.value=key;$("edge-type").append(option);}
     $("case-select").addEventListener("change",event=>loadCase(event.target.value).catch(error=>notice(error.message,"error")));
+    $("case-search").addEventListener("input",renderCaseList);
     $("node-search").addEventListener("input",renderNodes);
     $("node-category").addEventListener("change",renderNodes);
     document.querySelectorAll("[data-view-button]").forEach(button=>button.addEventListener("click",()=>setView(button.dataset.viewButton)));
@@ -293,19 +405,37 @@ async function init() {
       $("graph-scope").textContent=state.graphFocused ? "Alle Bausteine zeigen" : "Auswahl und Nachbarn zeigen";
       renderGraph();
     });
-    $("summary").addEventListener("input",event=>{state.current.summary=event.target.value;dirty();});
-    $("sources").addEventListener("input",event=>{state.current.sources=event.target.value.split("\n").map(v=>v.trim()).filter(Boolean);dirty();});
+    $("graph-focus").addEventListener("change",event=>{state.selected=event.target.value;renderAll();});
+    $("summary").addEventListener("input",event=>{state.current.summary=event.target.value;renderOverview();dirty();});
+    $("sources").addEventListener("input",event=>{state.current.sources=event.target.value.split("\n").map(v=>v.trim()).filter(Boolean);renderOverview();dirty();});
+    $("edit-overview").addEventListener("click",async()=>{
+      try{
+        if(state.branch==="main") await beginBranch();
+        $("overview-editor").hidden=!$("overview-editor").hidden;
+        $("edit-overview").textContent=$("overview-editor").hidden ? "Beschreibung und Quellen bearbeiten" : "Bearbeitungsfelder schließen";
+      }catch(error){notice(error.message,"error");}
+    });
+    $("edit-node").addEventListener("click",async()=>{
+      try{
+        const selected=state.selected;
+        if(!state.nodeEditing && state.branch==="main") await beginBranch();
+        state.selected=selected;
+        state.nodeEditing=!state.nodeEditing;
+        setView("bausteine");
+        renderNodes();renderNodeForm();renderGraph();
+      }catch(error){notice(error.message,"error");}
+    });
     $("add-node").addEventListener("click",()=>{
       let counter=1;while(state.current.nodes.some(node=>node.id===`local.${counter}`)) counter++;
       const node={id:`local.${counter}`,category:"required_information",label:"Neuer Baustein",status:"local-draft",question:"",section:"",detail:"",owner_role:"",privacy_class:"",document_source:"",contains_personal_data:null,required_for:[],options:[]};
-      state.current.nodes.push(node);dirty();renderAll();selectNode(node.id);
+      state.current.nodes.push(node);dirty();renderAll();selectNode(node.id);state.nodeEditing=true;renderNodeForm();
     });
     $("delete-node").addEventListener("click",()=>{
       const node=state.current.nodes.find(item=>item.id===state.selected);
-      if (!node || !window.confirm(`„${node.label}“ und seine Beziehungen entfernen?`)) return;
+      if (!node || !node.id.startsWith("local.") || !window.confirm(`„${node.label}“ und seine Beziehungen entfernen?`)) return;
       state.current.nodes=state.current.nodes.filter(item=>item.id!==node.id);
       state.current.edges=state.current.edges.filter(edge=>edge.from!==node.id && edge.to!==node.id);
-      state.selected=null;dirty();renderAll();
+      state.selected=null;state.nodeEditing=false;dirty();renderAll();
     });
     $("add-edge").addEventListener("click",()=>{
       const edge={from:$("edge-from").value,type:$("edge-type").value,to:$("edge-to").value};
@@ -313,12 +443,7 @@ async function init() {
       state.current.edges.push(edge);dirty();renderEdges();renderGraph();
     });
     $("start-branch").addEventListener("click",async()=>{
-      try{
-        if(state.dirty) throw new Error("Bitte ungespeicherte Änderungen vor einem neuen Arbeitszweig prüfen.");
-        const result=await api("/api/start-branch",{});state.branch=result.branch;refreshBranch();
-        await loadCase(state.current.slug);
-        notice("Arbeitszweig angelegt: " + state.branch,"success");
-      }
+      try{await beginBranch();}
       catch(error){notice(error.message,"error");}
     });
     $("save").addEventListener("click",save);
@@ -331,7 +456,8 @@ async function init() {
     });
     for(const id of ["close-preview","cancel-preview"]) $(id).addEventListener("click",()=>$("change-preview").close());
     window.addEventListener("beforeunload",event=>{if(state.dirty){event.preventDefault();event.returnValue="";}});
-    await loadCase(cases[0].slug);
+    await loadCase(cases.some(item=>item.slug===requestedCase) ? requestedCase : cases[0].slug);
+    if(["fall","bausteine","verbindungen","pruefung"].includes(initialView)) setView(initialView);
   } catch(error){notice(error.message,"error");}
 }
 init();

@@ -2,10 +2,12 @@
 """Regression checks for preserving RDF while editing through the browser model."""
 
 import sys
+import http.client
 from pathlib import Path
 import json
 import shutil
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -14,7 +16,7 @@ from rdflib.compare import to_isomorphic
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from case_editor_model import DCT, N8, RDFS, ROOT, case_uri, graph_from_model, load_case, prepare_change
+from case_editor_model import DCT, N8, RDFS, ROOT, case_uri, graph_from_model, load_case, prepare_change, slugs
 import case_editor
 import case_editor_model
 import render_case_docs
@@ -36,6 +38,16 @@ class CaseEditorTests(unittest.TestCase):
         self.assertFalse(changed)
         self.assertEqual(ttl, (ROOT / "cases" / SLUG / "ontology.ttl").read_text(encoding="utf-8"))
         self.assertIn("flowchart LR", page)
+
+    def test_all_20_cases_roundtrip_without_semantic_loss(self):
+        self.assertEqual(len(slugs()), 20)
+        for slug in slugs():
+            with self.subTest(case=slug):
+                original = Graph().parse(ROOT / "cases" / slug / "ontology.ttl", format="turtle")
+                model = load_case(slug)
+                self.assertEqual(to_isomorphic(graph_from_model(slug, model, original)), to_isomorphic(original))
+                _, _, changed = prepare_change(slug, model, model["revision"])
+                self.assertFalse(changed)
 
     def test_change_keeps_unknown_triples_and_pinned_source(self):
         extra_predicate = URIRef("https://example.org/custom")
@@ -85,6 +97,12 @@ class CaseEditorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "inzwischen geändert"):
             prepare_change(SLUG, self.model, "wrong")
 
+    def test_imported_nac_node_cannot_be_deleted(self):
+        removed = self.model["nodes"].pop(0)["id"]
+        self.model["edges"] = [edge for edge in self.model["edges"] if removed not in (edge["from"], edge["to"])]
+        with self.assertRaisesRegex(ValueError, "NaC-Vorlage können nicht entfernt"):
+            graph_from_model(SLUG, self.model, self.original)
+
     def test_preview_describes_validated_change_without_writing(self):
         path = ROOT / "cases" / SLUG / "ontology.ttl"
         before = path.read_bytes()
@@ -121,6 +139,22 @@ class CaseEditorTests(unittest.TestCase):
             self.assertIn("Isolierte Änderung", page)
             self.assertIn("Isolierte Änderung", ttl)
             self.assertNotIn("Isolierte Änderung", (ROOT / "cases" / SLUG / "ontology.ttl").read_text(encoding="utf-8"))
+
+    def test_local_editor_serves_case_deep_links(self):
+        server = case_editor.EditorServer(("127.0.0.1", 0))
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+            connection.request("GET", "/?case=erbausschlagung")
+            response = connection.getresponse()
+            self.assertEqual(response.status, 200)
+            self.assertIn(b"NaC-Fallontologie", response.read())
+            connection.close()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=3)
 
     def test_rejects_real_case_values_and_dangling_edges(self):
         self.model["nodes"][0]["value"] = "private data"

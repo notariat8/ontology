@@ -16,6 +16,7 @@ import secrets
 import subprocess
 import sys
 import tempfile
+from urllib.parse import urlparse
 import webbrowser
 
 from rdflib import Graph
@@ -188,21 +189,22 @@ class EditorHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         try:
-            if self.path == "/api/status":
+            path = urlparse(self.path).path
+            if path == "/api/status":
                 self._json(200, {"token": self.server.token, "branch": git_branch()})
-            elif self.path == "/api/cases":
+            elif path == "/api/cases":
                 from rdflib import Namespace
                 from rdflib.namespace import SKOS
                 catalog = Graph().parse(ROOT / "catalog/nac-usecases.ttl", format="turtle")
                 n8 = Namespace("https://notariat8.github.io/ontology/id/")
                 self._json(200, [{"slug": slug, "title": str(catalog.value(n8[f"vorgangsart-{slug}"], SKOS.prefLabel))} for slug in slugs()])
-            elif self.path.startswith("/api/cases/") and self.path.count("/") == 3:
-                self._json(200, load_case(self.path.rsplit("/", 1)[1]))
-            elif self.path.startswith("/api/cases/") and self.path.endswith("/turtle") and self.path.count("/") == 4:
-                slug = self.path.split("/")[3]
+            elif path.startswith("/api/cases/") and path.count("/") == 3:
+                self._json(200, load_case(path.rsplit("/", 1)[1]))
+            elif path.startswith("/api/cases/") and path.endswith("/turtle") and path.count("/") == 4:
+                slug = path.split("/")[3]
                 self._json(200, {"turtle": case_path(slug).read_text(encoding="utf-8")})
-            elif self.path in ("/", "/index.html", "/app.js", "/style.css"):
-                filename = "index.html" if self.path == "/" else self.path.lstrip("/")
+            elif path in ("/", "/index.html", "/app.js", "/style.css"):
+                filename = "index.html" if path == "/" else path.lstrip("/")
                 types = {"index.html": "text/html", "app.js": "text/javascript", "style.css": "text/css"}
                 self._send(200, (ASSETS / filename).read_bytes(), types[filename] + "; charset=utf-8")
             else:

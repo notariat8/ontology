@@ -241,7 +241,14 @@ class CloudHandler(BaseHTTPRequestHandler):
             if not isinstance(data, dict):
                 raise ValueError("Ungültige Anfrage")
             store = self._store(session)
-            if self.path == "/api/start-branch":
+            if self.path == "/api/logout":
+                with self.server.lock:
+                    for sid, candidate in list(self.server.sessions.items()):
+                        if candidate is session:
+                            self.server.sessions.pop(sid, None)
+                            break
+                self._json(200, {"ok": True})
+            elif self.path == "/api/start-branch":
                 if session["branch"] == "main":
                     branch = f"codex/ontology-editor-{session['user']}-{datetime.now(timezone.utc):%Y%m%d%H%M%S}-{secrets.token_hex(3)}"
                     store.create_branch(branch)

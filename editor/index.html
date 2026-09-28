@@ -11,14 +11,19 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark">N8</span><div><strong>NaC-Fallontologie</strong><small>Fachlicher Editor · 20 kanonische Fälle</small></div></div>
-    <div class="top-actions"><span id="branch" class="branch"></span><button id="start-branch" type="button">Änderung beginnen</button><button id="save" class="primary" type="button">Änderung speichern</button></div>
+    <div class="top-actions"><span id="session-user" class="session-user"></span><button id="logout" type="button" hidden>Abmelden</button><span id="branch" class="branch"></span><button id="start-branch" type="button">Änderung beginnen</button><button id="save" class="primary" type="button">Änderung speichern</button></div>
   </header>
   <main>
     <div id="notice" class="notice" role="status" aria-live="polite">Lade Fälle …</div>
-    <section class="intro">
-      <div><p class="eyebrow">FALL AUSWÄHLEN</p><select id="case-select" aria-label="Vorgangsart auswählen"></select></div>
-      <p>Hier bearbeitest du Fachvorlagen. Es werden keine Akten, Personen oder Dokumentinhalte gespeichert. Änderungen werden erst nach deiner Vorschau gespeichert und dann als Pull Request zur Prüfung eingereicht.</p>
-    </section>
+    <div class="workspace-shell">
+    <aside class="case-sidebar" aria-label="Vorgangsarten">
+      <p class="eyebrow">NAC-KATALOG</p><h2>20 Vorgangsarten</h2>
+      <label for="case-search">Fall suchen</label><input id="case-search" type="search" placeholder="Vorgangsart eingeben">
+      <div id="case-list" class="case-list"></div>
+      <p class="sidebar-note">Fachvorlagen ohne Aktenwerte. Änderungen gehen zur notariellen Prüfung.</p>
+    </aside>
+    <div class="workspace-main">
+    <section class="mobile-case-picker"><label for="case-select">Vorgangsart</label><select id="case-select" aria-label="Vorgangsart auswählen"></select></section>
     <nav class="workbench-nav" aria-label="Arbeitsbereiche">
       <button type="button" data-view-button="fall" aria-current="page">Fall verstehen</button>
       <button type="button" data-view-button="bausteine">Inhalte pflegen</button>
@@ -27,15 +32,24 @@
     </nav>
     <section class="card overview" data-view="fall">
       <div class="section-head"><div><p class="eyebrow">VORGANGSART</p><h1 id="case-title"></h1></div><a id="nac-source" target="_blank" rel="noopener noreferrer">NaC-Quelle ↗</a></div>
-      <p class="context-help">Diese Vorlage beschreibt fachliche Fragen, Dokumenttypen und Entscheidungen. Für den zeitlichen Ablauf gilt weiterhin das NaC-Prozessmodell.</p>
+      <p class="context-help">Fachliche Vorlage für Fragen, Dokumente und Entscheidungen. Der zeitliche Ablauf steht im NaC-Prozessmodell.</p>
+      <div id="overview-stats" class="overview-stats" aria-label="Bausteine dieses Falls"></div>
+      <div class="overview-reading"><h2>Worum geht es?</h2><p id="summary-read"></p><h2>Rechtsquellen</h2><div id="source-links" class="source-links"></div></div>
+      <button id="edit-overview" type="button">Beschreibung und Quellen bearbeiten</button>
+      <div id="overview-editor" hidden>
       <label for="summary">Kurzbeschreibung</label><textarea id="summary" rows="3"></textarea>
       <label for="sources">Rechtsquellen <span class="hint">eine HTTPS-Adresse pro Zeile</span></label><textarea id="sources" rows="3"></textarea>
+      </div>
       <button class="next-step" type="button" data-go-view="bausteine">Inhalte dieses Falls öffnen →</button>
     </section>
     <section class="card" data-view="verbindungen" hidden>
-      <div class="section-head"><div><p class="eyebrow">ZUSAMMENHANG</p><h2>Fachliche Verbindungen</h2></div><button id="graph-scope" type="button" aria-pressed="false">Auswahl und Nachbarn zeigen</button></div>
-      <p class="context-help">Wähle einen Baustein. Die fokussierte Ansicht zeigt, welche anderen Bausteine direkt mit ihm verbunden sind.</p>
-      <div class="graph-wrap"><svg id="graph" role="img" aria-label="Fachgraph des gewählten Falls"></svg></div>
+      <div class="section-head"><div><p class="eyebrow">ZUSAMMENHANG</p><h2>Fachliche Verbindungen</h2></div></div>
+      <label for="graph-focus">Welchen Baustein möchtest du prüfen?</label><select id="graph-focus"></select>
+      <div id="relation-context" class="relation-context"></div>
+      <details class="diagram-details"><summary>Verbindungen als Diagramm anzeigen</summary>
+        <div class="diagram-toolbar"><button id="graph-scope" type="button" aria-pressed="true">Alle Bausteine zeigen</button></div>
+        <div class="graph-wrap"><svg id="graph" role="img" aria-label="Fachgraph des gewählten Falls"></svg></div>
+      </details>
     </section>
     <div class="columns" data-view="bausteine" hidden>
       <section class="card">
@@ -46,12 +60,14 @@
         <div id="node-list" class="node-list"></div>
       </section>
       <section class="card detail">
-        <div class="section-head"><div><p class="eyebrow">BEARBEITEN</p><h2 id="detail-title">Baustein auswählen</h2></div><button id="delete-node" class="danger" type="button" hidden>Entfernen</button></div>
-        <div id="node-form" class="node-form"><p class="empty">Wähle links einen Baustein oder klicke im Fachgraphen darauf.</p></div>
+        <div class="section-head"><div><p class="eyebrow">BAUSTEIN</p><h2 id="detail-title">Baustein auswählen</h2></div><div class="detail-actions"><button id="edit-node" type="button" hidden>Bearbeiten</button><button id="delete-node" class="danger" type="button" hidden>Entfernen</button></div></div>
+        <div id="node-read" class="node-read"></div>
+        <div id="node-form" class="node-form" hidden></div>
       </section>
     </div>
     <section class="card" data-view="verbindungen" hidden>
-      <div class="section-head"><div><p class="eyebrow">BEZIEHUNGEN</p><h2>Verbindungen zwischen Bausteinen</h2></div></div>
+      <details class="manage-relations"><summary>Alle Verbindungen und ihre Bearbeitung anzeigen</summary>
+      <p class="context-help">Hier kannst du fachliche Verbindungen ergänzen oder entfernen. Die Änderung wird vor dem Speichern geprüft.</p>
       <div class="edge-add">
         <select id="edge-from" aria-label="Ausgangsbaustein"></select>
         <select id="edge-type" aria-label="Beziehungstyp"></select>
@@ -59,6 +75,7 @@
         <button id="add-edge" type="button">+ Beziehung</button>
       </div>
       <div id="edge-list" class="edge-list"></div>
+      </details>
     </section>
     <section class="card submission" data-view="pruefung" hidden>
       <div class="section-head"><div><p class="eyebrow">ZUR PRÜFUNG GEBEN</p><h2>Änderung einreichen</h2></div></div>
@@ -70,6 +87,8 @@
       <details id="turtle-details" class="technical-source"><summary>Gespeicherten Stand als Turtle ansehen</summary><pre id="turtle-content">Beim Öffnen wird der aktuelle Stand geladen.</pre></details>
     </section>
     <p class="footer-note">Turtle ist die Pflegequelle. Beim Speichern wird die Mermaid-Leseseite neu erzeugt. Eine notarielle Fachfreigabe erfolgt erst im dokumentierten Review.</p>
+    </div>
+    </div>
   </main>
   <dialog id="change-preview" aria-labelledby="preview-title">
     <div class="preview-head"><div><p class="eyebrow">VOR DEM SPEICHERN</p><h2 id="preview-title">Änderung prüfen</h2></div><button id="close-preview" type="button" aria-label="Vorschau schließen">Schließen</button></div>
