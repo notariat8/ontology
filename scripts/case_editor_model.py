@@ -41,15 +41,17 @@ NODE_FIELDS = {
 }
 
 
-def slugs() -> list[str]:
-    baseline = json.loads((ROOT / "catalog/nac-baseline.json").read_text(encoding="utf-8"))
+def slugs(root: Path | None = None) -> list[str]:
+    root = root or ROOT
+    baseline = json.loads((root / "catalog/nac-baseline.json").read_text(encoding="utf-8"))
     return baseline["business_case_type_ids"]
 
 
-def case_path(slug: str) -> Path:
-    if slug not in slugs():
+def case_path(slug: str, root: Path | None = None) -> Path:
+    root = root or ROOT
+    if slug not in slugs(root):
         raise ValueError("Unbekannter Fall")
-    return ROOT / "cases" / slug / "ontology.ttl"
+    return root / "cases" / slug / "ontology.ttl"
 
 
 def case_uri(slug: str) -> URIRef:
@@ -108,12 +110,13 @@ def _graph_to_model(slug: str, graph: Graph) -> dict:
     }
 
 
-def load_case(slug: str) -> dict:
-    path = case_path(slug)
+def load_case(slug: str, root: Path | None = None) -> dict:
+    root = root or ROOT
+    path = case_path(slug, root)
     graph = Graph().parse(path, format="turtle")
     model = _graph_to_model(slug, graph)
     model["revision"] = revision(path)
-    catalog = Graph().parse(ROOT / "catalog/nac-usecases.ttl", format="turtle")
+    catalog = Graph().parse(root / "catalog/nac-usecases.ttl", format="turtle")
     model["title"] = _one(catalog, case_uri(slug), SKOS.prefLabel)
     return model
 
@@ -136,8 +139,8 @@ def _clean_list(value: object, name: str) -> list[str]:
     return result
 
 
-def validate_model(slug: str, data: object) -> dict:
-    case_path(slug)
+def validate_model(slug: str, data: object, root: Path | None = None) -> dict:
+    case_path(slug, root)
     if not isinstance(data, dict) or data.get("slug") != slug:
         raise ValueError("Fallkennung stimmt nicht")
     summary = _clean_string(data.get("summary"), "Beschreibung", required=True)
@@ -193,8 +196,8 @@ def validate_model(slug: str, data: object) -> dict:
     return {"slug": slug, "summary": summary, "sources": sources, "nodes": nodes, "edges": edges}
 
 
-def graph_from_model(slug: str, data: object, original: Graph) -> Graph:
-    model = validate_model(slug, data)
+def graph_from_model(slug: str, data: object, original: Graph, root: Path | None = None) -> Graph:
+    model = validate_model(slug, data, root)
     graph = Graph()
     graph += original
     case = case_uri(slug)
@@ -249,18 +252,19 @@ def graph_from_model(slug: str, data: object, original: Graph) -> Graph:
     return graph
 
 
-def prepare_change(slug: str, data: object, expected_revision: str) -> tuple[str, str, bool]:
-    path = case_path(slug)
+def prepare_change(slug: str, data: object, expected_revision: str, root: Path | None = None) -> tuple[str, str, bool]:
+    root = root or ROOT
+    path = case_path(slug, root)
     if revision(path) != expected_revision:
         raise ValueError("Die Datei wurde inzwischen geändert. Fall neu laden und Änderung erneut prüfen.")
     original = Graph().parse(path, format="turtle")
-    candidate = graph_from_model(slug, data, original)
+    candidate = graph_from_model(slug, data, original, root)
     if to_isomorphic(candidate) == to_isomorphic(original):
-        return path.read_text(encoding="utf-8"), render(slug), False
+        return path.read_text(encoding="utf-8"), render(slug, root=root), False
     candidate.bind("n8", N8)
     candidate.bind("dcterms", DCT)
     candidate.bind("skos", SKOS)
     ttl = "# SPDX-License-Identifier: CC-BY-4.0\n" + candidate.serialize(format="turtle")
     Graph().parse(data=ttl, format="turtle")
-    page = render(slug, candidate)
+    page = render(slug, candidate, root=root)
     return ttl, page, True

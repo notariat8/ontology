@@ -40,11 +40,12 @@ def mermaid_label(value: str) -> str:
     return value.replace('"', "#quot;").replace("\n", " ").replace("|", "/")
 
 
-def render(slug: str, case_graph: Graph | None = None) -> str:
+def render(slug: str, case_graph: Graph | None = None, root: Path | None = None) -> str:
+    root = root or ROOT
     graph = Graph()
-    graph.parse(ROOT / "catalog/nac-usecases.ttl", format="turtle")
+    graph.parse(root / "catalog/nac-usecases.ttl", format="turtle")
     if case_graph is None:
-        graph.parse(ROOT / "cases" / slug / "ontology.ttl", format="turtle")
+        graph.parse(root / "cases" / slug / "ontology.ttl", format="turtle")
     else:
         graph += case_graph
     case = N8[f"vorgangsart-{slug}"]

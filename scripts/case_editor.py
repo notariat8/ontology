@@ -76,11 +76,11 @@ def write_change(slug: str, data: dict) -> dict:
     return {"changed": True, "revision": revision(path)}
 
 
-def preview_change(slug: str, data: dict) -> dict:
+def preview_change(slug: str, data: dict, root: Path | None = None) -> dict:
     """Describe an edit in domain terms after the same validation used by save."""
-    current = load_case(slug)
-    _, _, semantic_change = prepare_change(slug, data, data.get("revision", ""))
-    proposed = validate_model(slug, data)
+    current = load_case(slug, root)
+    _, _, semantic_change = prepare_change(slug, data, data.get("revision", ""), root)
+    proposed = validate_model(slug, data, root)
     before = {node["id"]: node for node in current["nodes"]}
     after = {node["id"]: node for node in proposed["nodes"]}
     labels = {"label": "Bezeichnung", "category": "Art", "status": "Status", "question": "Fachfrage", "section": "Kapitel", "detail": "Erläuterung", "owner_role": "Rolle", "privacy_class": "Datenschutzklasse", "required_for": "Benötigt für", "options": "Optionen", "document_source": "Dokumentquelle", "contains_personal_data": "Personendaten-Hinweis"}

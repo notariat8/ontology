@@ -28,6 +28,8 @@ Die lokale und GitHub-CI-Prüfung lautet nach Installation von [requirements.txt
 
 ## Im Browser bearbeiten
 
+Der [gehostete Editor](docs/editor-hosting.md) ist als einzelner Cloud-Dienst mit GitHub-App-Anmeldung und GitHub als Datenquelle implementiert, aber noch nicht bereitgestellt oder mit notariellen Testpersonen abgenommen. Die folgenden Schritte starten die lokale Entwicklungsvariante.
+
 Der [Fall-Editor](editor/index.html) bietet für die 20 Fälle eine Suche nach Fachbausteinen, eine fokussierte Beziehungsansicht und eine geprüfte Änderungsvorschau. Turtle-Syntax muss dafür nicht geschrieben werden. Diese Version läuft **nur auf dem eigenen Rechner**; der gehostete Mehrbenutzer-Editor ist noch in Entwicklung. Auf Windows nach Installation von Python:
 
 ```powershell

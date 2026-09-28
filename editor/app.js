@@ -45,6 +45,10 @@ async function api(path, body) {
   };
   const response = await fetch(path, options);
   const result = await response.json();
+  if (response.status === 401) {
+    window.location.assign("/login");
+    throw new Error("Anmeldung erforderlich");
+  }
   if (!response.ok) throw new Error(result.error || "Anfrage fehlgeschlagen");
   return result;
 }
@@ -68,6 +72,7 @@ async function loadCase(slug) {
   state.current = await api("/api/cases/" + encodeURIComponent(slug));
   state.selected = null;
   state.dirty = false;
+  $("review-link").hidden=true;
   $("case-title").textContent = state.current.title;
   $("summary").value = state.current.summary;
   $("sources").value = state.current.sources.join("\n");
@@ -239,6 +244,7 @@ async function confirmSave() {
   try {
     const result=await api("/api/cases/" + state.current.slug + "/save",state.current);
     state.current.revision=result.revision;state.dirty=false;
+    if(result.expected_ref) state.current.expected_ref=result.expected_ref;
     $("change-preview").close();
     notice(result.changed ? "Turtle und Mermaid-Seite gespeichert. Als Nächstes die Änderung im Pull Request fachlich prüfen lassen." : "Keine Änderungen zu speichern.","success");
   } catch (error) {notice(error.message,"error");}
@@ -251,6 +257,7 @@ async function submitReview() {
     });
     $("review-link").href=result.url;
     $("review-link").hidden=false;
+    if(result.branch){state.branch=result.branch;refreshBranch();}
     notice("Entwurfs-Pull-Request erstellt. Jetzt folgt die notarielle Fachprüfung.","success");
   } catch(error){notice(error.message,"error");window.scrollTo({top:0,behavior:"smooth"});}
 }
@@ -289,7 +296,12 @@ async function init() {
       state.current.edges.push(edge);dirty();renderEdges();renderGraph();
     });
     $("start-branch").addEventListener("click",async()=>{
-      try{const result=await api("/api/start-branch",{});state.branch=result.branch;refreshBranch();notice("Arbeitszweig angelegt: " + state.branch,"success");}
+      try{
+        if(state.dirty) throw new Error("Bitte ungespeicherte Änderungen vor einem neuen Arbeitszweig prüfen.");
+        const result=await api("/api/start-branch",{});state.branch=result.branch;refreshBranch();
+        await loadCase(state.current.slug);
+        notice("Arbeitszweig angelegt: " + state.branch,"success");
+      }
       catch(error){notice(error.message,"error");}
     });
     $("save").addEventListener("click",save);
