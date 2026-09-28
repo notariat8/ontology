@@ -52,6 +52,14 @@
       </div>
       <div id="edge-list" class="edge-list"></div>
     </section>
+    <section class="card submission">
+      <div class="section-head"><div><p class="eyebrow">ZUR PRÜFUNG GEBEN</p><h2>Änderung einreichen</h2></div></div>
+      <p>Nach dem Speichern beschreibst du den fachlichen Grund und den verwendeten Quellenstand. Daraus wird ein Entwurfs-Pull-Request für die notarielle Prüfung.</p>
+      <label for="change-reason">Warum ist die Änderung nötig?</label><textarea id="change-reason" rows="3" placeholder="Beschreibe die fachliche Änderung und ihre Wirkung."></textarea>
+      <label for="change-source">Welcher Quellenstand wurde verwendet?</label><input id="change-source" placeholder="z. B. NaC-Commit und Fachquelle">
+      <button id="submit-review" type="button">Entwurfs-PR erstellen</button>
+      <a id="review-link" hidden target="_blank" rel="noopener noreferrer">Pull Request öffnen ↗</a>
+    </section>
     <p class="footer-note">Turtle ist die Pflegequelle. Beim Speichern wird die Mermaid-Leseseite neu erzeugt. Eine notarielle Fachfreigabe erfolgt erst im dokumentierten Review.</p>
   </main>
   <dialog id="change-preview" aria-labelledby="preview-title">

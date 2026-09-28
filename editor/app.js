@@ -243,6 +243,17 @@ async function confirmSave() {
     notice(result.changed ? "Turtle und Mermaid-Seite gespeichert. Als Nächstes die Änderung im Pull Request fachlich prüfen lassen." : "Keine Änderungen zu speichern.","success");
   } catch (error) {notice(error.message,"error");}
 }
+async function submitReview() {
+  try {
+    if (state.dirty) throw new Error("Bitte die Änderung zuerst speichern und prüfen.");
+    const result=await api("/api/cases/" + state.current.slug + "/review",{
+      reason:$("change-reason").value,source:$("change-source").value
+    });
+    $("review-link").href=result.url;
+    $("review-link").hidden=false;
+    notice("Entwurfs-Pull-Request erstellt. Jetzt folgt die notarielle Fachprüfung.","success");
+  } catch(error){notice(error.message,"error");window.scrollTo({top:0,behavior:"smooth"});}
+}
 async function init() {
   try {
     const status=await api("/api/status");state.token=status.token;state.branch=status.branch;refreshBranch();
@@ -283,6 +294,7 @@ async function init() {
     });
     $("save").addEventListener("click",save);
     $("confirm-save").addEventListener("click",confirmSave);
+    $("submit-review").addEventListener("click",submitReview);
     for(const id of ["close-preview","cancel-preview"]) $(id).addEventListener("click",()=>$("change-preview").close());
     window.addEventListener("beforeunload",event=>{if(state.dirty){event.preventDefault();event.returnValue="";}});
     await loadCase(cases[0].slug);

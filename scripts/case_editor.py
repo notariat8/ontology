@@ -9,10 +9,12 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import json
+import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import secrets
 import subprocess
+import sys
 import tempfile
 import webbrowser
 
@@ -23,6 +25,7 @@ from case_editor_model import ROOT, case_path, load_case, prepare_change, revisi
 
 ASSETS = ROOT / "editor"
 MAX_REQUEST = 250_000
+EDITOR_BRANCH = re.compile(r"codex/ontology-editor-[0-9]{8}-[0-9]{6}$")
 
 
 def git_branch() -> str:
@@ -103,6 +106,53 @@ def preview_change(slug: str, data: dict) -> dict:
     return {"changed": semantic_change, "changes": changes, "case": current["title"]}
 
 
+def submit_review(slug: str, data: dict) -> dict:
+    """Publish exactly one edited case as a draft PR from the local editor."""
+    case_path(slug)
+    branch = git_branch()
+    if not EDITOR_BRANCH.fullmatch(branch):
+        raise ValueError("Bitte eine neue Änderung über „Änderung beginnen“ anlegen.")
+    reason = data.get("reason", "")
+    source = data.get("source", "")
+    if not isinstance(reason, str) or not 15 <= len(reason.strip()) <= 3000:
+        raise ValueError("Bitte den fachlichen Grund in mindestens 15 Zeichen beschreiben.")
+    if not isinstance(source, str) or not 5 <= len(source.strip()) <= 1000:
+        raise ValueError("Bitte den verwendeten Quellenstand angeben.")
+    expected = {f"cases/{slug}/ontology.ttl", f"cases/{slug}/README.md"}
+    pending = set(subprocess.check_output(["git", "diff", "--name-only", "HEAD"], cwd=ROOT, text=True).splitlines())
+    if pending and pending != expected:
+        raise ValueError("Auf diesem Arbeitszweig liegen weitere oder unvollständige Änderungen. Bitte separat prüfen.")
+    existing = set(subprocess.check_output(["git", "diff", "--name-only", "main...HEAD"], cwd=ROOT, text=True).splitlines())
+    if existing and (existing != expected or pending):
+        raise ValueError("Dieser Arbeitszweig enthält bereits andere Änderungen. Bitte separat prüfen.")
+    if not pending and not existing:
+        raise ValueError("Keine gespeicherte Änderung vorhanden.")
+    if pending:
+        for script, args in (("validate_catalog.py", []), ("validate_cases.py", []), ("render_case_docs.py", ["--check"])):
+            subprocess.run([sys.executable, str(ROOT / "scripts" / script), *args], cwd=ROOT, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "add", "--", *sorted(expected)], cwd=ROOT, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "commit", "-m", f"Propose ontology change for {slug}"], cwd=ROOT, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "push", "-u", "origin", branch], cwd=ROOT, check=True, capture_output=True, text=True)
+    try:
+        existing_url = subprocess.check_output(["gh", "pr", "view", branch, "--json", "url", "--jq", ".url"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
+        if existing_url.startswith("https://github.com/"):
+            return {"url": existing_url}
+    except subprocess.CalledProcessError:
+        pass
+    title = f"Fachliche Änderung: {load_case(slug)['title']}"
+    body = f"## Fachlicher Grund\n\n{reason.strip()}\n\n## Quellenstand\n\n{source.strip()}\n\n## Prüfung\n\nTurtle, Fallgraph und Mermaid technisch geprüft. Notarielle Fachfreigabe steht aus.\n"
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".md", delete=False) as handle:
+        handle.write(body)
+        body_file = Path(handle.name)
+    try:
+        url = subprocess.check_output(["gh", "pr", "create", "--draft", "--base", "main", "--head", branch, "--title", title, "--body-file", str(body_file)], cwd=ROOT, text=True).strip()
+    finally:
+        body_file.unlink(missing_ok=True)
+    if not url.startswith("https://github.com/"):
+        raise ValueError("Pull Request wurde erstellt, aber seine Adresse konnte nicht gelesen werden.")
+    return {"url": url}
+
+
 class EditorServer(ThreadingHTTPServer):
     def __init__(self, address: tuple[str, int]):
         super().__init__(address, EditorHandler)
@@ -165,6 +215,9 @@ class EditorHandler(BaseHTTPRequestHandler):
             elif self.path.startswith("/api/cases/") and self.path.endswith("/preview"):
                 slug = self.path.split("/")[3]
                 self._json(200, preview_change(slug, data))
+            elif self.path.startswith("/api/cases/") and self.path.endswith("/review"):
+                slug = self.path.split("/")[3]
+                self._json(200, submit_review(slug, data))
             elif self.path.startswith("/api/cases/") and self.path.endswith("/save"):
                 slug = self.path.split("/")[3]
                 self._json(200, write_change(slug, data))

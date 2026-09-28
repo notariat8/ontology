@@ -94,6 +94,14 @@ class CaseEditorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "inzwischen geändert"):
             case_editor.preview_change(SLUG, self.model)
 
+    def test_review_requires_editor_branch_and_fachliche_begruendung(self):
+        with patch.object(case_editor, "git_branch", return_value="main"):
+            with self.assertRaisesRegex(ValueError, "Änderung beginnen"):
+                case_editor.submit_review(SLUG, {"reason": "Eine ausführliche Begründung", "source": "NaC-Commit abc123"})
+        with patch.object(case_editor, "git_branch", return_value="codex/ontology-editor-20260928-120000"):
+            with self.assertRaisesRegex(ValueError, "fachlichen Grund"):
+                case_editor.submit_review(SLUG, {"reason": "kurz", "source": "NaC-Commit abc123"})
+
     def test_rejects_real_case_values_and_dangling_edges(self):
         self.model["nodes"][0]["value"] = "private data"
         # The editable schema ignores extra fields rather than writing them to RDF.
