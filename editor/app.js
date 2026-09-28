@@ -81,6 +81,8 @@ async function loadCase(slug) {
   state.selected = null;
   state.dirty = false;
   $("review-link").hidden=true;
+  $("turtle-details").open=false;
+  $("turtle-content").textContent="Beim Öffnen wird der aktuelle Stand geladen.";
   setView("fall");
   $("case-title").textContent = state.current.title;
   $("summary").value = state.current.summary;
@@ -322,6 +324,11 @@ async function init() {
     $("save").addEventListener("click",save);
     $("confirm-save").addEventListener("click",confirmSave);
     $("submit-review").addEventListener("click",submitReview);
+    $("turtle-details").addEventListener("toggle",async()=>{
+      if(!$("turtle-details").open || !state.current) return;
+      try{const result=await api("/api/cases/" + state.current.slug + "/turtle");$("turtle-content").textContent=result.turtle;}
+      catch(error){$("turtle-content").textContent=error.message;}
+    });
     for(const id of ["close-preview","cancel-preview"]) $(id).addEventListener("click",()=>$("change-preview").close());
     window.addEventListener("beforeunload",event=>{if(state.dirty){event.preventDefault();event.returnValue="";}});
     await loadCase(cases[0].slug);

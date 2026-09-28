@@ -208,6 +208,12 @@ class CloudHandler(BaseHTTPRequestHandler):
             elif path.path.startswith("/api/cases/") and path.path.count("/") == 3:
                 session = self._session()
                 self._json(200, self._store(session).load_case(path.path.rsplit("/", 1)[1], session["branch"]))
+            elif path.path.startswith("/api/cases/") and path.path.endswith("/turtle") and path.path.count("/") == 4:
+                session = self._session()
+                slug = path.path.split("/")[3]
+                if slug not in slugs():
+                    raise ValueError("Unbekannter Fall")
+                self._json(200, {"turtle": self._store(session).read_file(f"cases/{slug}/ontology.ttl", session["branch"])})
             else:
                 self._json(404, {"error": "Nicht gefunden"})
         except PermissionError as error:

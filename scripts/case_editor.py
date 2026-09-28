@@ -84,26 +84,37 @@ def preview_change(slug: str, data: dict, root: Path | None = None) -> dict:
     before = {node["id"]: node for node in current["nodes"]}
     after = {node["id"]: node for node in proposed["nodes"]}
     labels = {"label": "Bezeichnung", "category": "Art", "status": "Status", "question": "Fachfrage", "section": "Kapitel", "detail": "Erläuterung", "owner_role": "Rolle", "privacy_class": "Datenschutzklasse", "required_for": "Benötigt für", "options": "Optionen", "document_source": "Dokumentquelle", "contains_personal_data": "Personendaten-Hinweis"}
+    def display(value: object) -> str:
+        if value is None or value == "" or value == []:
+            return "(leer)"
+        if value is True:
+            return "Ja"
+        if value is False:
+            return "Nein"
+        if isinstance(value, list):
+            return ", ".join(map(str, value))
+        return str(value)
+
     changes = []
     if current["summary"] != proposed["summary"]:
-        changes.append("Kurzbeschreibung geändert")
+        changes.append(f"Kurzbeschreibung: {display(current['summary'])} → {display(proposed['summary'])}")
     if current["sources"] != proposed["sources"]:
-        changes.append("Rechtsquellen geändert")
+        changes.append(f"Rechtsquellen: {display(current['sources'])} → {display(proposed['sources'])}")
     for node_id in sorted(after.keys() - before.keys()):
         changes.append(f"Baustein hinzugefügt: {after[node_id]['label']}")
     for node_id in sorted(before.keys() - after.keys()):
         changes.append(f"Baustein entfernt: {before[node_id]['label']}")
     for node_id in sorted(before.keys() & after.keys()):
         fields = [key for key in after[node_id] if key != "id" and before[node_id].get(key) != after[node_id][key]]
-        if fields:
-            changes.append(f"Baustein geändert: {after[node_id]['label']} ({', '.join(labels.get(field, field) for field in fields)})")
+        for field in fields:
+            changes.append(f"{after[node_id]['label']} · {labels.get(field, field)}: {display(before[node_id].get(field))} → {display(after[node_id][field])}")
     old_edges = {(edge["from"], edge["type"], edge["to"]) for edge in current["edges"]}
     new_edges = {(edge["from"], edge["type"], edge["to"]) for edge in proposed["edges"]}
     for source, relation, target in sorted(new_edges - old_edges):
         changes.append(f"Beziehung hinzugefügt: {after[source]['label']} → {relation} → {after[target]['label']}")
     for source, relation, target in sorted(old_edges - new_edges):
         changes.append(f"Beziehung entfernt: {before[source]['label']} → {relation} → {before[target]['label']}")
-    return {"changed": semantic_change, "changes": changes, "case": current["title"]}
+    return {"changed": semantic_change, "changes": changes if semantic_change else [], "case": current["title"]}
 
 
 def submit_review(slug: str, data: dict) -> dict:
@@ -187,6 +198,9 @@ class EditorHandler(BaseHTTPRequestHandler):
                 self._json(200, [{"slug": slug, "title": str(catalog.value(n8[f"vorgangsart-{slug}"], SKOS.prefLabel))} for slug in slugs()])
             elif self.path.startswith("/api/cases/") and self.path.count("/") == 3:
                 self._json(200, load_case(self.path.rsplit("/", 1)[1]))
+            elif self.path.startswith("/api/cases/") and self.path.endswith("/turtle") and self.path.count("/") == 4:
+                slug = self.path.split("/")[3]
+                self._json(200, {"turtle": case_path(slug).read_text(encoding="utf-8")})
             elif self.path in ("/", "/index.html", "/app.js", "/style.css"):
                 filename = "index.html" if self.path == "/" else self.path.lstrip("/")
                 types = {"index.html": "text/html", "app.js": "text/javascript", "style.css": "text/css"}

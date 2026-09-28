@@ -43,6 +43,8 @@ class CloudEditorTests(unittest.TestCase):
     def test_session_required_and_csrf_blocks_cross_origin_write(self):
         status, _, _ = self.request("GET", "/api/status")
         self.assertEqual(status, 401)
+        status, _, _ = self.request("GET", "/api/cases/immobilienkaufvertrag/turtle")
+        self.assertEqual(status, 401)
         self.server.sessions["test-session"] = {
             "token": "fake", "user": "reviewer", "csrf": "csrf-test",
             "branch": "main", "created": time.time(),
