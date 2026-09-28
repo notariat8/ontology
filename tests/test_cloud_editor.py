@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import unittest
+from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
@@ -56,6 +57,14 @@ class CloudEditorTests(unittest.TestCase):
             "Content-Type": "application/json",
         })
         self.assertEqual(status, 403)
+
+    def test_oauth_callback_requires_browser_bound_state(self):
+        status, headers, _ = self.request("GET", "/login")
+        self.assertEqual(status, 302)
+        state = parse_qs(urlparse(headers["Location"]).query)["state"][0]
+        self.assertIn("nac_oauth_state=", headers["Set-Cookie"])
+        status, _, _ = self.request("GET", "/callback?state=" + state + "&code=fake")
+        self.assertEqual(status, 401)
 
 
 if __name__ == "__main__":

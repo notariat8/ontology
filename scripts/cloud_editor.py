@@ -45,7 +45,7 @@ def require_config() -> dict[str, str]:
     if any(not value for value in config.values()):
         raise ValueError("GitHub-App-Konfiguration und PUBLIC_ORIGIN fehlen")
     origin = urlparse(config["PUBLIC_ORIGIN"])
-    if origin.scheme != "https" or not origin.netloc or origin.path not in ("", "/"):
+    if origin.scheme != "https" or not origin.netloc or origin.path not in ("", "/") or origin.query or origin.fragment or origin.username or origin.password:
         raise ValueError("PUBLIC_ORIGIN muss eine HTTPS-Ursprungsadresse sein")
     owner_repo = config["GITHUB_REPOSITORY"].split("/")
     if len(owner_repo) != 2:
@@ -94,11 +94,11 @@ class CloudHandler(BaseHTTPRequestHandler):
     def _json(self, status: int, payload: dict | list) -> None:
         self._send(status, json.dumps(payload, ensure_ascii=False).encode("utf-8"), "application/json")
 
-    def _redirect(self, target: str, cookie: str | None = None) -> None:
+    def _redirect(self, target: str, cookies: list[str] | None = None) -> None:
         self.send_response(302)
         self.send_header("Location", target)
         self.send_header("Cache-Control", "no-store")
-        if cookie:
+        for cookie in cookies or []:
             self.send_header("Set-Cookie", cookie)
         self.end_headers()
 
@@ -124,17 +124,28 @@ class CloudHandler(BaseHTTPRequestHandler):
         verifier = secrets.token_urlsafe(48)
         challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
         with self.server.lock:
+            now = time.time()
+            self.server.pending = {key: value for key, value in self.server.pending.items() if now - value["created"] < AUTH_LIFETIME}
+            self.server.sessions = {key: value for key, value in self.server.sessions.items() if now - value["created"] < SESSION_LIFETIME}
+            if len(self.server.pending) >= 100:
+                raise ValueError("Zu viele laufende Anmeldungen. Bitte später erneut versuchen.")
             self.server.pending[state] = {"verifier": verifier, "created": time.time()}
         params = {
             "client_id": self.server.config["GITHUB_APP_CLIENT_ID"],
             "redirect_uri": self.server.config["PUBLIC_ORIGIN"].rstrip("/") + "/callback",
             "state": state, "code_challenge": challenge, "code_challenge_method": "S256",
         }
-        self._redirect("https://github.com/login/oauth/authorize?" + urlencode(params))
+        self._redirect("https://github.com/login/oauth/authorize?" + urlencode(params), [
+            f"nac_oauth_state={state}; Path=/callback; Max-Age={AUTH_LIFETIME}; HttpOnly; Secure; SameSite=Lax"
+        ])
 
     def _callback(self, query: dict[str, list[str]]) -> None:
         state = query.get("state", [""])[0]
         code = query.get("code", [""])[0]
+        jar = SimpleCookie()
+        jar.load(self.headers.get("Cookie", ""))
+        if not state or "nac_oauth_state" not in jar or jar["nac_oauth_state"].value != state:
+            raise PermissionError("Anmeldung stimmt nicht mit diesem Browser überein")
         with self.server.lock:
             pending = self.server.pending.pop(state, None)
         if not pending or time.time() - pending["created"] > AUTH_LIFETIME or not code:
@@ -167,7 +178,10 @@ class CloudHandler(BaseHTTPRequestHandler):
                 "token": token, "user": user["login"], "csrf": secrets.token_urlsafe(32),
                 "branch": "main", "created": time.time(),
             }
-        self._redirect("/", f"nac_session={sid}; Path=/; Max-Age={SESSION_LIFETIME}; HttpOnly; Secure; SameSite=Lax")
+        self._redirect("/", [
+            f"nac_session={sid}; Path=/; Max-Age={SESSION_LIFETIME}; HttpOnly; Secure; SameSite=Lax",
+            "nac_oauth_state=; Path=/callback; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
+        ])
 
     def _catalog(self) -> list[dict]:
         graph = Graph().parse(ROOT / "catalog/nac-usecases.ttl", format="turtle")

@@ -106,6 +106,22 @@ class CaseEditorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "fachlichen Grund"):
                 case_editor.submit_review(SLUG, {"reason": "kurz", "source": "NaC-Commit abc123"})
 
+    def test_isolated_model_root_does_not_change_shared_repository(self):
+        with tempfile.TemporaryDirectory() as location:
+            isolated = Path(location)
+            (isolated / "catalog").mkdir()
+            (isolated / "cases" / SLUG).mkdir(parents=True)
+            for filename in ("nac-baseline.json", "nac-usecases.ttl"):
+                shutil.copy2(ROOT / "catalog" / filename, isolated / "catalog" / filename)
+            shutil.copy2(ROOT / "cases" / SLUG / "ontology.ttl", isolated / "cases" / SLUG / "ontology.ttl")
+            model = load_case(SLUG, isolated)
+            model["nodes"][0]["label"] = "Isolierte Änderung"
+            ttl, page, changed = prepare_change(SLUG, model, model["revision"], isolated)
+            self.assertTrue(changed)
+            self.assertIn("Isolierte Änderung", page)
+            self.assertIn("Isolierte Änderung", ttl)
+            self.assertNotIn("Isolierte Änderung", (ROOT / "cases" / SLUG / "ontology.ttl").read_text(encoding="utf-8"))
+
     def test_rejects_real_case_values_and_dangling_edges(self):
         self.model["nodes"][0]["value"] = "private data"
         # The editable schema ignores extra fields rather than writing them to RDF.
