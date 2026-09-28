@@ -80,6 +80,7 @@ class CloudServer(ThreadingHTTPServer):
         self.config = config
         self.sessions: dict[str, dict] = {}
         self.pending: dict[str, dict] = {}
+        self.impact_cache: tuple[str, dict] | None = None
         self.lock = threading.RLock()
         self.owner, self.repo = config["GITHUB_REPOSITORY"].split("/")
 
@@ -239,6 +240,19 @@ class CloudHandler(BaseHTTPRequestHandler):
                 session = self._session()
                 branch = session["branch"] if session.get("purpose") == "vocabulary" else "main"
                 self._json(200, self._store(session).load_vocabulary(branch))
+            elif path.path == "/api/vocabulary/impact":
+                session = self._session()
+                store = self._store(session)
+                main_ref = store.ref("main")
+                with self.server.lock:
+                    cached = self.server.impact_cache
+                if cached and cached[0] == main_ref:
+                    impact = cached[1]
+                else:
+                    impact = store.vocabulary_impact(main_ref)
+                    with self.server.lock:
+                        self.server.impact_cache = (main_ref, impact)
+                self._json(200, impact)
             elif path.path == "/api/vocabulary/turtle":
                 session = self._session()
                 branch = session["branch"] if session.get("purpose") == "vocabulary" else "main"

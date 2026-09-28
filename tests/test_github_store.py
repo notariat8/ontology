@@ -16,6 +16,24 @@ from vocabulary_editor import model as vocabulary_model, prepare_change as prepa
 
 
 class GitHubStoreTests(unittest.TestCase):
+    def test_vocabulary_impact_reads_all_cases_at_one_main_commit(self):
+        from case_editor_model import slugs
+        store = GitHubStore("notariat8", "ontology", "fake-token")
+        paths = ["ontology/core.ttl", "catalog/nac-usecases.ttl", *(f"cases/{slug}/ontology.ttl" for slug in slugs())]
+        texts = {path: (ROOT / path).read_text(encoding="utf-8") for path in paths}
+        seen = []
+
+        def read_file(path, ref):
+            seen.append((path, ref))
+            return texts[path]
+
+        with (patch.object(store, "ref", return_value="a" * 40), patch.object(store, "read_file", side_effect=read_file)):
+            result = store.vocabulary_impact()
+        self.assertEqual({path for path, _ in seen}, set(paths))
+        self.assertEqual({ref for _, ref in seen}, {"a" * 40})
+        self.assertEqual(result["source_ref"], "a" * 40)
+        self.assertEqual(len(result["terms"]["Angabenfrage"]), 20)
+
     def test_pull_request_file_scope_rejects_extra_or_removed_files(self):
         store = GitHubStore("notariat8", "ontology", "fake-token")
         branch = "codex/ontology-vocabulary-test"

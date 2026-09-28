@@ -10,6 +10,7 @@ shared Git checkout or overwrite each other's work in server memory.
 from __future__ import annotations
 
 import base64
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 import json
 from pathlib import Path
@@ -27,6 +28,7 @@ from case_editor_model import ROOT, _graph_to_model, case_path, graph_from_model
 from case_editor import describe_changes, preview_change
 from render_case_docs import render
 from vocabulary_editor import model as vocabulary_model, prepare_change as prepare_vocabulary_change
+from vocabulary_impact import impact_index
 
 
 NAME = re.compile(r"[A-Za-z0-9_.-]+\Z")
@@ -165,6 +167,17 @@ class GitHubStore:
         result = vocabulary_model(self.read_file("ontology/core.ttl", branch))
         result["expected_ref"] = head
         return result
+
+    def vocabulary_impact(self, main_ref: str | None = None) -> dict:
+        main_ref = main_ref or self.ref("main")
+        if not SHA.fullmatch(main_ref):
+            raise ValueError("Ungültiger Katalog-Commit für die Auswirkungsübersicht")
+        paths = ["catalog/nac-usecases.ttl", *(f"cases/{slug}/ontology.ttl" for slug in slugs())]
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            texts = dict(zip(paths, pool.map(lambda path: self.read_file(path, main_ref), paths)))
+        core = self.read_file("ontology/core.ttl", main_ref)
+        cases = {slug: texts[f"cases/{slug}/ontology.ttl"] for slug in slugs()}
+        return impact_index(core, texts["catalog/nac-usecases.ttl"], cases, main_ref)
 
     def preview_vocabulary(self, branch: str, data: dict) -> dict:
         if self.ref(branch) != data.get("expected_ref"):

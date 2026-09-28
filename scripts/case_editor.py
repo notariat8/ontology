@@ -23,6 +23,7 @@ from rdflib import Graph
 
 from case_editor_model import ROOT, case_path, load_case, prepare_change, revision, slugs, validate_model
 from vocabulary_editor import model as vocabulary_model, prepare_change as prepare_vocabulary_change
+from vocabulary_impact import impact_index
 
 
 ASSETS = ROOT / "editor"
@@ -282,6 +283,9 @@ class EditorHandler(BaseHTTPRequestHandler):
                 self._json(200, {"turtle": case_path(slug).read_text(encoding="utf-8")})
             elif path == "/api/vocabulary":
                 self._json(200, vocabulary_model((ROOT / "ontology/core.ttl").read_text(encoding="utf-8")))
+            elif path == "/api/vocabulary/impact":
+                read = lambda relative: (ROOT / relative).read_text(encoding="utf-8")
+                self._json(200, impact_index(read("ontology/core.ttl"), read("catalog/nac-usecases.ttl"), {slug: read(f"cases/{slug}/ontology.ttl") for slug in slugs()}, "lokaler Arbeitsstand"))
             elif path == "/api/vocabulary/turtle":
                 self._json(200, {"turtle": (ROOT / "ontology/core.ttl").read_text(encoding="utf-8")})
             elif path in ("/", "/index.html", "/app.js", "/style.css"):

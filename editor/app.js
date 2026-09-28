@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", purpose: "case", user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false };
+let state = { token: "", branch: "", purpose: "case", user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "" };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -168,7 +168,43 @@ async function loadVocabulary(force=false){
   if(state.dirty && force)throw new Error("Bitte offene Änderungen zuerst speichern.");
   if(!state.vocabulary || force){state.vocabulary=await api("/api/vocabulary");state.vocabSelected=state.vocabulary.terms[0]?.id || null;state.vocabEditing=false;state.vocabNew=false;}
   renderVocabulary();
+  if((force || !state.vocabularyImpact) && !state.impactLoading)loadVocabularyImpact().catch(error=>{state.impactError=error.message;state.impactLoading=false;renderVocabularyImpact();});
   if(state.view==="vokabular")notice("Gemeinsame Begriffe geladen. Wähle einen Begriff, um seine fachliche Bedeutung zu lesen.","quiet");
+}
+async function loadVocabularyImpact(){
+  state.impactLoading=true;state.impactError="";renderVocabularyImpact();
+  try{
+    const result=await api("/api/vocabulary/impact");
+    if(result.case_count!==20 || !result.terms)throw new Error("Der Fallabgleich ist unvollständig.");
+    state.vocabularyImpact=result;
+  }catch(error){state.impactError=error.message;throw error;}
+  finally{state.impactLoading=false;renderVocabularyImpact();}
+}
+function renderVocabularyImpact(){
+  const root=$("vocab-impact-content");if(!root)return;root.replaceChildren();
+  const term=selectedTerm();
+  if(!term){root.append(element("p","Wähle zuerst einen Begriff aus.","empty"));return;}
+  if(state.impactLoading){root.append(element("p","Verwendung im aktuellen Katalogstand wird ermittelt …","empty"));return;}
+  if(state.impactError){root.append(element("p","Die Verwendung konnte nicht geladen werden: "+state.impactError,"review-problem"));return;}
+  if(!state.vocabularyImpact){root.append(element("p","Die Verwendung wurde noch nicht geladen.","empty"));return;}
+  const records=state.vocabularyImpact.terms[term.id] || [];
+  const total=records.reduce((sum,item)=>sum+item.count,0);
+  root.append(element("strong",records.length===0 ? "Noch in keinem Fallmodul verwendet" : `${records.length} von 20 Fällen · ${total} technische Verwendungen`,"impact-summary"));
+  const sha=state.vocabularyImpact.source_ref;
+  root.append(element("p",/^[0-9a-f]{40}$/.test(sha) ? `Berechnet aus GitHub main, Commit ${sha.slice(0,8)}.` : "Berechnet aus den lokalen Turtle-Dateien.","impact-source"));
+  root.append(element("p","Gezählt werden Klassen und Eigenschaften im Fachgraphen. Diese Übersicht ersetzt keine notarielle Bewertung der Folgen.","context-help"));
+  if(records.length){
+    const list=element("div",undefined,"impact-cases");
+    records.sort((a,b)=>(state.cases.find(item=>item.slug===a.slug)?.title || a.slug).localeCompare(state.cases.find(item=>item.slug===b.slug)?.title || b.slug,"de"));
+    records.forEach(item=>{
+      const title=state.cases.find(entry=>entry.slug===item.slug)?.title || item.slug;
+      const button=element("button",undefined,"impact-case");button.type="button";
+      button.append(element("span",title),element("small",`${item.count} ${item.count===1 ? "Verwendung" : "Verwendungen"} · Fall öffnen →`));
+      button.addEventListener("click",()=>loadCase(item.slug).catch(error=>notice(error.message,"error")));
+      list.append(button);
+    });
+    root.append(list);
+  }
 }
 function vocabularyReference(value){
   if(!value)return "";
@@ -214,19 +250,21 @@ function renderVocabularyDetail(){
   const term=selectedTerm(), read=$("vocab-read");read.replaceChildren();
   $("vocab-form").hidden=!state.vocabEditing;
   $("vocab-edit").hidden=!term || !state.ontologyMaintainer || state.vocabEditing || (state.branch!=="main" && state.purpose!=="vocabulary");
-  if(!term){$("vocab-title").textContent="Begriff auswählen";return;}
+  if(!term){$("vocab-title").textContent="Begriff auswählen";renderVocabularyImpact();return;}
   $("vocab-title").textContent=term.label;
   if(!state.vocabEditing){
     read.append(element("span",vocabularyKinds[term.kind],"node-meta"));
     const facts=[["Erläuterung",term.comment],["Oberklasse",term.parent],["Gilt für",term.domain],["Ziel oder Datentyp",term.range]];
     facts.filter(([,value])=>value).forEach(([name,value])=>{const box=element("div",undefined,"node-fact");box.append(element("strong",name),element("p",name==="Erläuterung"?value:vocabularyReference(value)));read.append(box);});
     read.append(element("p","Kennung: "+term.id,"node-provenance"));
+    renderVocabularyImpact();
     return;
   }
   $("vocab-id").value=term.id;$("vocab-id").readOnly=!state.vocabNew;
   $("vocab-kind").value=term.kind;$("vocab-kind").disabled=!state.vocabNew;
   $("vocab-label").value=term.label;$("vocab-comment").value=term.comment;
   setVocabularyOptions(term);
+  renderVocabularyImpact();
 }
 async function editVocabulary(newTerm=false){
   if(!state.ontologyMaintainer)throw new Error("Vokabularpflege ist nur für eingetragene Ontologie-Maintainer möglich.");
@@ -567,6 +605,7 @@ async function init() {
     $("case-select").addEventListener("change",event=>loadCase(event.target.value).catch(error=>notice(error.message,"error")));
     $("case-search").addEventListener("input",renderCaseList);
     $("vocab-search").addEventListener("input",renderVocabulary);
+    $("vocab-impact-refresh").addEventListener("click",()=>loadVocabularyImpact().catch(error=>notice(error.message,"error")));
     $("vocab-edit").addEventListener("click",()=>editVocabulary().catch(error=>notice(error.message,"error")));
     $("vocab-add").addEventListener("click",()=>editVocabulary(true).catch(error=>notice(error.message,"error")));
     $("vocab-submit").addEventListener("click",submitVocabulary);

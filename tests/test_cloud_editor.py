@@ -29,6 +29,8 @@ class CloudEditorTests(unittest.TestCase):
         cookie = {"Cookie": "nac_session=vocabulary-session"}
         headers = {**cookie, "Origin": "https://editor.example.org", "X-Editor-Token": "csrf-vocab", "Content-Type": "application/json"}
         source = (Path(__file__).resolve().parents[1] / "ontology/core.ttl").read_text(encoding="utf-8")
+        impact_calls = []
+        main_sha = ["a" * 40]
 
         class FakeStore:
             def __init__(self, *_):
@@ -37,10 +39,17 @@ class CloudEditorTests(unittest.TestCase):
             def create_branch(self, branch):
                 return "main-ref"
 
+            def ref(self, branch):
+                return main_sha[0]
+
             def load_vocabulary(self, branch):
                 result = vocabulary_model(source)
                 result["expected_ref"] = "main-ref"
                 return result
+
+            def vocabulary_impact(self, main_ref):
+                impact_calls.append(main_ref)
+                return {"source_ref": main_ref, "case_count": 20, "terms": {"Angabenfrage": [{"slug": "immobilienkaufvertrag", "count": 9}]}}
 
             def preview_vocabulary(self, branch, data):
                 return {"changed": True, "changes": ["Bezeichnung geändert"]}
@@ -67,6 +76,16 @@ class CloudEditorTests(unittest.TestCase):
             self.assertEqual(status, 200)
             proposed = json.loads(body)
             self.assertEqual(len(proposed["terms"]), 34)
+            status, _, body = self.request("GET", "/api/vocabulary/impact", headers=cookie)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body)["terms"]["Angabenfrage"][0]["count"], 9)
+            self.assertEqual(self.request("GET", "/api/vocabulary/impact", headers=cookie)[0], 200)
+            self.assertEqual(impact_calls, ["a" * 40])
+            main_sha[0] = "b" * 40
+            status, _, body = self.request("GET", "/api/vocabulary/impact", headers=cookie)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body)["source_ref"], "b" * 40)
+            self.assertEqual(impact_calls, ["a" * 40, "b" * 40])
             status, _, _ = self.request("POST", "/api/cases/immobilienkaufvertrag/save", body=json.dumps(load_case("immobilienkaufvertrag")), headers=headers)
             self.assertEqual(status, 400)
             status, _, _ = self.request("POST", "/api/vocabulary/preview", body=json.dumps(proposed), headers=headers)
