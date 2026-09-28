@@ -5,6 +5,7 @@ import sys
 import http.client
 from pathlib import Path
 import json
+from difflib import SequenceMatcher
 import shutil
 import tempfile
 import threading
@@ -48,6 +49,17 @@ class CaseEditorTests(unittest.TestCase):
                 self.assertEqual(to_isomorphic(graph_from_model(slug, model, original)), to_isomorphic(original))
                 _, _, changed = prepare_change(slug, model, model["revision"])
                 self.assertFalse(changed)
+
+    def test_small_change_stays_small_in_all_20_turtle_files(self):
+        for slug in slugs():
+            with self.subTest(case=slug):
+                model = load_case(slug)
+                source = (ROOT / "cases" / slug / "ontology.ttl").read_text(encoding="utf-8")
+                model["nodes"][0]["label"] += " (redaktioneller Entwurf)"
+                ttl, _, changed = prepare_change(slug, model, model["revision"])
+                self.assertTrue(changed)
+                self.assertGreater(SequenceMatcher(None, source.splitlines(), ttl.splitlines()).ratio(), 0.90)
+                self.assertIn("# Beziehungen aus dem NaC-Vorlagengraphen", ttl)
 
     def test_change_keeps_unknown_triples_and_pinned_source(self):
         extra_predicate = URIRef("https://example.org/custom")

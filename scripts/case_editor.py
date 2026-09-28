@@ -77,11 +77,15 @@ def write_change(slug: str, data: dict) -> dict:
     return {"changed": True, "revision": revision(path)}
 
 
-def preview_change(slug: str, data: dict, root: Path | None = None) -> dict:
-    """Describe an edit in domain terms after the same validation used by save."""
-    current = load_case(slug, root)
-    _, _, semantic_change = prepare_change(slug, data, data.get("revision", ""), root)
-    proposed = validate_model(slug, data, root)
+def describe_changes(current: dict, proposed: dict) -> list[str]:
+    """Explain two case models in terms a reviewer can inspect."""
+    relation_labels = {
+        "erfordert": "erfordert", "informiert": "informiert",
+        "blockiertBisVollstaendig": "wartet auf vollständige Angaben",
+        "blockiertBisGeprueft": "wartet auf Prüfung",
+        "erfordertEntscheidung": "erfordert Entscheidung",
+        "belegtDurch": "belegt durch", "fuellt": "füllt", "bestimmt": "bestimmt",
+    }
     before = {node["id"]: node for node in current["nodes"]}
     after = {node["id"]: node for node in proposed["nodes"]}
     labels = {"label": "Bezeichnung", "category": "Art", "status": "Status", "question": "Fachfrage", "section": "Kapitel", "detail": "Erläuterung", "owner_role": "Rolle", "privacy_class": "Datenschutzklasse", "required_for": "Benötigt für", "options": "Optionen", "document_source": "Dokumentquelle", "contains_personal_data": "Personendaten-Hinweis"}
@@ -112,14 +116,22 @@ def preview_change(slug: str, data: dict, root: Path | None = None) -> dict:
     old_edges = {(edge["from"], edge["type"], edge["to"]) for edge in current["edges"]}
     new_edges = {(edge["from"], edge["type"], edge["to"]) for edge in proposed["edges"]}
     for source, relation, target in sorted(new_edges - old_edges):
-        changes.append(f"Beziehung hinzugefügt: {after[source]['label']} → {relation} → {after[target]['label']}")
+        changes.append(f"Beziehung hinzugefügt: {after[source]['label']} → {relation_labels[relation]} → {after[target]['label']}")
     for source, relation, target in sorted(old_edges - new_edges):
-        changes.append(f"Beziehung entfernt: {before[source]['label']} → {relation} → {before[target]['label']}")
-    return {"changed": semantic_change, "changes": changes if semantic_change else [], "case": current["title"]}
+        changes.append(f"Beziehung entfernt: {before[source]['label']} → {relation_labels[relation]} → {before[target]['label']}")
+    return changes
+
+
+def preview_change(slug: str, data: dict, root: Path | None = None) -> dict:
+    """Describe an edit in domain terms after the same validation used by save."""
+    current = load_case(slug, root)
+    _, _, semantic_change = prepare_change(slug, data, data.get("revision", ""), root)
+    proposed = validate_model(slug, data, root)
+    return {"changed": semantic_change, "changes": describe_changes(current, proposed) if semantic_change else [], "case": current["title"]}
 
 
 def submit_review(slug: str, data: dict) -> dict:
-    """Publish exactly one edited case as a draft PR from the local editor."""
+    """Publish exactly one edited case as a PR for notarial review."""
     case_path(slug)
     branch = git_branch()
     if not EDITOR_BRANCH.fullmatch(branch):
@@ -157,7 +169,7 @@ def submit_review(slug: str, data: dict) -> dict:
         handle.write(body)
         body_file = Path(handle.name)
     try:
-        url = subprocess.check_output(["gh", "pr", "create", "--draft", "--base", "main", "--head", branch, "--title", title, "--body-file", str(body_file)], cwd=ROOT, text=True).strip()
+        url = subprocess.check_output(["gh", "pr", "create", "--base", "main", "--head", branch, "--title", title, "--body-file", str(body_file)], cwd=ROOT, text=True).strip()
     finally:
         body_file.unlink(missing_ok=True)
     if not url.startswith("https://github.com/"):

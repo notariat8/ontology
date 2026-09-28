@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall" };
+let state = { token: "", branch: "", user: "", notaryReviewer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall" };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -99,6 +99,59 @@ function renderOverview() {
     stats.append(button);
   });
 }
+async function loadReviewQueue() {
+  const root=$("review-list");root.replaceChildren(element("p","Änderungen werden geladen …","empty"));
+  const reviews=await api("/api/reviews");root.replaceChildren();
+  if(!reviews.length){root.append(element("p","Derzeit liegt keine einzelne Falländerung zur Prüfung vor.","empty"));return;}
+  reviews.forEach(item=>{
+    const card=element("button",undefined,"review-item"+(state.reviewDetail?.number===item.number ? " active" : ""));card.type="button";
+    const caseTitle=state.cases.find(entry=>entry.slug===item.case)?.title || item.case;
+    card.append(element("strong",caseTitle),element("span",`#${item.number} · von ${item.author} · ${item.draft ? "noch in Arbeit" : "zur Prüfung"}`));
+    card.addEventListener("click",()=>loadReview(item.number).catch(error=>notice(error.message,"error")));root.append(card);
+  });
+}
+async function loadReview(number) {
+  const detail=await api("/api/reviews/"+number);state.reviewDetail=detail;
+  $("review-detail").hidden=false;$("review-title").textContent=detail.title;
+  $("review-meta").textContent=`Fall: ${state.cases.find(item=>item.slug===detail.case)?.title || detail.case} · erstellt von ${detail.author} · ${detail.draft ? "noch in Arbeit" : "zur Prüfung bereit"}`;
+  $("review-pr-link").href=detail.url;
+  const body=$("review-body");body.replaceChildren();
+  const sections=(detail.body || "").split(/^## /m);
+  if(sections[0].trim())body.append(element("p",sections[0].trim()));
+  sections.slice(1).forEach(section=>{
+    const [title,...lines]=section.split("\n");
+    body.append(element("h5",title.trim()),element("p",lines.join("\n").trim() || "Keine Angabe."));
+  });
+  if(!body.childNodes.length)body.append(element("p","Keine Begründung im Pull Request angegeben."));
+  const list=$("review-changes");list.replaceChildren();
+  detail.changes.forEach(change=>list.append(element("li",change)));
+  if(!detail.changes.length)list.append(element("li","Keine erklärbare fachliche Änderung vorhanden."));
+  $("review-problem").hidden=!detail.problem;$("review-problem").textContent=detail.problem;
+  $("request-changes").disabled=!detail.can_review;
+  $("approve-review").disabled=!detail.can_approve;
+  $("review-checklist").hidden=!detail.can_approve;
+  $("review-permission").textContent=detail.draft ? "Diese Änderung ist noch in Arbeit." :
+    !detail.can_review ? "Eigene Änderungen können hier nicht selbst geprüft werden." :
+    detail.problem ? "Eine Freigabe ist erst nach Klärung der angezeigten Abweichung möglich." :
+    !detail.can_approve ? "Fachliche Freigaben sind nur für eingetragene Notarkonten möglich." :
+    "Prüfe Begriffe, Quellen und Beziehungen. Deine Entscheidung wird deinem GitHub-Konto zugeordnet.";
+  $("review-comment").value="";$("review-result").hidden=true;
+  for(const id of ["review-terms","review-sources","review-relations"])$(id).checked=false;
+  await loadReviewQueue();
+}
+async function submitCaseReview(event) {
+  try{
+    const detail=state.reviewDetail;
+    if(!detail)throw new Error("Bitte zuerst eine Änderung auswählen.");
+    const body=$("review-comment").value.trim();
+    if(body.length<15)throw new Error("Bitte deine fachliche Begründung in mindestens 15 Zeichen festhalten.");
+    const checks={terms:$("review-terms").checked,sources:$("review-sources").checked,relations:$("review-relations").checked};
+    if(event==="APPROVE" && !Object.values(checks).every(Boolean))throw new Error("Bitte zuerst Begriffe, Quellen und Beziehungen als geprüft markieren.");
+    const result=await api(`/api/reviews/${detail.number}/review`,{head_sha:detail.head_sha,event,body,checks});
+    $("review-result").href=result.url;$("review-result").hidden=false;
+    notice(event==="APPROVE" ? "Fachliche Freigabe in GitHub dokumentiert." : "Änderungswunsch in GitHub dokumentiert.","success");
+  }catch(error){notice(error.message,"error");}
+}
 async function beginBranch() {
   if(state.dirty) throw new Error("Bitte ungespeicherte Änderungen vor einem neuen Arbeitszweig prüfen.");
   const result=await api("/api/start-branch",{});state.branch=result.branch;refreshBranch();
@@ -108,6 +161,7 @@ async function beginBranch() {
 function setView(view) {
   state.view=view;
   if(view==="verbindungen" && state.current){renderRelationContext();fillNodeSelects();renderGraph();}
+  if(view==="fachpruefung" && state.user)loadReviewQueue().catch(error=>notice(error.message,"error"));
   if(state.current) window.history.replaceState(null,"",`?case=${encodeURIComponent(state.current.slug)}#${view}`);
   document.querySelectorAll("[data-view]").forEach(panel=>{panel.hidden=panel.dataset.view!==view;});
   document.querySelectorAll("[data-view-button]").forEach(button=>{
@@ -389,8 +443,14 @@ async function submitReview() {
     });
     $("review-link").href=result.url;
     $("review-link").hidden=false;
-    if(result.branch){state.branch=result.branch;refreshBranch();}
-    notice("Entwurfs-Pull-Request erstellt. Jetzt folgt die notarielle Fachprüfung.","success");
+    if(result.branch){
+      const slug=state.current.slug;
+      state.branch=result.branch;refreshBranch();
+      await loadCase(slug);
+      setView("pruefung");
+      $("review-link").href=result.url;$("review-link").hidden=false;
+    }
+    notice("Pull Request eingereicht. Jetzt folgt die notarielle Fachprüfung.","success");
   } catch(error){notice(error.message,"error");window.scrollTo({top:0,behavior:"smooth"});}
 }
 async function init() {
@@ -398,7 +458,7 @@ async function init() {
     const initialView=window.location.hash.slice(1);
     const requestedCase=new URLSearchParams(window.location.search).get("case");
     const status=await api("/api/status");state.token=status.token;state.branch=status.branch;refreshBranch();
-    if(status.user){$("session-user").textContent=status.user;$("logout").hidden=false;}
+    if(status.user){state.user=status.user;state.notaryReviewer=!!status.notary_reviewer;$("session-user").textContent=status.user;$("logout").hidden=false;$("review-nav").hidden=false;}
     $("logout").addEventListener("click",async()=>{try{await api("/api/logout",{});window.location.assign("/login");}catch(error){notice(error.message,"error");}});
     const cases=await api("/api/cases");state.cases=cases;
     cases.forEach(item=>{const option=element("option",item.title);option.value=item.slug;$("case-select").append(option);});
@@ -459,6 +519,9 @@ async function init() {
     $("save").addEventListener("click",save);
     $("confirm-save").addEventListener("click",confirmSave);
     $("submit-review").addEventListener("click",submitReview);
+    $("refresh-reviews").addEventListener("click",()=>loadReviewQueue().catch(error=>notice(error.message,"error")));
+    $("request-changes").addEventListener("click",()=>submitCaseReview("REQUEST_CHANGES"));
+    $("approve-review").addEventListener("click",()=>submitCaseReview("APPROVE"));
     $("turtle-details").addEventListener("toggle",async()=>{
       if(!$("turtle-details").open || !state.current) return;
       try{const result=await api("/api/cases/" + state.current.slug + "/turtle");$("turtle-content").textContent=result.turtle;}
@@ -467,7 +530,7 @@ async function init() {
     for(const id of ["close-preview","cancel-preview"]) $(id).addEventListener("click",()=>$("change-preview").close());
     window.addEventListener("beforeunload",event=>{if(state.dirty){event.preventDefault();event.returnValue="";}});
     await loadCase(cases.some(item=>item.slug===requestedCase) ? requestedCase : cases[0].slug);
-    if(["fall","bausteine","verbindungen","pruefung"].includes(initialView)) setView(initialView);
+    if(["fall","bausteine","verbindungen","pruefung"].includes(initialView) || (initialView==="fachpruefung" && state.user)) setView(initialView);
   } catch(error){notice(error.message,"error");}
 }
 init();

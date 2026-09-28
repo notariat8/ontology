@@ -4,6 +4,7 @@
 import http.client
 from io import BytesIO
 import json
+import os
 from pathlib import Path
 import sys
 import threading
@@ -14,11 +15,23 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from cloud_editor import CloudServer
+from cloud_editor import CloudServer, require_config
 from case_editor_model import load_case
 
 
 class CloudEditorTests(unittest.TestCase):
+    def test_notary_reviewer_must_be_a_configured_editor(self):
+        config = {
+            "GITHUB_APP_CLIENT_ID": "example", "GITHUB_APP_CLIENT_SECRET": "example-secret",
+            "GITHUB_REPOSITORY": "notariat8/ontology", "PUBLIC_ORIGIN": "https://editor.example.org",
+            "EDITOR_USERS": "reviewer", "NOTARY_REVIEWERS": "someone-else",
+        }
+        with patch.dict(os.environ, config, clear=True):
+            with self.assertRaisesRegex(ValueError, "Teilmenge"):
+                require_config()
+            os.environ["NOTARY_REVIEWERS"] = "reviewer"
+            self.assertEqual(require_config()["NOTARY_REVIEWERS"], "reviewer")
+
     def setUp(self):
         self.server = CloudServer(("127.0.0.1", 0), {
             "GITHUB_APP_CLIENT_ID": "example",
@@ -75,6 +88,8 @@ class CloudEditorTests(unittest.TestCase):
 
     def test_hosted_login_edit_preview_save_and_review_flow(self):
         class FakeStore:
+            review_calls = []
+
             def __init__(self, owner, repo, token):
                 self.token = token
 
@@ -95,6 +110,17 @@ class CloudEditorTests(unittest.TestCase):
             def create_pr(self, slug, branch, reason, source):
                 return "https://github.com/notariat8/ontology/pull/123"
 
+            def list_case_reviews(self):
+                return [{"number": 42, "case": "immobilienkaufvertrag", "title": "Fachliche Änderung"}]
+
+            def review_detail(self, number):
+                return {"number": number, "case": "immobilienkaufvertrag", "title": "Fachliche Änderung", "author": "author", "draft": False, "problem": "", "head_sha": "b" * 40, "changes": ["Bezeichnung geändert"], "body": "Fachlicher Grund", "url": "https://github.com/notariat8/ontology/pull/42"}
+
+            def submit_case_review(self, number, head_sha, event, body, reviewer, notaries, checks):
+                self.review_calls.append((number, head_sha, event, body, reviewer, notaries, checks))
+                return "https://github.com/notariat8/ontology/pull/42#pullrequestreview-1"
+
+        self.server.config["NOTARY_REVIEWERS"] = "reviewer"
         status, headers, _ = self.request("GET", "/login")
         self.assertEqual(status, 302)
         state = parse_qs(urlparse(headers["Location"]).query)["state"][0]
@@ -129,6 +155,18 @@ class CloudEditorTests(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body)["branch"], "main")
             self.assertEqual(self.server.sessions[sid]["branch"], "main")
+            status, _, body = self.request("GET", "/api/reviews", headers=cookie)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body)[0]["number"], 42)
+            status, _, body = self.request("GET", "/api/reviews/42", headers=cookie)
+            self.assertEqual(status, 200)
+            self.assertTrue(json.loads(body)["can_approve"])
+            decision = json.dumps({"head_sha": "b" * 40, "event": "APPROVE", "body": "Fachlich ausführlich geprüft", "checks": {"terms": True, "sources": True, "relations": True}})
+            status, _, body = self.request("POST", "/api/reviews/42/review", body=decision, headers=post_headers)
+            self.assertEqual(status, 200)
+            self.assertIn("pullrequestreview", json.loads(body)["url"])
+            self.assertEqual(FakeStore.review_calls[0][-2], {"reviewer"})
+            self.assertTrue(FakeStore.review_calls[0][-1]["terms"])
             status, _, body = self.request("POST", "/api/logout", body="{}", headers=post_headers)
             self.assertEqual(status, 200)
             self.assertTrue(json.loads(body)["ok"])

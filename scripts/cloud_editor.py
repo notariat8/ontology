@@ -42,6 +42,7 @@ AUTH_LIFETIME = 5 * 60
 def require_config() -> dict[str, str]:
     names = ("GITHUB_APP_CLIENT_ID", "GITHUB_APP_CLIENT_SECRET", "GITHUB_REPOSITORY", "PUBLIC_ORIGIN", "EDITOR_USERS")
     config = {name: os.environ.get(name, "") for name in names}
+    config["NOTARY_REVIEWERS"] = os.environ.get("NOTARY_REVIEWERS", "")
     if any(not value for value in config.values()):
         raise ValueError("GitHub-App-Konfiguration und PUBLIC_ORIGIN fehlen")
     origin = urlparse(config["PUBLIC_ORIGIN"])
@@ -53,6 +54,10 @@ def require_config() -> dict[str, str]:
     GitHubStore(owner_repo[0], owner_repo[1], "configuration-check")
     if not all(value.strip() for value in config["EDITOR_USERS"].split(",")):
         raise ValueError("EDITOR_USERS muss GitHub-Benutzernamen enthalten")
+    editors = {value.strip().lower() for value in config["EDITOR_USERS"].split(",")}
+    notaries = {value.strip().lower() for value in config["NOTARY_REVIEWERS"].split(",") if value.strip()}
+    if notaries - editors:
+        raise ValueError("NOTARY_REVIEWERS muss eine Teilmenge von EDITOR_USERS sein")
     return config
 
 
@@ -118,6 +123,9 @@ class CloudHandler(BaseHTTPRequestHandler):
 
     def _store(self, session: dict) -> GitHubStore:
         return GitHubStore(self.server.owner, self.server.repo, session["token"])
+
+    def _notaries(self) -> set[str]:
+        return {name.strip().lower() for name in self.server.config.get("NOTARY_REVIEWERS", "").split(",") if name.strip()}
 
     def _login(self) -> None:
         state = secrets.token_urlsafe(24)
@@ -201,10 +209,20 @@ class CloudHandler(BaseHTTPRequestHandler):
                 self._send(200, (ASSETS / filename).read_bytes(), kind[filename])
             elif path.path == "/api/status":
                 session = self._session()
-                self._json(200, {"token": session["csrf"], "branch": session["branch"], "user": session["user"]})
+                self._json(200, {"token": session["csrf"], "branch": session["branch"], "user": session["user"], "notary_reviewer": session["user"].lower() in self._notaries()})
             elif path.path == "/api/cases":
                 self._session()
                 self._json(200, self._catalog())
+            elif path.path == "/api/reviews":
+                session = self._session()
+                self._json(200, self._store(session).list_case_reviews())
+            elif path.path.startswith("/api/reviews/") and path.path.count("/") == 3:
+                session = self._session()
+                number = int(path.path.rsplit("/", 1)[1])
+                detail = self._store(session).review_detail(number)
+                detail["can_review"] = session["user"].lower() != detail["author"].lower() and not detail["draft"]
+                detail["can_approve"] = session["user"].lower() in self._notaries() and session["user"].lower() != detail["author"].lower() and not detail["draft"] and not detail["problem"]
+                self._json(200, detail)
             elif path.path.startswith("/api/cases/") and path.path.count("/") == 3:
                 session = self._session()
                 self._json(200, self._store(session).load_case(path.path.rsplit("/", 1)[1], session["branch"]))
@@ -258,6 +276,10 @@ class CloudHandler(BaseHTTPRequestHandler):
                     store.create_branch(branch)
                     session["branch"] = branch
                 self._json(200, {"branch": session["branch"]})
+            elif self.path.startswith("/api/reviews/") and self.path.endswith("/review") and self.path.count("/") == 4:
+                number = int(self.path.split("/")[3])
+                url = store.submit_case_review(number, data.get("head_sha", ""), data.get("event", ""), data.get("body", ""), session["user"], self._notaries(), data.get("checks"))
+                self._json(200, {"url": url})
             elif self.path.startswith("/api/cases/") and self.path.count("/") == 4:
                 _, _, _, slug, action = self.path.split("/")
                 if action == "preview":

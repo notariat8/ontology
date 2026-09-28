@@ -14,6 +14,7 @@ from rdflib.compare import to_isomorphic
 
 from bootstrap_from_nac import CATEGORIES, EDGES
 from render_case_docs import render
+from turtle_edit import minimal_turtle
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -263,10 +264,6 @@ def prepare_change(slug: str, data: object, expected_revision: str, root: Path |
     candidate = graph_from_model(slug, data, original, root)
     if to_isomorphic(candidate) == to_isomorphic(original):
         return path.read_text(encoding="utf-8"), render(slug, root=root), False
-    candidate.bind("n8", N8)
-    candidate.bind("dcterms", DCT)
-    candidate.bind("skos", SKOS)
-    ttl = "# SPDX-License-Identifier: CC-BY-4.0\n" + candidate.serialize(format="turtle")
-    Graph().parse(data=ttl, format="turtle")
+    ttl = minimal_turtle(path.read_text(encoding="utf-8"), original, candidate, slug)
     page = render(slug, candidate, root=root)
     return ttl, page, True

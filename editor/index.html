@@ -29,6 +29,7 @@
       <button type="button" data-view-button="bausteine">Inhalte pflegen</button>
       <button type="button" data-view-button="verbindungen">Verbindungen prüfen</button>
       <button type="button" data-view-button="pruefung">Zur Prüfung geben</button>
+      <button id="review-nav" type="button" data-view-button="fachpruefung" hidden>Fachprüfung</button>
     </nav>
     <section class="card overview" data-view="fall">
       <div class="section-head"><div><p class="eyebrow">VORGANGSART</p><h1 id="case-title"></h1></div><a id="nac-source" target="_blank" rel="noopener noreferrer">NaC-Quelle ↗</a></div>
@@ -79,12 +80,32 @@
     </section>
     <section class="card submission" data-view="pruefung" hidden>
       <div class="section-head"><div><p class="eyebrow">ZUR PRÜFUNG GEBEN</p><h2>Änderung einreichen</h2></div></div>
-      <p>Nach dem Speichern beschreibst du den fachlichen Grund und den verwendeten Quellenstand. Daraus wird ein Entwurfs-Pull-Request für die notarielle Prüfung.</p>
+      <p>Nach dem Speichern beschreibst du den fachlichen Grund und den verwendeten Quellenstand. Daraus wird ein Pull Request zur notariellen Prüfung. Eine Freigabe erfolgt erst durch ein anderes, eingetragenes Notarkonto.</p>
       <label for="change-reason">Warum ist die Änderung nötig?</label><textarea id="change-reason" rows="3" placeholder="Beschreibe die fachliche Änderung und ihre Wirkung."></textarea>
       <label for="change-source">Welcher Quellenstand wurde verwendet?</label><input id="change-source" placeholder="z. B. NaC-Commit und Fachquelle">
-      <button id="submit-review" type="button">Entwurfs-PR erstellen</button>
+      <button id="submit-review" type="button">Zur Fachprüfung einreichen</button>
       <a id="review-link" hidden target="_blank" rel="noopener noreferrer">Pull Request öffnen ↗</a>
       <details id="turtle-details" class="technical-source"><summary>Gespeicherten Stand als Turtle ansehen</summary><pre id="turtle-content">Beim Öffnen wird der aktuelle Stand geladen.</pre></details>
+    </section>
+    <section class="card review-workspace" data-view="fachpruefung" hidden>
+      <div class="section-head"><div><p class="eyebrow">FACHLICHE PRÜFUNG</p><h2>Änderungen zur Prüfung</h2></div><button id="refresh-reviews" type="button">Liste aktualisieren</button></div>
+      <p class="context-help">Hier stehen einzelne Falländerungen aus GitHub. Die Ansicht zeigt fachliche Unterschiede und den angegebenen Quellenstand. Eine Entscheidung wird mit deinem GitHub-Konto dokumentiert.</p>
+      <div id="review-list" class="review-list"></div>
+      <div id="review-detail" class="review-detail" hidden>
+        <div class="section-head"><div><p class="eyebrow">AUSGEWÄHLTE ÄNDERUNG</p><h3 id="review-title"></h3></div><a id="review-pr-link" target="_blank" rel="noopener noreferrer">In GitHub öffnen ↗</a></div>
+        <p id="review-meta" class="review-meta"></p>
+        <h4>Begründung und Quellenstand</h4><div id="review-body" class="review-body"></div>
+        <h4>Fachliche Änderungen</h4><ul id="review-changes" class="review-changes"></ul>
+        <p id="review-problem" class="review-problem" hidden></p>
+        <fieldset id="review-checklist" class="review-checklist"><legend>Vor einer fachlichen Freigabe prüfen</legend>
+          <label><input id="review-terms" type="checkbox"> Begriffe und Fachfragen</label>
+          <label><input id="review-sources" type="checkbox"> Rechtsquellen und Quellenstand</label>
+          <label><input id="review-relations" type="checkbox"> Beziehungen und fachliche Wirkung</label>
+        </fieldset>
+        <label for="review-comment">Deine fachliche Begründung</label><textarea id="review-comment" rows="3" placeholder="Was hast du geprüft? Welche Änderung ist nötig?"></textarea>
+        <div class="review-actions"><button id="request-changes" type="button">Änderung anfordern</button><button id="approve-review" class="primary" type="button">Fachlich freigeben</button></div>
+        <p id="review-permission" class="context-help"></p><a id="review-result" hidden target="_blank" rel="noopener noreferrer">Dokumentierte Entscheidung öffnen ↗</a>
+      </div>
     </section>
     <p class="footer-note">Turtle ist die Pflegequelle. Beim Speichern wird die Mermaid-Leseseite neu erzeugt. Eine notarielle Fachfreigabe erfolgt erst im dokumentierten Review.</p>
     </div>
