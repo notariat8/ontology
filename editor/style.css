@@ -1,5 +1,15 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 :root{--ink:#17313b;--muted:#617680;--line:#dce7e9;--accent:#087c83;--surface:#fff}
+[hidden]{display:none!important}
+.workbench-nav{display:flex;gap:6px;border-bottom:1px solid var(--line);margin:6px 0 22px;overflow:auto}
+.workbench-nav button{border:0;border-radius:8px 8px 0 0;background:transparent;color:var(--muted);padding:14px 18px;white-space:nowrap;font-weight:700}
+.workbench-nav button:hover{background:#eaf3f5}
+.workbench-nav button[aria-current="page"]{color:#086e75;background:#fff;border-bottom:3px solid #087c83}
+.next-step{margin-top:20px;background:#e9f5f5;border-color:#8cc7c9;color:#075e65}
+.submission{max-width:780px}
+.submission p{color:var(--muted);line-height:1.55}
+.submission #submit-review{margin-top:18px}
+.submission #review-link{margin-left:14px;color:#087c83;font-weight:700}
 .context-help{color:var(--muted);margin:-7px 0 16px;line-height:1.5}
 .result-count{font-size:12px;color:var(--muted);margin:11px 0}
 #node-search{margin-bottom:7px}

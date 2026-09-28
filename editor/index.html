@@ -17,19 +17,27 @@
     <div id="notice" class="notice" role="status" aria-live="polite">Lade Fälle …</div>
     <section class="intro">
       <div><p class="eyebrow">FALL AUSWÄHLEN</p><select id="case-select" aria-label="Vorgangsart auswählen"></select></div>
-      <p>Hier bearbeitest du Vorlagenbegriffe. Es werden keine Akten, Personen oder Dokumentinhalte gespeichert. Die Änderung bleibt lokal, bis sie als Pull Request zur Prüfung eingereicht wird.</p>
+      <p>Hier bearbeitest du Fachvorlagen. Es werden keine Akten, Personen oder Dokumentinhalte gespeichert. Änderungen werden erst nach deiner Vorschau gespeichert und dann als Pull Request zur Prüfung eingereicht.</p>
     </section>
-    <section class="card overview">
+    <nav class="workbench-nav" aria-label="Arbeitsbereiche">
+      <button type="button" data-view-button="fall" aria-current="page">Fall verstehen</button>
+      <button type="button" data-view-button="bausteine">Inhalte pflegen</button>
+      <button type="button" data-view-button="verbindungen">Verbindungen prüfen</button>
+      <button type="button" data-view-button="pruefung">Zur Prüfung geben</button>
+    </nav>
+    <section class="card overview" data-view="fall">
       <div class="section-head"><div><p class="eyebrow">VORGANGSART</p><h1 id="case-title"></h1></div><a id="nac-source" target="_blank" rel="noopener noreferrer">NaC-Quelle ↗</a></div>
+      <p class="context-help">Diese Vorlage beschreibt fachliche Fragen, Dokumenttypen und Entscheidungen. Für den zeitlichen Ablauf gilt weiterhin das NaC-Prozessmodell.</p>
       <label for="summary">Kurzbeschreibung</label><textarea id="summary" rows="3"></textarea>
       <label for="sources">Rechtsquellen <span class="hint">eine HTTPS-Adresse pro Zeile</span></label><textarea id="sources" rows="3"></textarea>
+      <button class="next-step" type="button" data-go-view="bausteine">Inhalte dieses Falls öffnen →</button>
     </section>
-    <section class="card">
+    <section class="card" data-view="verbindungen" hidden>
       <div class="section-head"><div><p class="eyebrow">ZUSAMMENHANG</p><h2>Fachliche Verbindungen</h2></div><button id="graph-scope" type="button" aria-pressed="false">Auswahl und Nachbarn zeigen</button></div>
       <p class="context-help">Wähle einen Baustein. Die fokussierte Ansicht zeigt, welche anderen Bausteine direkt mit ihm verbunden sind.</p>
       <div class="graph-wrap"><svg id="graph" role="img" aria-label="Fachgraph des gewählten Falls"></svg></div>
     </section>
-    <div class="columns">
+    <div class="columns" data-view="bausteine" hidden>
       <section class="card">
         <div class="section-head"><div><p class="eyebrow">IM FALL</p><h2>Bausteine finden</h2></div><button id="add-node" type="button">+ Baustein</button></div>
         <label for="node-search">Suche nach Bezeichnung oder Kennung</label><input id="node-search" type="search" placeholder="z. B. Vollmacht, Frist, Nachweis">
@@ -42,7 +50,7 @@
         <div id="node-form" class="node-form"><p class="empty">Wähle links einen Baustein oder klicke im Fachgraphen darauf.</p></div>
       </section>
     </div>
-    <section class="card">
+    <section class="card" data-view="verbindungen" hidden>
       <div class="section-head"><div><p class="eyebrow">BEZIEHUNGEN</p><h2>Verbindungen zwischen Bausteinen</h2></div></div>
       <div class="edge-add">
         <select id="edge-from" aria-label="Ausgangsbaustein"></select>
@@ -52,7 +60,7 @@
       </div>
       <div id="edge-list" class="edge-list"></div>
     </section>
-    <section class="card submission">
+    <section class="card submission" data-view="pruefung" hidden>
       <div class="section-head"><div><p class="eyebrow">ZUR PRÜFUNG GEBEN</p><h2>Änderung einreichen</h2></div></div>
       <p>Nach dem Speichern beschreibst du den fachlichen Grund und den verwendeten Quellenstand. Daraus wird ein Entwurfs-Pull-Request für die notarielle Prüfung.</p>
       <label for="change-reason">Warum ist die Änderung nötig?</label><textarea id="change-reason" rows="3" placeholder="Beschreibe die fachliche Änderung und ihre Wirkung."></textarea>

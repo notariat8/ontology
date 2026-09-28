@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", current: null, selected: null, dirty: false, graphFocused: false };
+let state = { token: "", branch: "", current: null, selected: null, dirty: false, graphFocused: false, view: "fall" };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -64,6 +64,14 @@ function refreshBranch() {
   $("start-branch").hidden = state.branch !== "main";
   $("save").disabled = state.branch === "main";
 }
+function setView(view) {
+  state.view=view;
+  document.querySelectorAll("[data-view]").forEach(panel=>{panel.hidden=panel.dataset.view!==view;});
+  document.querySelectorAll("[data-view-button]").forEach(button=>{
+    if(button.dataset.viewButton===view) button.setAttribute("aria-current","page");
+    else button.removeAttribute("aria-current");
+  });
+}
 async function loadCase(slug) {
   if (state.dirty && !window.confirm("Ungespeicherte Änderungen verwerfen und anderen Fall öffnen?")) {
     $("case-select").value = state.current.slug;
@@ -73,6 +81,7 @@ async function loadCase(slug) {
   state.selected = null;
   state.dirty = false;
   $("review-link").hidden=true;
+  setView("fall");
   $("case-title").textContent = state.current.title;
   $("summary").value = state.current.summary;
   $("sources").value = state.current.sources.join("\n");
@@ -163,6 +172,7 @@ function renderNodes() {
 }
 function selectNode(id) {
   state.selected = id;
+  setView("bausteine");
   renderNodes(); renderNodeForm(); renderGraph();
 }
 function field(root, label, value, onChange, multiline = false, hint = "") {
@@ -270,6 +280,8 @@ async function init() {
     $("case-select").addEventListener("change",event=>loadCase(event.target.value).catch(error=>notice(error.message,"error")));
     $("node-search").addEventListener("input",renderNodes);
     $("node-category").addEventListener("change",renderNodes);
+    document.querySelectorAll("[data-view-button]").forEach(button=>button.addEventListener("click",()=>setView(button.dataset.viewButton)));
+    document.querySelectorAll("[data-go-view]").forEach(button=>button.addEventListener("click",()=>setView(button.dataset.goView)));
     $("graph-scope").addEventListener("click",()=>{
       state.graphFocused=!state.graphFocused;
       $("graph-scope").setAttribute("aria-pressed",String(state.graphFocused));
