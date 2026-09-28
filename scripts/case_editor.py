@@ -18,7 +18,7 @@ import webbrowser
 
 from rdflib import Graph
 
-from case_editor_model import ROOT, case_path, load_case, prepare_change, revision, slugs
+from case_editor_model import ROOT, case_path, load_case, prepare_change, revision, slugs, validate_model
 
 
 ASSETS = ROOT / "editor"
@@ -71,6 +71,36 @@ def write_change(slug: str, data: dict) -> dict:
         for temporary in temp_files:
             temporary.unlink(missing_ok=True)
     return {"changed": True, "revision": revision(path)}
+
+
+def preview_change(slug: str, data: dict) -> dict:
+    """Describe an edit in domain terms after the same validation used by save."""
+    current = load_case(slug)
+    _, _, semantic_change = prepare_change(slug, data, data.get("revision", ""))
+    proposed = validate_model(slug, data)
+    before = {node["id"]: node for node in current["nodes"]}
+    after = {node["id"]: node for node in proposed["nodes"]}
+    labels = {"label": "Bezeichnung", "category": "Art", "status": "Status", "question": "Fachfrage", "section": "Kapitel", "detail": "Erläuterung", "owner_role": "Rolle", "privacy_class": "Datenschutzklasse", "required_for": "Benötigt für", "options": "Optionen", "document_source": "Dokumentquelle", "contains_personal_data": "Personendaten-Hinweis"}
+    changes = []
+    if current["summary"] != proposed["summary"]:
+        changes.append("Kurzbeschreibung geändert")
+    if current["sources"] != proposed["sources"]:
+        changes.append("Rechtsquellen geändert")
+    for node_id in sorted(after.keys() - before.keys()):
+        changes.append(f"Baustein hinzugefügt: {after[node_id]['label']}")
+    for node_id in sorted(before.keys() - after.keys()):
+        changes.append(f"Baustein entfernt: {before[node_id]['label']}")
+    for node_id in sorted(before.keys() & after.keys()):
+        fields = [key for key in after[node_id] if key != "id" and before[node_id].get(key) != after[node_id][key]]
+        if fields:
+            changes.append(f"Baustein geändert: {after[node_id]['label']} ({', '.join(labels.get(field, field) for field in fields)})")
+    old_edges = {(edge["from"], edge["type"], edge["to"]) for edge in current["edges"]}
+    new_edges = {(edge["from"], edge["type"], edge["to"]) for edge in proposed["edges"]}
+    for source, relation, target in sorted(new_edges - old_edges):
+        changes.append(f"Beziehung hinzugefügt: {after[source]['label']} → {relation} → {after[target]['label']}")
+    for source, relation, target in sorted(old_edges - new_edges):
+        changes.append(f"Beziehung entfernt: {before[source]['label']} → {relation} → {before[target]['label']}")
+    return {"changed": semantic_change, "changes": changes, "case": current["title"]}
 
 
 class EditorServer(ThreadingHTTPServer):
@@ -132,6 +162,9 @@ class EditorHandler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length))
             if self.path == "/api/start-branch":
                 self._json(200, {"branch": start_branch()})
+            elif self.path.startswith("/api/cases/") and self.path.endswith("/preview"):
+                slug = self.path.split("/")[3]
+                self._json(200, preview_change(slug, data))
             elif self.path.startswith("/api/cases/") and self.path.endswith("/save"):
                 slug = self.path.split("/")[3]
                 self._json(200, write_change(slug, data))

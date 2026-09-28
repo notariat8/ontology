@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", current: null, selected: null, dirty: false };
+let state = { token: "", branch: "", current: null, selected: null, dirty: false, graphFocused: false };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -85,7 +85,15 @@ function renderAll() {
 function renderGraph() {
   const canvas = $("graph");
   canvas.replaceChildren();
-  const ordered = groups.map(([key]) => state.current.nodes.filter(node => node.category === key).sort((a,b) => a.id.localeCompare(b.id)));
+  const visible = new Set(state.current.nodes.map(node => node.id));
+  if (state.graphFocused && state.selected) {
+    visible.clear();visible.add(state.selected);
+    state.current.edges.forEach(edge => {
+      if (edge.from === state.selected) visible.add(edge.to);
+      if (edge.to === state.selected) visible.add(edge.from);
+    });
+  }
+  const ordered = groups.map(([key]) => state.current.nodes.filter(node => visible.has(node.id) && node.category === key).sort((a,b) => a.id.localeCompare(b.id)));
   const maxRows = Math.max(...ordered.map(group => group.length), 1);
   const width = 1330, height = Math.max(185, 105 + maxRows * 66);
   canvas.setAttribute("viewBox", `0 0 ${width} ${height}`);
@@ -103,7 +111,7 @@ function renderGraph() {
     canvas.append(heading);
     list.forEach((node,row) => positions.set(node.id,{x,y:52 + row * 66,column}));
   });
-  state.current.edges.forEach(edge => {
+  state.current.edges.filter(edge => visible.has(edge.from) && visible.has(edge.to)).forEach(edge => {
     const a = positions.get(edge.from), b = positions.get(edge.to);
     if (!a || !b) return;
     const x1 = a.x + 230, y1 = a.y + 19, x2 = b.x, y2 = b.y + 19;
@@ -127,8 +135,13 @@ function renderGraph() {
 }
 function renderNodes() {
   const root = $("node-list"); root.replaceChildren();
+  const query = $("node-search").value.trim().toLocaleLowerCase("de");
+  const category = $("node-category").value;
+  let count = 0;
   groups.forEach(([key,title]) => {
-    const list = state.current.nodes.filter(node => node.category === key).sort((a,b) => a.label.localeCompare(b.label,"de"));
+    const list = state.current.nodes.filter(node => node.category === key && (!category || category === key) && (!query || (node.label + " " + node.id + " " + node.question).toLocaleLowerCase("de").includes(query))).sort((a,b) => a.label.localeCompare(b.label,"de"));
+    if (!list.length) return;
+    count += list.length;
     const box = element("div",undefined,"node-group");
     box.append(element("h3",title + " · " + list.length));
     list.forEach(node => {
@@ -140,6 +153,8 @@ function renderNodes() {
     });
     root.append(box);
   });
+  $("node-count").textContent = `${count} von ${state.current.nodes.length} Bausteinen`;
+  if (!count) root.append(element("p","Keine Bausteine gefunden. Suche oder Art ändern.","empty"));
 }
 function selectNode(id) {
   state.selected = id;
@@ -212,8 +227,19 @@ function renderEdges() {
 async function save() {
   try {
     if (state.branch === "main") throw new Error("Bitte zuerst „Änderung beginnen“ wählen.");
+    const result=await api("/api/cases/" + state.current.slug + "/preview",state.current);
+    const list=$("preview-list");list.replaceChildren();
+    result.changes.forEach(change=>list.append(element("li",change)));
+    if(!result.changed) list.append(element("li","Keine fachliche Änderung erkannt."));
+    $("confirm-save").disabled=!result.changed;
+    $("change-preview").showModal();
+  } catch (error) {notice(error.message,"error");}
+}
+async function confirmSave() {
+  try {
     const result=await api("/api/cases/" + state.current.slug + "/save",state.current);
     state.current.revision=result.revision;state.dirty=false;
+    $("change-preview").close();
     notice(result.changed ? "Turtle und Mermaid-Seite gespeichert. Als Nächstes die Änderung im Pull Request fachlich prüfen lassen." : "Keine Änderungen zu speichern.","success");
   } catch (error) {notice(error.message,"error");}
 }
@@ -224,6 +250,14 @@ async function init() {
     cases.forEach(item=>{const option=element("option",item.title);option.value=item.slug;$("case-select").append(option);});
     for(const [key,label] of Object.entries(relations)){const option=element("option",label);option.value=key;$("edge-type").append(option);}
     $("case-select").addEventListener("change",event=>loadCase(event.target.value).catch(error=>notice(error.message,"error")));
+    $("node-search").addEventListener("input",renderNodes);
+    $("node-category").addEventListener("change",renderNodes);
+    $("graph-scope").addEventListener("click",()=>{
+      state.graphFocused=!state.graphFocused;
+      $("graph-scope").setAttribute("aria-pressed",String(state.graphFocused));
+      $("graph-scope").textContent=state.graphFocused ? "Alle Bausteine zeigen" : "Auswahl und Nachbarn zeigen";
+      renderGraph();
+    });
     $("summary").addEventListener("input",event=>{state.current.summary=event.target.value;dirty();});
     $("sources").addEventListener("input",event=>{state.current.sources=event.target.value.split("\n").map(v=>v.trim()).filter(Boolean);dirty();});
     $("add-node").addEventListener("click",()=>{
@@ -248,6 +282,8 @@ async function init() {
       catch(error){notice(error.message,"error");}
     });
     $("save").addEventListener("click",save);
+    $("confirm-save").addEventListener("click",confirmSave);
+    for(const id of ["close-preview","cancel-preview"]) $(id).addEventListener("click",()=>$("change-preview").close());
     window.addEventListener("beforeunload",event=>{if(state.dirty){event.preventDefault();event.returnValue="";}});
     await loadCase(cases[0].slug);
   } catch(error){notice(error.message,"error");}

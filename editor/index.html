@@ -25,12 +25,16 @@
       <label for="sources">Rechtsquellen <span class="hint">eine HTTPS-Adresse pro Zeile</span></label><textarea id="sources" rows="3"></textarea>
     </section>
     <section class="card">
-      <div class="section-head"><div><p class="eyebrow">ÜBERSICHT</p><h2>Fachgraph</h2></div><span class="hint">Knoten anklicken, um ihn zu bearbeiten</span></div>
+      <div class="section-head"><div><p class="eyebrow">ZUSAMMENHANG</p><h2>Fachliche Verbindungen</h2></div><button id="graph-scope" type="button" aria-pressed="false">Auswahl und Nachbarn zeigen</button></div>
+      <p class="context-help">Wähle einen Baustein. Die fokussierte Ansicht zeigt, welche anderen Bausteine direkt mit ihm verbunden sind.</p>
       <div class="graph-wrap"><svg id="graph" role="img" aria-label="Fachgraph des gewählten Falls"></svg></div>
     </section>
     <div class="columns">
       <section class="card">
-        <div class="section-head"><div><p class="eyebrow">BAUSTEINE</p><h2>Fragen, Dokumente und Gates</h2></div><button id="add-node" type="button">+ Baustein</button></div>
+        <div class="section-head"><div><p class="eyebrow">IM FALL</p><h2>Bausteine finden</h2></div><button id="add-node" type="button">+ Baustein</button></div>
+        <label for="node-search">Suche nach Bezeichnung oder Kennung</label><input id="node-search" type="search" placeholder="z. B. Vollmacht, Frist, Nachweis">
+        <label for="node-category">Art</label><select id="node-category"><option value="">Alle Arten</option><option value="required_information">Angabenfragen</option><option value="documents">Dokumenttypen</option><option value="decisions">Entscheidungen</option><option value="gates">Prüfschritte</option><option value="evidence">Nachweistypen</option></select>
+        <p id="node-count" class="result-count"></p>
         <div id="node-list" class="node-list"></div>
       </section>
       <section class="card detail">
@@ -50,5 +54,11 @@
     </section>
     <p class="footer-note">Turtle ist die Pflegequelle. Beim Speichern wird die Mermaid-Leseseite neu erzeugt. Eine notarielle Fachfreigabe erfolgt erst im dokumentierten Review.</p>
   </main>
+  <dialog id="change-preview" aria-labelledby="preview-title">
+    <div class="preview-head"><div><p class="eyebrow">VOR DEM SPEICHERN</p><h2 id="preview-title">Änderung prüfen</h2></div><button id="close-preview" type="button" aria-label="Vorschau schließen">Schließen</button></div>
+    <p>Diese fachlichen Änderungen werden in Turtle und in der daraus erzeugten Leseseite gespeichert. Die notarielle Freigabe erfolgt anschließend im Pull Request.</p>
+    <ul id="preview-list"></ul>
+    <div class="preview-actions"><button id="cancel-preview" type="button">Weiter bearbeiten</button><button id="confirm-save" class="primary" type="button">Änderung speichern</button></div>
+  </dialog>
 </body>
 </html>

@@ -81,6 +81,19 @@ class CaseEditorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "inzwischen geändert"):
             prepare_change(SLUG, self.model, "wrong")
 
+    def test_preview_describes_validated_change_without_writing(self):
+        path = ROOT / "cases" / SLUG / "ontology.ttl"
+        before = path.read_bytes()
+        self.assertFalse(case_editor.preview_change(SLUG, self.model)["changed"])
+        self.model["nodes"][0]["label"] = "Neue fachliche Bezeichnung"
+        preview = case_editor.preview_change(SLUG, self.model)
+        self.assertTrue(preview["changed"])
+        self.assertTrue(any("Neue fachliche Bezeichnung" in item and "Bezeichnung" in item for item in preview["changes"]))
+        self.assertEqual(path.read_bytes(), before)
+        self.model["revision"] = "wrong"
+        with self.assertRaisesRegex(ValueError, "inzwischen geändert"):
+            case_editor.preview_change(SLUG, self.model)
+
     def test_rejects_real_case_values_and_dangling_edges(self):
         self.model["nodes"][0]["value"] = "private data"
         # The editable schema ignores extra fields rather than writing them to RDF.
