@@ -229,7 +229,11 @@ class CloudHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         try:
-            session = self._session()
+            try:
+                session = self._session()
+            except PermissionError as error:
+                self._json(401, {"error": str(error)})
+                return
             if self.headers.get("Origin") != self.server.config["PUBLIC_ORIGIN"].rstrip("/"):
                 raise PermissionError("Ungültiger Ursprung")
             if self.headers.get("X-Editor-Token") != session["csrf"]:

@@ -123,7 +123,8 @@ async function loadCase(slug) {
   state.current = await api("/api/cases/" + encodeURIComponent(slug));
   const degree=new Map(state.current.nodes.map(node=>[node.id,0]));
   state.current.edges.forEach(edge=>{degree.set(edge.from,(degree.get(edge.from)||0)+1);degree.set(edge.to,(degree.get(edge.to)||0)+1);});
-  state.selected = [...state.current.nodes].sort((a,b)=>(degree.get(b.id)||0)-(degree.get(a.id)||0))[0]?.id || null;
+  const usefulness=node=>(node.question ? 20 : 0)+(node.detail ? 20 : 0)+(degree.get(node.id)||0);
+  state.selected = [...state.current.nodes].sort((a,b)=>usefulness(b)-usefulness(a))[0]?.id || null;
   state.nodeEditing = false;
   state.dirty = false;
   $("overview-editor").hidden=true;
@@ -237,7 +238,6 @@ function renderNodes() {
     list.forEach(node => {
       const button = element("button",node.label,"node-row" + (state.selected === node.id ? " active" : ""));
       button.type = "button";
-      button.append(element("small",node.id));
       button.addEventListener("click",() => selectNode(node.id));
       box.append(button);
     });
@@ -280,15 +280,25 @@ function renderNodeForm() {
     ["Fachfrage",node.question],
     ["Abschnitt der Vorlage",node.section],
     ["Erläuterung",node.detail],
-    ["Verantwortliche Rolle",node.owner_role],
-    ["Datenschutzklasse",node.privacy_class],
-    ["Benötigt für",node.required_for.join(", ")],
-    ["Entscheidungsoptionen",node.options.join(", ")],
     ["Dokumentquelle",node.document_source]
   ];
   let shown=0;
   for(const [label,value] of facts){if(!value) continue; const block=element("div",undefined,"node-fact");block.append(element("strong",label),element("p",value));read.append(block);shown++;}
+  if(node.options.length){
+    const block=element("div",undefined,"node-fact");block.append(element("strong","Auswahlwerte der NaC-Vorlage"));
+    const details=element("details",undefined,"node-options");details.append(element("summary",`${node.options.length} technische Werte anzeigen`));
+    details.append(element("p","Für diese Kennungen fehlen derzeit fachlich geprüfte, lesbare Bezeichnungen."));
+    const list=element("ul");node.options.forEach(option=>list.append(element("li",option)));details.append(list);block.append(details);read.append(block);shown++;
+  }
+  if(node.contains_personal_data===true){const block=element("div",undefined,"node-fact");block.append(element("strong","Datenschutz"),element("p","Dieser Baustein kann Personendaten betreffen."));read.append(block);shown++;}
   if(!shown) read.append(element("p","Zu diesem Baustein sind noch keine weiteren fachlichen Angaben erfasst.","empty"));
+  if(node.owner_role || node.privacy_class || node.required_for.length){
+    const extra=element("details",undefined,"node-provenance");extra.append(element("summary","Weitere Angaben aus der NaC-Vorlage"));
+    if(node.owner_role)extra.append(element("p","Rollenkennung: "+node.owner_role));
+    if(node.privacy_class)extra.append(element("p","Datenschutzkennung: "+node.privacy_class));
+    if(node.required_for.length)extra.append(element("p","Benötigt für: "+node.required_for.join(", ")));
+    read.append(extra);
+  }
   const provenance=element("details",undefined,"node-provenance");provenance.append(element("summary","Technische Herkunft und Kennung"));
   provenance.append(element("p","Kennung: " + node.id),element("p","Quellstatus: " + (node.status || "nicht angegeben")));
   read.append(provenance);
