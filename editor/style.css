@@ -10,6 +10,9 @@
 .submission p{color:var(--muted);line-height:1.55}
 .submission #submit-review{margin-top:18px}
 .submission #review-link{margin-left:14px;color:#087c83;font-weight:700}
+.advanced-fields{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
+.advanced-fields summary{cursor:pointer;color:#087c83;font-weight:700;padding:8px 0}
+.advanced-fields[open] summary{margin-bottom:12px}
 .context-help{color:var(--muted);margin:-7px 0 16px;line-height:1.5}
 .result-count{font-size:12px;color:var(--muted);margin:11px 0}
 #node-search{margin-bottom:7px}

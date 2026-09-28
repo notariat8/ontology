@@ -2,17 +2,17 @@
 "use strict";
 
 const groups = [
-  ["required_information", "Angabenfragen", "#e8f2ff", "#4b77a7"],
+  ["required_information", "Fragen", "#e8f2ff", "#4b77a7"],
   ["documents", "Dokumenttypen", "#eef8ee", "#4d8a55"],
   ["decisions", "Entscheidungen", "#fff4df", "#ac7a21"],
-  ["gates", "Prüfgates", "#fdebec", "#b45c64"],
+  ["gates", "Prüfschritte", "#fdebec", "#b45c64"],
   ["evidence", "Nachweistypen", "#f3edff", "#8060aa"]
 ];
 const relations = {
   erfordert: "erfordert",
   informiert: "informiert",
-  blockiertBisVollstaendig: "blockiert bis vollständig",
-  blockiertBisGeprueft: "blockiert bis geprüft",
+  blockiertBisVollstaendig: "wartet auf vollständige Angaben",
+  blockiertBisGeprueft: "wartet auf Prüfung",
   erfordertEntscheidung: "erfordert Entscheidung",
   belegtDurch: "belegt durch",
   fuellt: "füllt",
@@ -207,18 +207,21 @@ function renderNodeForm() {
   const status=field(root,node.id.startsWith("local.") ? "Pflegestatus des lokalen Entwurfs" : "Status der NaC-Vorlage",node.status,value=>node.status=value);
   if (!node.id.startsWith("local.")) status.readOnly=true;
   field(root,"Offene Fachfrage",node.question,value=>node.question=value,true);
-  const grid=element("div",undefined,"grid");root.append(grid);
+  const advanced=element("details",undefined,"advanced-fields");
+  advanced.append(element("summary","Weitere Angaben für die Datenpflege"));
+  root.append(advanced);
+  const grid=element("div",undefined,"grid");advanced.append(grid);
   field(grid,"Verantwortliche Rolle",node.owner_role,value=>node.owner_role=value);
   field(grid,"Datenschutzklasse",node.privacy_class,value=>node.privacy_class=value);
-  field(root,"Benötigt für",node.required_for.join("\n"),value=>node.required_for=value.split("\n").map(v=>v.trim()).filter(Boolean),true,"eine Angabe pro Zeile");
-  field(root,"Entscheidungsoptionen",node.options.join("\n"),value=>node.options=value.split("\n").map(v=>v.trim()).filter(Boolean),true,"eine Option pro Zeile");
-  field(root,"Dokumentquelle",node.document_source,value=>node.document_source=value);
+  field(advanced,"Benötigt für",node.required_for.join("\n"),value=>node.required_for=value.split("\n").map(v=>v.trim()).filter(Boolean),true,"eine Angabe pro Zeile");
+  field(advanced,"Entscheidungsoptionen",node.options.join("\n"),value=>node.options=value.split("\n").map(v=>v.trim()).filter(Boolean),true,"eine Option pro Zeile");
+  field(advanced,"Dokumentquelle",node.document_source,value=>node.document_source=value);
   const privacy=element("label","Kann Personendaten enthalten?");
   const select=element("select");
   [["","Keine Angabe"],["true","Ja"],["false","Nein"]].forEach(([value,text])=>{const option=element("option",text);option.value=value;select.append(option);});
   select.value=node.contains_personal_data === null ? "" : String(node.contains_personal_data);
   select.addEventListener("change",()=>{node.contains_personal_data=select.value === "" ? null : select.value === "true";dirty();});
-  privacy.append(select);root.append(privacy);
+  privacy.append(select);advanced.append(privacy);
 }
 function fillNodeSelects() {
   for (const id of ["edge-from","edge-to"]) {
