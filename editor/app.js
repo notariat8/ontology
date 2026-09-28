@@ -325,6 +325,7 @@ async function loadCase(slug) {
   $("summary").value = state.current.summary;
   $("sources").value = state.current.sources.join("\n");
   $("nac-source").href = state.current.nac_source;
+  $("bpmn-source").href = state.current.bpmn_source;
   $("case-select").value=slug;
   renderCaseList();renderOverview();
   renderAll();

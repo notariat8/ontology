@@ -51,6 +51,7 @@ class CaseEditorTests(unittest.TestCase):
             with self.subTest(case=slug):
                 original = Graph().parse(ROOT / "cases" / slug / "ontology.ttl", format="turtle")
                 model = load_case(slug)
+                self.assertTrue(model["bpmn_source"].startswith("https://github.com/notariat8/NaC/blob/"))
                 self.assertEqual(to_isomorphic(graph_from_model(slug, model, original)), to_isomorphic(original))
                 _, _, changed = prepare_change(slug, model, model["revision"])
                 self.assertFalse(changed)

@@ -119,6 +119,7 @@ def load_case(slug: str, root: Path | None = None) -> dict:
     model["revision"] = revision(path)
     catalog = Graph().parse(root / "catalog/nac-usecases.ttl", format="turtle")
     model["title"] = _one(catalog, case_uri(slug), SKOS.prefLabel)
+    model["bpmn_source"] = _one(catalog, case_uri(slug), N8.hatBpmnModell)
     return model
 
 
