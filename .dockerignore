@@ -5,3 +5,6 @@ __pycache__
 .pytest_cache
 .codex
 .agents
+tests
+scripts/register_github_app.py
+scripts/recover_github_app_secret.py
