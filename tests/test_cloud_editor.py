@@ -21,6 +21,66 @@ from vocabulary_editor import model as vocabulary_model
 
 
 class CloudEditorTests(unittest.TestCase):
+    def test_saved_draft_can_only_be_resumed_by_its_owner(self):
+        branch = "codex/ontology-editor-reviewer-20260929100000-a1b2c3"
+        self.server.sessions["draft-session"] = {
+            "token": "fake", "user": "reviewer", "csrf": "draft-csrf", "branch": "main", "created": time.time(),
+        }
+        cookie = {"Cookie": "nac_session=draft-session"}
+        headers = {**cookie, "Origin": "https://editor.example.org", "X-Editor-Token": "draft-csrf", "Content-Type": "application/json"}
+
+        class FakeStore:
+            def __init__(self, *_):
+                pass
+
+            def list_drafts(self, user):
+                assert user == "reviewer"
+                return [{"branch": branch, "purpose": "case", "case": "erbausschlagung"}]
+
+            def load_case(self, slug, ref):
+                assert (slug, ref) == ("erbausschlagung", branch)
+                return {"title": "Erbausschlagung"}
+
+        with patch("cloud_editor.GitHubStore", FakeStore):
+            status, _, body = self.request("GET", "/api/drafts", headers=cookie)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body)[0]["branch"], branch)
+            status, _, _ = self.request("POST", "/api/drafts/resume", body=json.dumps({"branch": "codex/ontology-editor-other-20260929120000-a1b2c3"}), headers=headers)
+            self.assertEqual(status, 400)
+            self.assertEqual(self.server.sessions["draft-session"]["branch"], "main")
+            status, _, body = self.request("POST", "/api/drafts/resume", body=json.dumps({"branch": branch}), headers=headers)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body)["case"], "erbausschlagung")
+            self.assertEqual(self.server.sessions["draft-session"]["branch"], branch)
+            self.assertEqual(self.request("POST", "/api/drafts/resume", body=json.dumps({"branch": branch}), headers=headers)[0], 400)
+
+    def test_vocabulary_draft_needs_current_maintainer_role(self):
+        branch = "codex/ontology-vocabulary-reviewer-20260929110000-d4e5f6"
+        self.server.sessions["vocab-draft"] = {
+            "token": "fake", "user": "reviewer", "csrf": "draft-csrf", "branch": "main", "created": time.time(),
+        }
+        cookie = {"Cookie": "nac_session=vocab-draft"}
+        headers = {**cookie, "Origin": "https://editor.example.org", "X-Editor-Token": "draft-csrf", "Content-Type": "application/json"}
+
+        class FakeStore:
+            def __init__(self, *_):
+                pass
+
+            def list_drafts(self, user):
+                return [{"branch": branch, "purpose": "vocabulary", "case": ""}]
+
+            def load_vocabulary(self, ref):
+                assert ref == branch
+                return {"terms": []}
+
+        with patch("cloud_editor.GitHubStore", FakeStore):
+            self.assertEqual(json.loads(self.request("GET", "/api/drafts", headers=cookie)[2]), [])
+            self.assertEqual(self.request("POST", "/api/drafts/resume", body=json.dumps({"branch": branch}), headers=headers)[0], 403)
+            self.server.config["ONTOLOGY_MAINTAINERS"] = "reviewer"
+            self.assertEqual(json.loads(self.request("GET", "/api/drafts", headers=cookie)[2])[0]["branch"], branch)
+            self.assertEqual(self.request("POST", "/api/drafts/resume", body=json.dumps({"branch": branch}), headers=headers)[0], 200)
+            self.assertEqual(self.server.sessions["vocab-draft"]["purpose"], "vocabulary")
+
     def test_historical_case_becomes_a_separate_review_branch(self):
         main, target = "a" * 40, "b" * 40
         self.server.sessions["restore-session"] = {
@@ -215,6 +275,8 @@ class CloudEditorTests(unittest.TestCase):
         status, _, _ = self.request("GET", "/api/case-index")
         self.assertEqual(status, 401)
         status, _, _ = self.request("GET", "/api/cases/erbausschlagung/history")
+        self.assertEqual(status, 401)
+        status, _, _ = self.request("GET", "/api/drafts")
         self.assertEqual(status, 401)
         status, _, _ = self.request("POST", "/api/start-branch", body="{}")
         self.assertEqual(status, 401)

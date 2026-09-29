@@ -3,6 +3,9 @@
 [hidden]{display:none!important}
 .workspace-shell{display:grid;grid-template-columns:280px minmax(0,1fr);gap:24px;align-items:start}
 .workspace-main{min-width:0}
+.draft-panel{background:#f0f9f7;border:1px solid #b8dcd9;border-radius:12px;padding:16px 20px;margin-bottom:18px;display:flex;justify-content:space-between;gap:24px;align-items:center}
+.draft-panel h2{font-size:16px;margin:0 0 5px}.draft-panel p{font-size:12px;line-height:1.4;margin:0;color:#55757b}.draft-list{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.draft-list button{font-size:12px}
+@media(max-width:760px){.draft-panel{display:block}.draft-list{justify-content:flex-start;margin-top:12px}}
 .case-sidebar{background:#fff;border:1px solid var(--line);border-radius:13px;padding:20px;position:sticky;top:18px;max-height:calc(100vh - 36px);display:flex;flex-direction:column}
 .case-sidebar h2{font-size:19px;margin:0 0 16px;color:#183044}
 .case-sidebar label{font-size:13px;margin:0 0 6px}

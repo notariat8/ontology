@@ -93,6 +93,36 @@ class GitHubStore:
         self.request("POST", "/git/refs", {"ref": "refs/heads/" + branch, "sha": sha})
         return sha
 
+    def list_drafts(self, username: str) -> list[dict]:
+        """Find this user's saved editor branches that have not entered a PR."""
+        if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?", username):
+            raise ValueError("Ungültiges GitHub-Konto")
+        refs = self.request("GET", "/git/matching-refs/heads/codex/ontology-")
+        prefix = "refs/heads/"
+        pattern = re.compile(r"codex/ontology-(editor|vocabulary)-" + re.escape(username) + r"-[0-9]{14}-[0-9a-f]{6}\Z", re.IGNORECASE)
+        branches = sorted((ref["ref"][len(prefix):] for ref in refs if isinstance(ref.get("ref"), str) and ref["ref"].startswith(prefix) and pattern.fullmatch(ref["ref"][len(prefix):])), reverse=True)
+        if len(branches) > 50:
+            raise ValueError("Zu viele Arbeitsentwürfe. Bitte alte Zweige in GitHub prüfen.")
+        drafts = []
+        for branch in branches:
+            comparison = self.request("GET", "/compare/main..." + quote(branch, safe="/"))
+            files = comparison.get("files", [])
+            if comparison.get("total_commits", 0) < 1 or any(item.get("status") not in {"modified", "added"} for item in files):
+                continue
+            paths = {item.get("filename") for item in files}
+            if paths == {"ontology/core.ttl"} and branch.startswith("codex/ontology-vocabulary-"):
+                purpose, slug = "vocabulary", ""
+            else:
+                matches = [slug for slug in slugs() if paths == {f"cases/{slug}/ontology.ttl", f"cases/{slug}/README.md"}]
+                if len(matches) != 1 or not branch.startswith("codex/ontology-editor-"):
+                    continue
+                purpose, slug = "case", matches[0]
+            head = quote(f"{self.owner}:{branch}", safe="")
+            if self.request("GET", f"/pulls?state=all&head={head}&per_page=1"):
+                continue
+            drafts.append({"branch": branch, "purpose": purpose, "case": slug})
+        return drafts
+
     @contextmanager
     def model_root(self, slug: str, commit_ref: str):
         case_path(slug)  # Enforce the pinned 20-case scope before any remote path.

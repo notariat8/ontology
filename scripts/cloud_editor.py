@@ -226,6 +226,12 @@ class CloudHandler(BaseHTTPRequestHandler):
             elif path.path == "/api/status":
                 session = self._session()
                 self._json(200, {"token": session["csrf"], "branch": session["branch"], "purpose": session.get("purpose", "case"), "user": session["user"], "notary_reviewer": session["user"].lower() in self._notaries(), "ontology_maintainer": session["user"].lower() in self._maintainers()})
+            elif path.path == "/api/drafts":
+                session = self._session()
+                drafts = self._store(session).list_drafts(session["user"])
+                if session["user"].lower() not in self._maintainers():
+                    drafts = [item for item in drafts if item["purpose"] == "case"]
+                self._json(200, drafts)
             elif path.path == "/api/cases":
                 session = self._session()
                 store = self._store(session)
@@ -343,6 +349,22 @@ class CloudHandler(BaseHTTPRequestHandler):
                     session["branch"] = branch
                     session["purpose"] = purpose
                 self._json(200, {"branch": session["branch"], "purpose": session.get("purpose", "case")})
+            elif self.path == "/api/drafts/resume":
+                if session["branch"] != "main":
+                    raise ValueError("Bitte den laufenden Arbeitszweig zuerst zur Prüfung einreichen")
+                branch = data.get("branch", "")
+                draft = next((item for item in store.list_drafts(session["user"]) if item["branch"] == branch), None)
+                if draft is None:
+                    raise ValueError("Dieser eigene Entwurf ist nicht mehr verfügbar")
+                if draft["purpose"] == "vocabulary" and session["user"].lower() not in self._maintainers():
+                    raise PermissionError("Vokabularpflege ist nur für eingetragene Ontologie-Maintainer möglich")
+                if draft["purpose"] == "vocabulary":
+                    store.load_vocabulary(draft["branch"])
+                else:
+                    store.load_case(draft["case"], draft["branch"])
+                session["branch"] = draft["branch"]
+                session["purpose"] = draft["purpose"]
+                self._json(200, draft)
             elif self.path.startswith("/api/reviews/") and self.path.endswith("/review") and self.path.count("/") == 4:
                 number = int(self.path.split("/")[3])
                 url = store.submit_case_review(number, data.get("head_sha", ""), data.get("event", ""), data.get("body", ""), session["user"], self._notaries(), data.get("checks"))

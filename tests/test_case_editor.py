@@ -169,6 +169,12 @@ class CaseEditorTests(unittest.TestCase):
             self.assertEqual(response.status, 200)
             self.assertIn(b"NaC-Fallontologie", response.read())
             connection.close()
+            connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+            connection.request("GET", "/api/drafts")
+            response = connection.getresponse()
+            self.assertEqual(response.status, 200)
+            self.assertEqual(json.loads(response.read()), [])
+            connection.close()
         finally:
             server.shutdown()
             server.server_close()

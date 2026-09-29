@@ -325,6 +325,8 @@ class EditorHandler(BaseHTTPRequestHandler):
                 self._json(200, local_case_history(path.split("/")[3]))
             elif path == "/api/vocabulary":
                 self._json(200, vocabulary_model((ROOT / "ontology/core.ttl").read_text(encoding="utf-8")))
+            elif path == "/api/drafts":
+                self._json(200, [])
             elif path == "/api/vocabulary/impact":
                 read = lambda relative: (ROOT / relative).read_text(encoding="utf-8")
                 self._json(200, impact_index(read("ontology/core.ttl"), read("catalog/nac-usecases.ttl"), {slug: read(f"cases/{slug}/ontology.ttl") for slug in slugs()}, "lokaler Arbeitsstand"))

@@ -16,6 +16,30 @@ from vocabulary_editor import model as vocabulary_model, prepare_change as prepa
 
 
 class GitHubStoreTests(unittest.TestCase):
+    def test_saved_drafts_are_own_unsubmitted_single_scope_branches(self):
+        store = GitHubStore("notariat8", "ontology", "fake-token")
+        case = "codex/ontology-editor-reviewer-20260929100000-a1b2c3"
+        vocabulary = "codex/ontology-vocabulary-reviewer-20260929110000-d4e5f6"
+        other = "codex/ontology-editor-other-20260929120000-a1b2c3"
+        seen = []
+
+        def request(method, path, payload=None):
+            seen.append(path)
+            if path == "/git/matching-refs/heads/codex/ontology-":
+                return [{"ref": "refs/heads/" + branch} for branch in (case, vocabulary, other)]
+            if path.startswith("/compare/main..."):
+                files = ["ontology/core.ttl"] if "vocabulary" in path else ["cases/erbausschlagung/ontology.ttl", "cases/erbausschlagung/README.md"]
+                return {"total_commits": 1, "files": [{"filename": name, "status": "modified"} for name in files]}
+            if path.startswith("/pulls?"):
+                return [{"number": 17}] if "vocabulary" in path else []
+            raise AssertionError(path)
+
+        with patch.object(store, "request", side_effect=request):
+            self.assertEqual(store.list_drafts("reviewer"), [{"branch": case, "purpose": "case", "case": "erbausschlagung"}])
+        self.assertFalse(any(other in path for path in seen[1:]))
+        with self.assertRaisesRegex(ValueError, "GitHub-Konto"):
+            store.list_drafts("../other")
+
     def test_case_history_is_limited_to_one_case_and_pinned_main(self):
         store = GitHubStore("notariat8", "ontology", "fake-token")
         main, older = "a" * 40, "b" * 40

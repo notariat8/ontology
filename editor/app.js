@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", purpose: "case", user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null, caseHistory: null, historyTarget: "" };
+let state = { token: "", branch: "", purpose: "case", user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null, caseHistory: null, historyTarget: "", drafts: [] };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -60,7 +60,9 @@ function nodeLabel(id) {
   return state.current.nodes.find(node => node.id === id)?.label || id;
 }
 function refreshBranch() {
-  $("branch").textContent = "Arbeitszweig: " + (state.branch || "kein Branch");
+  $("branch").textContent = state.branch && state.branch!=="main" ? "Mein Entwurf" : "Lesemodus";
+  $("branch").title = state.branch && state.branch!=="main" ? `GitHub-Zweig: ${state.branch}` : "Aktueller Katalogstand";
+  $("draft-panel").hidden = state.branch !== "main" || !state.drafts.length;
   $("start-branch").hidden = state.branch !== "main" || (state.view==="vokabular" && !state.ontologyMaintainer);
   $("save").disabled = state.branch === "main" || (state.view==="vokabular" ? state.purpose!=="vocabulary" : state.purpose!=="case");
   for(const id of ["add-node","add-edge","submit-review"]) $(id).disabled=state.branch==="main" || state.purpose!=="case";
@@ -243,6 +245,26 @@ async function beginBranch(purpose="case") {
   if(purpose==="vocabulary") await loadVocabulary(true);
   else await loadCase(state.current.slug);
   notice("Änderung begonnen. Du bearbeitest jetzt deinen eigenen Arbeitszweig.","success");
+}
+async function loadDrafts() {
+  if(state.branch!=="main")return;
+  const drafts=await api("/api/drafts");state.drafts=drafts;
+  const root=$("draft-list");root.replaceChildren();
+  drafts.forEach(draft=>{
+    const title=draft.purpose==="vocabulary" ? "Gemeinsame Begriffe" : state.cases.find(item=>item.slug===draft.case)?.title || draft.case;
+    const button=element("button",`${title} weiterbearbeiten`);button.type="button";
+    button.addEventListener("click",()=>resumeDraft(draft).catch(error=>notice(error.message,"error")));
+    root.append(button);
+  });
+  refreshBranch();
+}
+async function resumeDraft(draft) {
+  if(state.dirty || state.branch!=="main")throw new Error("Bitte die laufende Änderung zuerst abschließen.");
+  const result=await api("/api/drafts/resume",{branch:draft.branch});
+  state.branch=result.branch;state.purpose=result.purpose;refreshBranch();
+  if(result.purpose==="vocabulary") {await loadVocabulary(true);setView("vokabular");}
+  else {await loadCase(result.case);setView("bausteine");}
+  notice("Gespeicherten Entwurf wieder geöffnet. Du kannst die Änderung weiterbearbeiten oder zur Prüfung geben.","success");
 }
 const vocabularyKinds={class:"Begriffsklasse",object_property:"Verbindung",datatype_property:"Merkmal"};
 function selectedTerm(){return state.vocabulary?.terms.find(item=>item.id===state.vocabSelected);}
@@ -676,6 +698,7 @@ async function submitReview() {
       await loadCase(slug);
       setView("pruefung");
       $("review-link").href=result.url;$("review-link").hidden=false;
+      loadDrafts().catch(error=>notice(error.message,"error"));
     }
     notice("Pull Request eingereicht. Jetzt folgt die notarielle Fachprüfung.","success");
   } catch(error){notice(error.message,"error");window.scrollTo({top:0,behavior:"smooth"});}
@@ -776,6 +799,7 @@ async function init() {
     window.addEventListener("beforeunload",event=>{if(state.dirty){event.preventDefault();event.returnValue="";}});
     await loadCase(cases.some(item=>item.slug===requestedCase) ? requestedCase : cases[0].slug);
     if(["fall","bausteine","verbindungen","pruefung","vokabular"].includes(initialView) || (initialView==="fachpruefung" && state.user)) setView(initialView);
+    if(state.user)loadDrafts().catch(error=>notice(error.message,"error"));
   } catch(error){notice(error.message,"error");}
 }
 init();
