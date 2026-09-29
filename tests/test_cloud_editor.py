@@ -21,6 +21,43 @@ from vocabulary_editor import model as vocabulary_model
 
 
 class CloudEditorTests(unittest.TestCase):
+    def test_case_draft_can_be_put_aside_and_cannot_change_another_case(self):
+        branch = "codex/ontology-editor-reviewer-20260929100000-a1b2c3"
+        self.server.sessions["switch-session"] = {
+            "token": "fake", "user": "reviewer", "csrf": "switch-csrf", "branch": branch,
+            "purpose": "case", "case": "erbausschlagung", "created": time.time(),
+        }
+        cookie = {"Cookie": "nac_session=switch-session"}
+        headers = {**cookie, "Origin": "https://editor.example.org", "X-Editor-Token": "switch-csrf", "Content-Type": "application/json"}
+        reads = []
+
+        class FakeStore:
+            def __init__(self, *_):
+                pass
+
+            def load_case(self, slug, ref):
+                reads.append((slug, ref))
+                return {"title": slug, "expected_ref": "a" * 40}
+
+            def list_drafts(self, user):
+                assert user == "reviewer"
+                return [{"branch": branch, "purpose": "case", "case": ""}]
+
+        with patch("cloud_editor.GitHubStore", FakeStore):
+            status, _, body = self.request("GET", "/api/cases/immobilienkaufvertrag", headers=cookie)
+            self.assertEqual(status, 200)
+            self.assertEqual(reads[-1], ("immobilienkaufvertrag", "main"))
+            self.assertEqual(self.request("POST", "/api/cases/immobilienkaufvertrag/save", body="{}", headers=headers)[0], 400)
+            self.assertEqual(self.request("POST", "/api/start-branch", body='{"purpose":"case","case":"immobilienkaufvertrag"}', headers=headers)[0], 400)
+            self.assertEqual(self.request("POST", "/api/drafts/leave", body="{}", headers=headers)[0], 200)
+            self.assertEqual(self.server.sessions["switch-session"]["branch"], "main")
+            self.assertEqual(self.server.sessions["switch-session"]["case"], "")
+            status, _, body = self.request("POST", "/api/drafts/resume", body=json.dumps({"branch": branch, "case": "immobilienkaufvertrag"}), headers=headers)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body)["case"], "immobilienkaufvertrag")
+            self.assertEqual(reads[-1], ("immobilienkaufvertrag", branch))
+            self.assertEqual(self.server.sessions["switch-session"]["case"], "immobilienkaufvertrag")
+
     def test_saved_draft_can_only_be_resumed_by_its_owner(self):
         branch = "codex/ontology-editor-reviewer-20260929100000-a1b2c3"
         self.server.sessions["draft-session"] = {
@@ -354,7 +391,7 @@ class CloudEditorTests(unittest.TestCase):
             self.assertEqual(status, 200)
             csrf = json.loads(body)["token"]
             post_headers = {**cookie, "Origin": "https://editor.example.org", "X-Editor-Token": csrf, "Content-Type": "application/json"}
-            status, _, body = self.request("POST", "/api/start-branch", body="{}", headers=post_headers)
+            status, _, body = self.request("POST", "/api/start-branch", body='{"case":"immobilienkaufvertrag"}', headers=post_headers)
             self.assertEqual(status, 200)
             self.assertTrue(json.loads(body)["branch"].startswith("codex/ontology-editor-reviewer-"))
             status, _, body = self.request("GET", "/api/cases/immobilienkaufvertrag", headers=cookie)

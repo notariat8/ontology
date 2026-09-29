@@ -11,12 +11,12 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark">N8</span><div><strong>NaC-Fallontologie</strong><small>Fachlicher Editor · 20 kanonische Fälle</small></div></div>
-    <div class="top-actions"><span id="session-user" class="session-user"></span><button id="logout" type="button" hidden>Abmelden</button><span id="branch" class="branch"></span><button id="start-branch" type="button">Änderung beginnen</button><button id="save" class="primary" type="button">Änderung speichern</button></div>
+    <div class="top-actions"><span id="session-user" class="session-user"></span><button id="logout" type="button" hidden>Abmelden</button><span id="branch" class="branch"></span><button id="start-branch" type="button">Änderung beginnen</button><button id="leave-draft" type="button" hidden>Entwurf ablegen</button><button id="save" class="primary" type="button">Änderung speichern</button></div>
   </header>
   <main>
     <div id="notice" class="notice" role="status" aria-live="polite">Lade Fälle …</div>
     <section id="draft-panel" class="draft-panel" aria-label="Meine gespeicherten Entwürfe" hidden>
-      <div><h2>Meine gespeicherten Entwürfe</h2><p>Diese Änderungen liegen bereits auf GitHub und warten noch auf einen Pull Request. Du kannst nach einer Unterbrechung hier weiterarbeiten.</p></div>
+      <div><h2>Meine Arbeitsentwürfe</h2><p>Hier findest du eigene GitHub-Zweige ohne Pull Request. Gespeicherte Änderungen bleiben beim Wechsel des Arbeitsbereichs erhalten.</p></div>
       <div id="draft-list" class="draft-list"></div>
     </section>
     <div class="workspace-shell">

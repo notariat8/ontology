@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", purpose: "case", user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null, caseHistory: null, historyTarget: "", drafts: [] };
+let state = { token: "", branch: "", purpose: "case", activeCase: "", hosted: false, user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null, caseHistory: null, historyTarget: "", drafts: [] };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -59,13 +59,20 @@ function dirty() {
 function nodeLabel(id) {
   return state.current.nodes.find(node => node.id === id)?.label || id;
 }
+function caseEditable() {
+  return state.branch !== "main" && state.purpose === "case" && (!state.hosted || state.activeCase === state.current?.slug);
+}
 function refreshBranch() {
-  $("branch").textContent = state.branch && state.branch!=="main" ? "Mein Entwurf" : "Lesemodus";
-  $("branch").title = state.branch && state.branch!=="main" ? `GitHub-Zweig: ${state.branch}` : "Aktueller Katalogstand";
+  $("branch").textContent = state.branch && state.branch!=="main" ? (state.hosted && state.purpose==="case" && !caseEditable() ? "Anderen Fall ansehen" : "Mein Entwurf") : "Lesemodus";
+  const activeTitle=state.cases.find(item=>item.slug===state.activeCase)?.title || state.activeCase;
+  $("branch").title = state.branch && state.branch!=="main" ? `GitHub-Zweig: ${state.branch}${activeTitle ? " · Entwurf für " + activeTitle : ""}` : "Aktueller Katalogstand";
   $("draft-panel").hidden = state.branch !== "main" || !state.drafts.length;
   $("start-branch").hidden = state.branch !== "main" || (state.view==="vokabular" && !state.ontologyMaintainer);
-  $("save").disabled = state.branch === "main" || (state.view==="vokabular" ? state.purpose!=="vocabulary" : state.purpose!=="case");
-  for(const id of ["add-node","add-edge","submit-review"]) $(id).disabled=state.branch==="main" || state.purpose!=="case";
+  $("leave-draft").hidden = !state.hosted || state.branch === "main";
+  $("save").disabled = state.view==="vokabular" ? state.branch==="main" || state.purpose!=="vocabulary" : !caseEditable();
+  for(const id of ["add-node","add-edge","submit-review"]) $(id).disabled=!caseEditable();
+  $("edit-overview").disabled=state.branch!=="main" && !caseEditable();
+  $("edit-node").disabled=state.branch!=="main" && !caseEditable();
   $("vocab-add").hidden=!state.ontologyMaintainer || (state.branch!=="main" && state.purpose!=="vocabulary");
   $("vocab-submit").disabled=state.branch==="main" || state.purpose!=="vocabulary";
 }
@@ -241,7 +248,7 @@ async function submitCaseReview(event) {
 }
 async function beginBranch(purpose="case") {
   if(state.dirty) throw new Error("Bitte ungespeicherte Änderungen vor einem neuen Arbeitszweig prüfen.");
-  const result=await api("/api/start-branch",{purpose});state.branch=result.branch;state.purpose=result.purpose || purpose;refreshBranch();
+  const result=await api("/api/start-branch",{purpose,case:purpose==="case" ? state.current.slug : ""});state.branch=result.branch;state.purpose=result.purpose || purpose;state.activeCase=result.case || "";refreshBranch();
   if(purpose==="vocabulary") await loadVocabulary(true);
   else await loadCase(state.current.slug);
   notice("Änderung begonnen. Du bearbeitest jetzt deinen eigenen Arbeitszweig.","success");
@@ -251,8 +258,9 @@ async function loadDrafts() {
   const drafts=await api("/api/drafts");state.drafts=drafts;
   const root=$("draft-list");root.replaceChildren();
   drafts.forEach(draft=>{
-    const title=draft.purpose==="vocabulary" ? "Gemeinsame Begriffe" : state.cases.find(item=>item.slug===draft.case)?.title || draft.case;
+    const title=draft.purpose==="vocabulary" ? "Gemeinsame Begriffe" : draft.case ? state.cases.find(item=>item.slug===draft.case)?.title || draft.case : "Begonnener Fallentwurf";
     const button=element("button",`${title} weiterbearbeiten`);button.type="button";
+    if(!draft.case)button.title="Noch keine fachliche Änderung gespeichert";
     button.addEventListener("click",()=>resumeDraft(draft).catch(error=>notice(error.message,"error")));
     root.append(button);
   });
@@ -260,11 +268,21 @@ async function loadDrafts() {
 }
 async function resumeDraft(draft) {
   if(state.dirty || state.branch!=="main")throw new Error("Bitte die laufende Änderung zuerst abschließen.");
-  const result=await api("/api/drafts/resume",{branch:draft.branch});
-  state.branch=result.branch;state.purpose=result.purpose;refreshBranch();
+  const result=await api("/api/drafts/resume",{branch:draft.branch,case:state.current.slug});
+  state.branch=result.branch;state.purpose=result.purpose;state.activeCase=result.case || "";refreshBranch();
   if(result.purpose==="vocabulary") {await loadVocabulary(true);setView("vokabular");}
   else {await loadCase(result.case);setView("bausteine");}
   notice("Gespeicherten Entwurf wieder geöffnet. Du kannst die Änderung weiterbearbeiten oder zur Prüfung geben.","success");
+}
+async function leaveDraft() {
+  if(state.dirty && !window.confirm("Ungespeicherte Eingaben verwerfen? Bereits auf GitHub gespeicherte Änderungen bleiben erhalten."))return;
+  const slug=state.current.slug;
+  await api("/api/drafts/leave",{});
+  state.branch="main";state.purpose="case";state.activeCase="";state.dirty=false;
+  state.vocabulary=null;
+  await loadCase(slug);
+  await loadDrafts();
+  notice("Entwurf abgelegt. Du kannst ihn unter „Meine Arbeitsentwürfe“ wieder öffnen.","success");
 }
 const vocabularyKinds={class:"Begriffsklasse",object_property:"Verbindung",datatype_property:"Merkmal"};
 function selectedTerm(){return state.vocabulary?.terms.find(item=>item.id===state.vocabSelected);}
@@ -434,7 +452,7 @@ async function loadCase(slug) {
   $("case-select").value=slug;
   renderCaseList();renderOverview();
   renderAll();
-  notice("Fall geladen. Inhalte, Verbindungen und Quellen sind in den Arbeitsbereichen sichtbar.","quiet");
+  notice(state.hosted && state.branch!=="main" && state.purpose==="case" && !caseEditable() ? "Dieser Fall ist im Lesemodus. Lege den geöffneten Entwurf ab, um hier eine Änderung zu beginnen." : "Fall geladen. Inhalte, Verbindungen und Quellen sind in den Arbeitsbereichen sichtbar.","quiet");
 }
 function renderAll() {
   renderGraph();
@@ -551,7 +569,7 @@ function field(root, label, value, onChange, multiline = false, hint = "") {
   const caption = element("label",label + (hint ? " · " + hint : ""));
   const control = element(multiline ? "textarea" : "input");
   control.value = value ?? "";
-  control.disabled=state.branch==="main";
+  control.disabled=!caseEditable();
   if (multiline) control.rows = 3;
   control.addEventListener("input",() => {onChange(control.value);dirty();});
   caption.append(control); wrap.append(caption); root.append(wrap);
@@ -606,7 +624,7 @@ function renderNodeForm() {
   const categorySelect=element("select");
   groups.forEach(([key,title])=>{const option=element("option",title);option.value=key;categorySelect.append(option);});
   categorySelect.value=node.category;
-  categorySelect.disabled=state.branch==="main";
+  categorySelect.disabled=!caseEditable();
   categorySelect.addEventListener("change",()=>{node.category=categorySelect.value;dirty();renderNodes();renderGraph();});
   categoryLabel.append(categorySelect);categoryWrap.append(categoryLabel);root.append(categoryWrap);
   const status=field(root,node.id.startsWith("local.") ? "Pflegestatus des lokalen Entwurfs" : "Status der NaC-Vorlage",node.status,value=>node.status=value);
@@ -625,12 +643,12 @@ function renderNodeForm() {
   field(advanced,"Dokumentquelle",node.document_source,value=>node.document_source=value);
   const privacy=element("label","Kann Personendaten enthalten?");
   const select=element("select");
-  select.disabled=state.branch==="main";
+  select.disabled=!caseEditable();
   [["","Keine Angabe"],["true","Ja"],["false","Nein"]].forEach(([value,text])=>{const option=element("option",text);option.value=value;select.append(option);});
   select.value=node.contains_personal_data === null ? "" : String(node.contains_personal_data);
   select.addEventListener("change",()=>{node.contains_personal_data=select.value === "" ? null : select.value === "true";dirty();});
   privacy.append(select);advanced.append(privacy);
-  $("delete-node").disabled=state.branch==="main";
+  $("delete-node").disabled=!caseEditable();
 }
 function fillNodeSelects() {
   for (const id of ["edge-from","edge-to"]) {
@@ -650,7 +668,7 @@ function renderEdges() {
     row.append(element("span",relations[edge.type],"edge-type"));
     row.append(element("span",nodeLabel(edge.to)));
     const remove=element("button","Entfernen","danger");remove.type="button";
-    remove.disabled=state.branch==="main";
+    remove.disabled=!caseEditable();
     remove.addEventListener("click",()=>{state.current.edges.splice(index,1);dirty();renderEdges();renderGraph();});
     row.append(remove);root.append(row);
   });
@@ -658,6 +676,7 @@ function renderEdges() {
 async function save() {
   try {
     if (state.branch === "main") throw new Error("Bitte zuerst „Änderung beginnen“ wählen.");
+    if(state.view!=="vokabular" && !caseEditable())throw new Error("Dieser Entwurf gehört zu einem anderen Fall. Lege ihn zuerst ab.");
     const vocabulary=state.view==="vokabular";
     if((vocabulary && state.purpose!=="vocabulary") || (!vocabulary && state.purpose!=="case"))throw new Error("Dieser Arbeitszweig gehört zu einem anderen Arbeitsbereich.");
     const result=await api(vocabulary ? "/api/vocabulary/preview" : "/api/cases/" + state.current.slug + "/preview",vocabulary ? state.vocabulary : state.current);
@@ -694,7 +713,7 @@ async function submitReview() {
     $("review-link").hidden=false;
     if(result.branch){
       const slug=state.current.slug;
-      state.branch=result.branch;refreshBranch();
+      state.branch=result.branch;state.activeCase="";refreshBranch();
       await loadCase(slug);
       setView("pruefung");
       $("review-link").href=result.url;$("review-link").hidden=false;
@@ -707,9 +726,10 @@ async function init() {
   try {
     const initialView=window.location.hash.slice(1);
     const requestedCase=new URLSearchParams(window.location.search).get("case");
-    const status=await api("/api/status");state.token=status.token;state.branch=status.branch;state.purpose=status.purpose || "case";state.ontologyMaintainer=!!status.ontology_maintainer;refreshBranch();
+    const status=await api("/api/status");state.token=status.token;state.branch=status.branch;state.purpose=status.purpose || "case";state.activeCase=status.case || "";state.hosted=!!status.hosted;state.ontologyMaintainer=!!status.ontology_maintainer;refreshBranch();
     if(status.user){state.user=status.user;state.notaryReviewer=!!status.notary_reviewer;$("session-user").textContent=status.user;$("logout").hidden=false;$("review-nav").hidden=false;}
     $("logout").addEventListener("click",async()=>{try{await api("/api/logout",{});window.location.assign("/login");}catch(error){notice(error.message,"error");}});
+    $("leave-draft").addEventListener("click",()=>leaveDraft().catch(error=>notice(error.message,"error")));
     const cases=await api("/api/cases");state.cases=cases;
     cases.forEach(item=>{const option=element("option",item.title);option.value=item.slug;$("case-select").append(option);});
     for(const [key,label] of Object.entries(relations)){const option=element("option",label);option.value=key;$("edge-type").append(option);}
@@ -744,6 +764,7 @@ async function init() {
     $("edit-overview").addEventListener("click",async()=>{
       try{
         if(state.branch==="main") await beginBranch();
+        if(!caseEditable())throw new Error("Dieser Entwurf gehört zu einem anderen Fall. Lege ihn zuerst ab.");
         $("overview-editor").hidden=!$("overview-editor").hidden;
         $("edit-overview").textContent=$("overview-editor").hidden ? "Beschreibung und Quellen bearbeiten" : "Bearbeitungsfelder schließen";
       }catch(error){notice(error.message,"error");}
@@ -752,6 +773,7 @@ async function init() {
       try{
         const selected=state.selected;
         if(!state.nodeEditing && state.branch==="main") await beginBranch();
+        if(!caseEditable())throw new Error("Dieser Entwurf gehört zu einem anderen Fall. Lege ihn zuerst ab.");
         state.selected=selected;
         state.nodeEditing=!state.nodeEditing;
         setView("bausteine");

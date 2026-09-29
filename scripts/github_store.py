@@ -107,10 +107,15 @@ class GitHubStore:
         for branch in branches:
             comparison = self.request("GET", "/compare/main..." + quote(branch, safe="/"))
             files = comparison.get("files", [])
-            if comparison.get("total_commits", 0) < 1 or any(item.get("status") not in {"modified", "added"} for item in files):
+            if any(item.get("status") not in {"modified", "added"} for item in files):
                 continue
             paths = {item.get("filename") for item in files}
-            if paths == {"ontology/core.ttl"} and branch.startswith("codex/ontology-vocabulary-"):
+            if comparison.get("total_commits") == 0 and not files:
+                purpose = "vocabulary" if branch.startswith("codex/ontology-vocabulary-") else "case"
+                slug = ""
+            elif comparison.get("total_commits", 0) < 1:
+                continue
+            elif paths == {"ontology/core.ttl"} and branch.startswith("codex/ontology-vocabulary-"):
                 purpose, slug = "vocabulary", ""
             else:
                 matches = [slug for slug in slugs() if paths == {f"cases/{slug}/ontology.ttl", f"cases/{slug}/README.md"}]

@@ -225,7 +225,7 @@ class CloudHandler(BaseHTTPRequestHandler):
                 self._send(200, (ASSETS / filename).read_bytes(), kind[filename])
             elif path.path == "/api/status":
                 session = self._session()
-                self._json(200, {"token": session["csrf"], "branch": session["branch"], "purpose": session.get("purpose", "case"), "user": session["user"], "notary_reviewer": session["user"].lower() in self._notaries(), "ontology_maintainer": session["user"].lower() in self._maintainers()})
+                self._json(200, {"token": session["csrf"], "branch": session["branch"], "purpose": session.get("purpose", "case"), "case": session.get("case", ""), "hosted": True, "user": session["user"], "notary_reviewer": session["user"].lower() in self._notaries(), "ontology_maintainer": session["user"].lower() in self._maintainers()})
             elif path.path == "/api/drafts":
                 session = self._session()
                 drafts = self._store(session).list_drafts(session["user"])
@@ -283,8 +283,9 @@ class CloudHandler(BaseHTTPRequestHandler):
                 self._json(200, {"turtle": self._store(session).read_file("ontology/core.ttl", branch)})
             elif path.path.startswith("/api/cases/") and path.path.count("/") == 3:
                 session = self._session()
-                branch = session["branch"] if session.get("purpose", "case") == "case" else "main"
-                self._json(200, self._store(session).load_case(path.path.rsplit("/", 1)[1], branch))
+                slug = path.path.rsplit("/", 1)[1]
+                branch = session["branch"] if session.get("purpose", "case") == "case" and session.get("case") == slug else "main"
+                self._json(200, self._store(session).load_case(slug, branch))
             elif path.path.startswith("/api/cases/") and path.path.endswith("/history") and path.path.count("/") == 4:
                 session = self._session()
                 slug = path.path.split("/")[3]
@@ -294,7 +295,7 @@ class CloudHandler(BaseHTTPRequestHandler):
                 slug = path.path.split("/")[3]
                 if slug not in slugs():
                     raise ValueError("Unbekannter Fall")
-                branch = session["branch"] if session.get("purpose", "case") == "case" else "main"
+                branch = session["branch"] if session.get("purpose", "case") == "case" and session.get("case") == slug else "main"
                 self._json(200, {"turtle": self._store(session).read_file(f"cases/{slug}/ontology.ttl", branch)})
             else:
                 self._json(404, {"error": "Nicht gefunden"})
@@ -334,21 +335,34 @@ class CloudHandler(BaseHTTPRequestHandler):
                             self.server.sessions.pop(sid, None)
                             break
                 self._json(200, {"ok": True})
+            elif self.path == "/api/drafts/leave":
+                if session["branch"] == "main":
+                    raise ValueError("Es ist kein Arbeitsentwurf geöffnet")
+                session["branch"] = "main"
+                session["purpose"] = "case"
+                session["case"] = ""
+                self._json(200, {"branch": "main", "purpose": "case"})
             elif self.path == "/api/start-branch":
                 purpose = data.get("purpose", "case")
                 if purpose not in ("case", "vocabulary"):
                     raise ValueError("Unbekannter Arbeitsbereich")
+                case = data.get("case", "") if purpose == "case" else ""
+                if purpose == "case" and case not in slugs():
+                    raise ValueError("Bitte einen der 20 Fälle wählen")
                 if purpose == "vocabulary" and session["user"].lower() not in self._maintainers():
                     raise PermissionError("Vokabularpflege ist nur für eingetragene Ontologie-Maintainer möglich")
                 if session["branch"] != "main" and session.get("purpose", "case") != purpose:
                     raise ValueError("Bitte den laufenden Arbeitszweig zuerst zur Prüfung einreichen")
+                if session["branch"] != "main" and purpose == "case" and session.get("case") != case:
+                    raise ValueError("Dieser Arbeitszweig gehört zu einem anderen Fall")
                 if session["branch"] == "main":
                     prefix = "vocabulary" if purpose == "vocabulary" else "editor"
                     branch = f"codex/ontology-{prefix}-{session['user']}-{datetime.now(timezone.utc):%Y%m%d%H%M%S}-{secrets.token_hex(3)}"
                     store.create_branch(branch)
                     session["branch"] = branch
                     session["purpose"] = purpose
-                self._json(200, {"branch": session["branch"], "purpose": session.get("purpose", "case")})
+                    session["case"] = case
+                self._json(200, {"branch": session["branch"], "purpose": session.get("purpose", "case"), "case": session.get("case", "")})
             elif self.path == "/api/drafts/resume":
                 if session["branch"] != "main":
                     raise ValueError("Bitte den laufenden Arbeitszweig zuerst zur Prüfung einreichen")
@@ -361,9 +375,14 @@ class CloudHandler(BaseHTTPRequestHandler):
                 if draft["purpose"] == "vocabulary":
                     store.load_vocabulary(draft["branch"])
                 else:
-                    store.load_case(draft["case"], draft["branch"])
+                    case = draft["case"] or data.get("case", "")
+                    if case not in slugs():
+                        raise ValueError("Bitte einen der 20 Fälle wählen")
+                    store.load_case(case, draft["branch"])
+                    draft = {**draft, "case": case}
                 session["branch"] = draft["branch"]
                 session["purpose"] = draft["purpose"]
+                session["case"] = draft["case"]
                 self._json(200, draft)
             elif self.path.startswith("/api/reviews/") and self.path.endswith("/review") and self.path.count("/") == 4:
                 number = int(self.path.split("/")[3])
@@ -390,6 +409,8 @@ class CloudHandler(BaseHTTPRequestHandler):
                 if session.get("purpose", "case") != "case":
                     raise ValueError("Für Falländerungen ist ein eigener Arbeitszweig erforderlich")
                 _, _, _, slug, action = self.path.split("/")
+                if action in ("preview", "save", "review") and session.get("case") != slug:
+                    raise ValueError("Dieser Arbeitszweig gehört zu einem anderen Fall")
                 if action == "preview":
                     self._json(200, store.preview(slug, session["branch"], data))
                 elif action == "save":
@@ -397,6 +418,7 @@ class CloudHandler(BaseHTTPRequestHandler):
                 elif action == "review":
                     url = store.create_pr(slug, session["branch"], data.get("reason", ""), data.get("source", ""))
                     session["branch"] = "main"
+                    session["case"] = ""
                     self._json(200, {"url": url, "branch": "main"})
                 elif action == "restore-preview":
                     if session["branch"] != "main":
@@ -409,6 +431,7 @@ class CloudHandler(BaseHTTPRequestHandler):
                     result = store.restore_case(slug, data.get("target_sha", ""), data.get("expected_main", ""), branch)
                     session["branch"] = branch
                     session["purpose"] = "case"
+                    session["case"] = slug
                     self._json(200, result)
                 else:
                     self._json(404, {"error": "Nicht gefunden"})

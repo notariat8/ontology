@@ -1,6 +1,6 @@
 # Produktstand des NaC-Ontologie-Editors
 
-Stand: 28.09.2026. Bezugsrahmen sind ausschließlich die 20 Vorgangsarten in [`catalog/nac-baseline.json`](../catalog/nac-baseline.json). Die Oberfläche bearbeitet fachliche **Vorlagen**; reale Akten und laufende Vorgänge gehören nicht in dieses Repository.
+Stand: 29.09.2026. Bezugsrahmen sind ausschließlich die 20 Vorgangsarten in [`catalog/nac-baseline.json`](../catalog/nac-baseline.json). Die Oberfläche bearbeitet fachliche **Vorlagen**; reale Akten und laufende Vorgänge gehören nicht in dieses Repository.
 
 ## Was die Oberfläche bereits kann
 
@@ -11,7 +11,7 @@ Stand: 28.09.2026. Bezugsrahmen sind ausschließlich die 20 Vorgangsarten in [`c
 | Fachliche Inhalte pflegen | Strukturierte Felder für Fragen, Dokumenttypen, Entscheidungen, Prüfschritte, Nachweistypen und ihre Beziehungen. Vor dem Speichern erscheint eine fachliche Änderungsvorschau. Turtle bleibt Pflegequelle. |
 | Gemeinsame Begriffe pflegen | Klassen und Eigenschaften bearbeiten; die technische Verwendung in den 20 Fällen sehen und zu betroffenen Fällen springen. |
 | Änderungen prüfen | Getrennte Git-Branches und Pull Requests, Quellenstand und Begründung, fachlicher Prüfkorb, begründete Freigabe durch ein anderes eingetragenes Notarkonto auf dem geprüften Commit. |
-| Arbeit fortsetzen | Eigene, auf GitHub gespeicherte und noch nicht eingereichte Fall- oder Vokabularentwürfe nach erneuter Anmeldung wieder öffnen. Ungespeicherte Browser-Eingaben sind davon nicht umfasst. |
+| Arbeit fortsetzen und wechseln | Eigene Fall- oder Vokabularzweige ohne Pull Request nach erneuter Anmeldung wieder öffnen, auch wenn noch keine Änderung gespeichert wurde. Mit „Entwurf ablegen“ in den Lesemodus wechseln und einen anderen Zweig öffnen. Ein Fallentwurf kann nur seinen ausgewählten Fall ändern; andere Fälle sind lesbar. Ungespeicherte Browser-Eingaben sind davon nicht umfasst. |
 | Frühere Fassung prüfen | Die letzten 20 GitHub-Änderungen eines Falls ansehen. Eine frühere Fassung kann nach einer fachlichen Differenzvorschau als neuer Branch und Pull Request vorgeschlagen werden. Der Editor akzeptiert nur eine vollständig darstellbare RDF-Fassung; die notarielle Prüfung bleibt erforderlich. |
 
 Die [Palantir-Dokumentation zum Ontology Manager](https://www.palantir.com/docs/foundry/ontology-manager/overview) beschreibt darüber hinaus die Pflege von Objekttypen, Eigenschaften, Aktionen und Datenanbindungen. Ihre [Usage-Ansicht](https://www.palantir.com/docs/foundry/ontology-manager/view-usage) bezieht auch tatsächliche Lese- und Schreibzugriffe von Anwendungen ein. Unsere Verwendungsanzeige zählt dagegen RDF-Aussagen in den 20 Fallvorlagen; sie sagt nichts über laufende Akten oder Anwendungen aus. Palantir bietet eine [globale und objektbezogene Änderungshistorie mit Wiederherstellung](https://www.palantir.com/docs/foundry/ontology-manager/restore-changes). Der NaC-Editor zeigt derzeit die fallbezogene GitHub-Historie; eine frühere Fassung erzeugt ausschließlich einen neuen Prüfentwurf und ändert `main` nicht direkt.

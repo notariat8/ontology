@@ -16,6 +16,22 @@ from vocabulary_editor import model as vocabulary_model, prepare_change as prepa
 
 
 class GitHubStoreTests(unittest.TestCase):
+    def test_empty_own_branch_can_be_reopened_after_leaving(self):
+        store = GitHubStore("notariat8", "ontology", "fake-token")
+        branch = "codex/ontology-editor-reviewer-20260929100000-a1b2c3"
+
+        def request(method, path, payload=None):
+            if path == "/git/matching-refs/heads/codex/ontology-":
+                return [{"ref": "refs/heads/" + branch}]
+            if path.startswith("/compare/main..."):
+                return {"total_commits": 0, "files": []}
+            if path.startswith("/pulls?"):
+                return []
+            raise AssertionError(path)
+
+        with patch.object(store, "request", side_effect=request):
+            self.assertEqual(store.list_drafts("reviewer"), [{"branch": branch, "purpose": "case", "case": ""}])
+
     def test_saved_drafts_are_own_unsubmitted_single_scope_branches(self):
         store = GitHubStore("notariat8", "ontology", "fake-token")
         case = "codex/ontology-editor-reviewer-20260929100000-a1b2c3"
