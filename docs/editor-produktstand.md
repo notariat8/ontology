@@ -6,7 +6,7 @@ Stand: 29.09.2026. Bezugsrahmen sind ausschließlich die 20 Vorgangsarten in [`c
 
 | Aufgabe | Umgesetzter Weg |
 | --- | --- |
-| Einen Fall verstehen | Lesbare Fallübersicht, Quellen, direkter Verweis auf das NaC-BPMN-Prozessmodell und aus Turtle erzeugte Mermaid-Seite. |
+| Einen Fall verstehen | Kurzbeschreibung und direkt sichtbarer, interaktiver Graph des ganzen Falls. Die Quellen und der NaC-Prozessablauf stehen bei Bedarf in einem Kontextdialog. |
 | Einen Baustein finden | Suche im Fall und über alle 20 Fälle; ein Treffer öffnet unmittelbar den betreffenden Baustein. Der gemeinsame Suchstand ist an einen Git-Commit gebunden. |
 | Fachliche Inhalte pflegen | Strukturierte Felder für Fragen, Dokumenttypen, Entscheidungen, Prüfschritte, Nachweistypen und ihre Beziehungen. Vor dem Speichern erscheint eine fachliche Änderungsvorschau. Turtle bleibt Pflegequelle. |
 | Gemeinsame Begriffe pflegen | Klassen und Eigenschaften bearbeiten; die technische Verwendung in den 20 Fällen sehen und zu betroffenen Fällen springen. |
@@ -17,6 +17,8 @@ Stand: 29.09.2026. Bezugsrahmen sind ausschließlich die 20 Vorgangsarten in [`c
 Die [Palantir-Dokumentation zum Ontology Manager](https://www.palantir.com/docs/foundry/ontology-manager/overview) beschreibt darüber hinaus die Pflege von Objekttypen, Eigenschaften, Aktionen und Datenanbindungen. Ihre [Usage-Ansicht](https://www.palantir.com/docs/foundry/ontology-manager/view-usage) bezieht auch tatsächliche Lese- und Schreibzugriffe von Anwendungen ein. Unsere Verwendungsanzeige zählt dagegen RDF-Aussagen in den 20 Fallvorlagen; sie sagt nichts über laufende Akten oder Anwendungen aus. Palantir bietet eine [globale und objektbezogene Änderungshistorie mit Wiederherstellung](https://www.palantir.com/docs/foundry/ontology-manager/restore-changes). Der NaC-Editor zeigt derzeit die fallbezogene GitHub-Historie; eine frühere Fassung erzeugt ausschließlich einen neuen Prüfentwurf und ändert `main` nicht direkt.
 
 Das Ziel ist deshalb ein **vollwertiger Editor für den abgegrenzten NaC-Fachkatalog**, keine Kopie der gesamten Foundry-Plattform. BPMN bleibt in NaC für Abläufe zuständig. SHACL ist eine spätere Prüfschicht und wird erst nach einer konkreten Shapes-Entscheidung bearbeitet.
+
+Die [UI-Prüfung vom 29.09.2026](editor-ux-audit-2026-09-29.md) dokumentiert die Abweichung von der Palantir-Referenz, die neue Blickführung und den noch ausstehenden Nutzertest. Die App zeigt keine Turtle-Rohansicht; die technische Fassung bleibt im Git-Repository.
 
 ## Offene Produktabnahme
 

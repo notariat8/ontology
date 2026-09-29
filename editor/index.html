@@ -11,7 +11,7 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark">N8</span><div><strong>NaC-Fallontologie</strong><small>Fachlicher Editor · 20 kanonische Fälle</small></div></div>
-    <div class="top-actions"><span id="session-user" class="session-user"></span><button id="logout" type="button" hidden>Abmelden</button><span id="branch" class="branch"></span><button id="start-branch" type="button">Änderung beginnen</button><button id="leave-draft" type="button" hidden>Entwurf ablegen</button><button id="save" class="primary" type="button">Änderung speichern</button></div>
+    <div class="top-actions"><button id="global-search" type="button" aria-haspopup="dialog" aria-controls="catalog-search">Suche</button><span id="session-user" class="session-user"></span><button id="logout" type="button" hidden>Abmelden</button><span id="branch" class="branch"></span><button id="start-branch" type="button">Änderung beginnen</button><button id="leave-draft" type="button" hidden>Entwurf ablegen</button><button id="save" class="primary" type="button">Änderung speichern</button></div>
   </header>
   <main>
     <div id="notice" class="notice" role="status" aria-live="polite">Lade Fälle …</div>
@@ -28,24 +28,26 @@
     </aside>
     <div class="workspace-main">
     <section class="mobile-case-picker"><label for="case-select">Vorgangsart</label><select id="case-select" aria-label="Vorgangsart auswählen"></select></section>
-    <details class="case-index-search"><summary>Bausteine in allen 20 Fällen suchen</summary>
-      <label for="case-index-query">Frage, Dokument oder Begriff</label><input id="case-index-query" type="search" placeholder="z. B. Erbschein, Identität oder Vollmacht" autocomplete="off">
-      <p id="case-index-status" class="context-help">Mindestens zwei Zeichen eingeben. Die Suche zeigt fachliche Bausteine aus dem aktuellen Katalogstand.</p>
-      <div id="case-index-results" class="case-index-results" aria-live="polite"></div>
-    </details>
     <nav class="workbench-nav" aria-label="Arbeitsbereiche">
       <button type="button" data-view-button="fall" aria-current="page">Fall verstehen</button>
       <button type="button" data-view-button="bausteine">Inhalte pflegen</button>
-      <button type="button" data-view-button="verbindungen">Verbindungen prüfen</button>
+      <button type="button" data-view-button="verbindungen">Beziehungen bearbeiten</button>
       <button type="button" data-view-button="pruefung">Zur Prüfung geben</button>
       <button type="button" data-view-button="vokabular">Gemeinsame Begriffe</button>
       <button id="review-nav" type="button" data-view-button="fachpruefung" hidden>Fachprüfung</button>
     </nav>
     <section class="card overview" data-view="fall">
-      <div class="section-head"><div><p class="eyebrow">VORGANGSART</p><h1 id="case-title"></h1></div><a id="nac-source" target="_blank" rel="noopener noreferrer">NaC-Quelle ↗</a></div>
-      <p class="context-help">Fachliche Vorlage für Fragen, Dokumente und Entscheidungen. Der zeitliche Ablauf steht im NaC-Prozessmodell.</p>
+      <div class="section-head"><div><p class="eyebrow">VORGANGSART</p><h1 id="case-title"></h1></div><button id="source-open" type="button" aria-haspopup="dialog" aria-controls="case-sources">Quellen und Herkunft</button></div>
+      <p id="summary-read" class="case-summary"></p>
       <div id="overview-stats" class="overview-stats" aria-label="Bausteine dieses Falls"></div>
-      <div class="overview-reading"><h2>Worum geht es?</h2><p id="summary-read"></p><h2>Rechtsquellen</h2><div id="source-links" class="source-links"></div><h2>Fachgraph und Ablauf</h2><p>Diese Ontologie beschreibt die fachlichen Bausteine und Verbindungen. Der zeitliche Prozessablauf steht im NaC-BPMN-Modell.</p><a id="bpmn-source" class="source-link" target="_blank" rel="noopener noreferrer">NaC-Prozessmodell (BPMN) öffnen ↗</a></div>
+      <section class="graph-panel" aria-labelledby="graph-title">
+        <div class="section-head"><div><p class="eyebrow">ZUSAMMENHÄNGE</p><h2 id="graph-title">So hängt der Fall zusammen</h2><p class="graph-help">Wähle einen Baustein im Bild. Die zugehörigen Verbindungen stehen darunter.</p></div><button id="graph-scope" type="button" aria-pressed="false">Ausgewählten Baustein zeigen</button></div>
+        <label for="graph-focus">Baustein auswählen</label><select id="graph-focus"></select>
+        <div id="graph-legend" class="graph-legend" aria-label="Farben der Bausteine"></div>
+        <p id="graph-status" class="graph-status"></p>
+        <div class="graph-wrap"><svg id="graph" role="img" aria-label="Fachliche Zusammenhänge des gewählten Falls"></svg></div>
+        <div id="relation-context" class="relation-context"></div>
+      </section>
       <button id="edit-overview" type="button">Beschreibung und Quellen bearbeiten</button>
       <div id="overview-editor" hidden>
       <label for="summary">Kurzbeschreibung</label><textarea id="summary" rows="3"></textarea>
@@ -60,15 +62,6 @@
         </div>
       </details>
       <button class="next-step" type="button" data-go-view="bausteine">Inhalte dieses Falls öffnen →</button>
-    </section>
-    <section class="card" data-view="verbindungen" hidden>
-      <div class="section-head"><div><p class="eyebrow">ZUSAMMENHANG</p><h2>Fachliche Verbindungen</h2></div></div>
-      <label for="graph-focus">Welchen Baustein möchtest du prüfen?</label><select id="graph-focus"></select>
-      <div id="relation-context" class="relation-context"></div>
-      <details class="diagram-details"><summary>Verbindungen als Diagramm anzeigen</summary>
-        <div class="diagram-toolbar"><button id="graph-scope" type="button" aria-pressed="true">Alle Bausteine zeigen</button></div>
-        <div class="graph-wrap"><svg id="graph" role="img" aria-label="Fachgraph des gewählten Falls"></svg></div>
-      </details>
     </section>
     <div class="columns" data-view="bausteine" hidden>
       <section class="card">
@@ -103,7 +96,6 @@
       <label for="change-source">Welcher Quellenstand wurde verwendet?</label><input id="change-source" placeholder="z. B. NaC-Commit und Fachquelle">
       <button id="submit-review" type="button">Zur Fachprüfung einreichen</button>
       <a id="review-link" hidden target="_blank" rel="noopener noreferrer">Pull Request öffnen ↗</a>
-      <details id="turtle-details" class="technical-source"><summary>Gespeicherten Stand als Turtle ansehen</summary><pre id="turtle-content">Beim Öffnen wird der aktuelle Stand geladen.</pre></details>
     </section>
     <section class="card review-workspace" data-view="fachpruefung" hidden>
       <div class="section-head"><div><p class="eyebrow">FACHLICHE PRÜFUNG</p><h2>Änderungen zur Prüfung</h2></div><button id="refresh-reviews" type="button">Liste aktualisieren</button></div>
@@ -153,17 +145,29 @@
         <label for="vocab-source">Quellenstand</label><input id="vocab-source" placeholder="z. B. NaC-Commit und Fachquelle">
         <button id="vocab-submit" type="button">Zur Fachprüfung einreichen</button><a id="vocab-pr-link" hidden target="_blank" rel="noopener noreferrer">Pull Request öffnen ↗</a>
       </div>
-      <details id="vocab-turtle-details" class="technical-source"><summary>Gespeicherten Stand als Turtle ansehen</summary><pre id="vocab-turtle">Beim Öffnen wird der aktuelle Stand geladen.</pre></details>
     </section>
-    <p class="footer-note">Turtle ist die Pflegequelle. Für Falländerungen wird die Mermaid-Leseseite neu erzeugt. Eine notarielle Fachfreigabe erfolgt erst im dokumentierten Review.</p>
+    <p class="footer-note">Änderungen an Fallvorlagen gehen zur notariellen Fachprüfung. Die technische Fassung wird im Hintergrund mitgeführt.</p>
     </div>
     </div>
   </main>
   <dialog id="change-preview" aria-labelledby="preview-title">
     <div class="preview-head"><div><p class="eyebrow">VOR DEM SPEICHERN</p><h2 id="preview-title">Änderung prüfen</h2></div><button id="close-preview" type="button" aria-label="Vorschau schließen">Schließen</button></div>
-    <p id="preview-description">Diese fachlichen Änderungen werden in Turtle und in der daraus erzeugten Leseseite gespeichert. Die notarielle Freigabe erfolgt anschließend im Pull Request.</p>
+    <p id="preview-description">Prüfe die fachlichen Änderungen vor dem Speichern. Danach kannst du sie zur notariellen Fachprüfung einreichen.</p>
     <ul id="preview-list"></ul>
     <div class="preview-actions"><button id="cancel-preview" type="button">Weiter bearbeiten</button><button id="confirm-save" class="primary" type="button">Änderung speichern</button></div>
+  </dialog>
+  <dialog id="case-sources" aria-labelledby="sources-title">
+    <div class="preview-head"><div><p class="eyebrow">ZUM GEWÄHLTEN FALL</p><h2 id="sources-title">Quellen und Herkunft</h2></div><button id="source-close" type="button">Schließen</button></div>
+    <p>Hier findest du die fachlichen Quellen und den Ablauf in NaC. Diese Angaben helfen bei Rückfragen und der Prüfung von Änderungen.</p>
+    <h3>Rechtsquellen</h3><div id="source-links" class="source-links"></div>
+    <h3>NaC-Vorlage</h3><p><a id="nac-source" target="_blank" rel="noopener noreferrer">Ursprüngliche Fallvorlage öffnen ↗</a></p>
+    <h3>Prozessablauf</h3><p><a id="bpmn-source" target="_blank" rel="noopener noreferrer">Ablauf in NaC öffnen ↗</a></p>
+  </dialog>
+  <dialog id="catalog-search" aria-labelledby="catalog-search-title">
+    <div class="preview-head"><div><p class="eyebrow">ALLE 20 VORGANGSARTEN</p><h2 id="catalog-search-title">Bausteine suchen</h2></div><button id="catalog-search-close" type="button">Schließen</button></div>
+    <label for="case-index-query">Frage, Dokument oder Begriff</label><input id="case-index-query" type="search" placeholder="z. B. Erbschein, Identität oder Vollmacht" autocomplete="off">
+    <p id="case-index-status" class="context-help">Mindestens zwei Zeichen eingeben. Die Suche zeigt fachliche Bausteine aus dem aktuellen Katalogstand.</p>
+    <div id="case-index-results" class="case-index-results" aria-live="polite"></div>
   </dialog>
 </body>
 </html>

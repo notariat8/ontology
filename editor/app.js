@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", purpose: "case", activeCase: "", hosted: false, user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: true, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null, caseHistory: null, historyTarget: "", drafts: [] };
+let state = { token: "", branch: "", purpose: "case", activeCase: "", hosted: false, user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: false, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null, caseHistory: null, historyTarget: "", drafts: [] };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -112,6 +112,7 @@ function renderCaseIndex() {
         if(state.current.slug!==item.slug)return;
         $("node-search").value="";$("node-category").value="";
         selectNode(item.node_id);
+        $("catalog-search").close();
       }catch(error){notice(error.message,"error");}
     });
     root.append(button);
@@ -127,6 +128,13 @@ async function loadCaseIndex() {
 }
 function renderOverview() {
   $("summary-read").textContent=state.current.summary;
+  const legend=$("graph-legend");legend.replaceChildren();
+  groups.forEach(([key,label,fill,border])=>{
+    const item=element("span",label,"graph-legend-item");
+    item.style.setProperty("--group-fill",fill);
+    item.style.setProperty("--group-border",border);
+    legend.append(item);
+  });
   const sources=$("source-links");sources.replaceChildren();
   state.current.sources.forEach(source=>{
     try{
@@ -313,8 +321,8 @@ function renderVocabularyImpact(){
   const total=records.reduce((sum,item)=>sum+item.count,0);
   root.append(element("strong",records.length===0 ? "Noch in keinem Fallmodul verwendet" : `${records.length} von 20 Fällen · ${total} technische Verwendungen`,"impact-summary"));
   const sha=state.vocabularyImpact.source_ref;
-  root.append(element("p",/^[0-9a-f]{40}$/.test(sha) ? `Berechnet aus GitHub main, Commit ${sha.slice(0,8)}.` : "Berechnet aus den lokalen Turtle-Dateien.","impact-source"));
-  root.append(element("p","Gezählt werden Klassen und Eigenschaften im Fachgraphen. Diese Übersicht ersetzt keine notarielle Bewertung der Folgen.","context-help"));
+  root.append(element("p",/^[0-9a-f]{40}$/.test(sha) ? "Berechnet aus dem aktuellen Katalogstand." : "Berechnet aus der lokalen Fallvorlage.","impact-source"));
+  root.append(element("p","Gezählt werden Begriffe und Beziehungen in den Fallvorlagen. Diese Übersicht ersetzt keine notarielle Bewertung der Folgen.","context-help"));
   if(records.length){
     const list=element("div",undefined,"impact-cases");
     records.sort((a,b)=>(state.cases.find(item=>item.slug===a.slug)?.title || a.slug).localeCompare(state.cases.find(item=>item.slug===b.slug)?.title || b.slug,"de"));
@@ -435,14 +443,16 @@ async function loadCase(slug) {
   state.current.edges.forEach(edge=>{degree.set(edge.from,(degree.get(edge.from)||0)+1);degree.set(edge.to,(degree.get(edge.to)||0)+1);});
   const usefulness=node=>(node.question ? 20 : 0)+(node.detail ? 20 : 0)+(degree.get(node.id)||0);
   state.selected = [...state.current.nodes].sort((a,b)=>usefulness(b)-usefulness(a))[0]?.id || null;
+  state.graphFocused=false;
+  $("graph-scope").setAttribute("aria-pressed","false");
+  $("graph-scope").textContent="Ausgewählten Baustein zeigen";
   state.nodeEditing = false;
   state.dirty = false;
   $("overview-editor").hidden=true;
   $("edit-overview").textContent="Beschreibung und Quellen bearbeiten";
   $("review-link").hidden=true;
-  $("turtle-details").open=false;
   $("case-history").open=false;state.caseHistory=null;state.historyTarget="";$("history-preview").hidden=true;
-  $("turtle-content").textContent="Beim Öffnen wird der aktuelle Stand geladen.";
+  if($("case-sources").open)$("case-sources").close();
   setView("fall");
   $("case-title").textContent = state.current.title;
   $("summary").value = state.current.summary;
@@ -452,7 +462,7 @@ async function loadCase(slug) {
   $("case-select").value=slug;
   renderCaseList();renderOverview();
   renderAll();
-  notice(state.hosted && state.branch!=="main" && state.purpose==="case" && !caseEditable() ? "Dieser Fall ist im Lesemodus. Lege den geöffneten Entwurf ab, um hier eine Änderung zu beginnen." : "Fall geladen. Inhalte, Verbindungen und Quellen sind in den Arbeitsbereichen sichtbar.","quiet");
+  notice(state.hosted && state.branch!=="main" && state.purpose==="case" && !caseEditable() ? "Dieser Fall ist im Lesemodus. Lege den geöffneten Entwurf ab, um hier eine Änderung zu beginnen." : "Fall geladen. Die fachlichen Zusammenhänge sind direkt sichtbar.","quiet");
 }
 function renderAll() {
   renderGraph();
@@ -470,6 +480,8 @@ function renderRelationContext() {
   panel.append(element("p","AUSGEWÄHLTER BAUSTEIN","eyebrow"),element("h3",node.label));
   const type=groups.find(([key])=>key===node.category)?.[1] || "Baustein";
   panel.append(element("p",type + (node.question ? " · " + node.question : ""),"relation-question"));
+  const open=element("button","Inhalt ansehen","relation-open");open.type="button";
+  open.addEventListener("click",()=>selectNode(node.id));panel.append(open);
   root.append(panel);
   const relevant=state.current.edges.filter(edge=>edge.from===node.id || edge.to===node.id);
   const heading=element("h3",`Direkte Verbindungen · ${relevant.length}`);root.append(heading);
@@ -488,53 +500,95 @@ function renderRelationContext() {
 function renderGraph() {
   const canvas = $("graph");
   canvas.replaceChildren();
-  const visible = new Set(state.current.nodes.map(node => node.id));
-  if (state.graphFocused && state.selected) {
-    visible.clear();visible.add(state.selected);
-    state.current.edges.forEach(edge => {
-      if (edge.from === state.selected) visible.add(edge.to);
-      if (edge.to === state.selected) visible.add(edge.from);
+  const linked=new Set(state.current.edges.flatMap(edge=>[edge.from,edge.to]));
+  const withoutLink=state.current.nodes.filter(node=>!linked.has(node.id)).length;
+  $("graph-status").textContent=state.current.edges.length+" fachliche Verbindungen erfasst · "+withoutLink+" Bausteine bisher ohne Verbindung";
+  const selected=state.current.nodes.find(node=>node.id===state.selected);
+  const focused=!!(state.graphFocused && selected);
+  const positions=new Map();
+  let nodes, edges, width, height, nodeWidth;
+  if(focused){
+    const neighbors=new Set();
+    edges=state.current.edges.filter(edge=>edge.from===selected.id || edge.to===selected.id);
+    edges.forEach(edge=>neighbors.add(edge.from===selected.id ? edge.to : edge.from));
+    const related=state.current.nodes.filter(node=>neighbors.has(node.id)).sort((a,b)=>a.label.localeCompare(b.label,"de"));
+    nodes=[selected,...related];
+    width=980;nodeWidth=270;
+    height=Math.max(240,170+Math.ceil(related.length/3)*76);
+    positions.set(selected.id,{x:355,y:48});
+    related.forEach((node,index)=>positions.set(node.id,{x:20+(index%3)*325,y:160+Math.floor(index/3)*76}));
+  }else{
+    nodes=state.current.nodes;
+    edges=state.current.edges;
+    width=1050;nodeWidth=180;
+    const ordered=groups.map(([key])=>nodes.filter(node=>node.category===key).sort((a,b)=>a.label.localeCompare(b.label,"de")));
+    height=Math.max(230,105+Math.max(...ordered.map(group=>group.length),1)*72);
+    ordered.forEach((list,column)=>{
+      const x=20+column*205;
+      const heading=svg("text",{x,y:28,class:"graph-heading"});
+      heading.textContent=groups[column][1]+" ("+list.length+")";
+      canvas.append(heading);
+      list.forEach((node,row)=>positions.set(node.id,{x,y:52+row*72}));
     });
   }
-  const ordered = groups.map(([key]) => state.current.nodes.filter(node => visible.has(node.id) && node.category === key).sort((a,b) => a.id.localeCompare(b.id)));
-  const maxRows = Math.max(...ordered.map(group => group.length), 1);
-  const width = 1330, height = Math.max(185, 105 + maxRows * 66);
-  canvas.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  canvas.style.height = height + "px";
-  const defs = svg("defs");
-  const marker = svg("marker", {id:"arrow",markerWidth:"8",markerHeight:"8",refX:"7",refY:"4",orient:"auto"});
-  marker.append(svg("path", {d:"M 0 0 L 8 4 L 0 8 z",fill:"#8daab3"}));
-  defs.append(marker);
-  canvas.append(defs);
-  const positions = new Map();
-  ordered.forEach((list, column) => {
-    const x = 20 + column * 263;
-    const heading = svg("text",{x, y:28, class:"graph-heading"});
-    heading.textContent = groups[column][1] + " (" + list.length + ")";
-    canvas.append(heading);
-    list.forEach((node,row) => positions.set(node.id,{x,y:52 + row * 66,column}));
+  canvas.dataset.scope=focused?"focused":"all";
+  canvas.setAttribute("viewBox","0 0 "+width+" "+height);
+  canvas.style.height=height+"px";
+  canvas.style.minWidth=focused?"720px":"900px";
+  const defs=svg("defs");
+  const marker=svg("marker",{id:"arrow",markerWidth:"8",markerHeight:"8",refX:"7",refY:"4",orient:"auto"});
+  marker.append(svg("path",{d:"M 0 0 L 8 4 L 0 8 z",fill:"#6b929f"}));
+  defs.append(marker);canvas.append(defs);
+  edges.forEach(edge=>{
+    const a=positions.get(edge.from),b=positions.get(edge.to);
+    if(!a||!b)return;
+    let pathData;
+    if(focused){
+      const fromCenter=edge.from===selected.id;
+      const sx=a.x+nodeWidth/2,sy=fromCenter?a.y+56:a.y;
+      const tx=b.x+nodeWidth/2,ty=fromCenter?b.y:b.y+56;
+      const middle=(sy+ty)/2;
+      pathData="M "+sx+" "+sy+" C "+sx+" "+middle+", "+tx+" "+middle+", "+tx+" "+ty;
+    }else{
+      const sx=a.x+nodeWidth,sy=a.y+28,tx=b.x,ty=b.y+28;
+      const bend=Math.max(35,Math.abs(tx-sx)/2);
+      pathData="M "+sx+" "+sy+" C "+(sx+bend)+" "+sy+", "+(tx-bend)+" "+ty+", "+tx+" "+ty;
+    }
+    const path=svg("path",{d:pathData,class:"graph-edge","marker-end":"url(#arrow)"});
+    const title=svg("title");
+    title.textContent=nodeLabel(edge.from)+" "+(relations[edge.type]||edge.type)+" "+nodeLabel(edge.to);
+    path.append(title);canvas.append(path);
   });
-  state.current.edges.filter(edge => visible.has(edge.from) && visible.has(edge.to)).forEach(edge => {
-    const a = positions.get(edge.from), b = positions.get(edge.to);
-    if (!a || !b) return;
-    const x1 = a.x + 230, y1 = a.y + 19, x2 = b.x, y2 = b.y + 19;
-    const bend = Math.max(35, Math.abs(x2-x1) / 2);
-    const path = svg("path",{d:`M ${x1} ${y1} C ${x1+bend} ${y1}, ${x2-bend} ${y2}, ${x2} ${y2}`,class:"graph-edge","marker-end":"url(#arrow)"});
-    const title = svg("title"); title.textContent = nodeLabel(edge.from) + " " + relations[edge.type] + " " + nodeLabel(edge.to);
-    path.append(title); canvas.append(path);
-  });
-  ordered.forEach((list,column) => list.forEach(node => {
-    const {x,y} = positions.get(node.id);
-    const group = svg("g",{class:"graph-node" + (state.selected === node.id ? " selected" : ""),tabindex:"0",role:"button","aria-label":node.label});
-    group.append(svg("rect",{x,y,width:230,height:39,rx:7,fill:groups[column][2],stroke:groups[column][3]}));
-    const text = svg("text",{x:x+10,y:y+24});
-    text.textContent = node.label.length > 32 ? node.label.slice(0,30) + "…" : node.label;
-    group.append(text);
-    const title = svg("title"); title.textContent = node.label; group.append(title);
-    group.addEventListener("click",() => selectNode(node.id));
-    group.addEventListener("keydown",event => {if(event.key === "Enter" || event.key === " "){event.preventDefault();selectNode(node.id);}});
+  nodes.forEach(node=>{
+    const position=positions.get(node.id);
+    if(!position)return;
+    const groupIndex=groups.findIndex(([key])=>key===node.category);
+    const category=groups[groupIndex<0?0:groupIndex];
+    const chosen=node.id===state.selected;
+    const group=svg("g",{class:"graph-node"+(chosen?" selected":"")+(linked.has(node.id)?"":" disconnected"),tabindex:"0",role:"button","aria-label":node.label+"; "+category[1]+(linked.has(node.id)?"":"; bisher ohne Verbindung")});
+    group.append(svg("rect",{x:position.x,y:position.y,width:nodeWidth,height:56,rx:8,fill:category[2],stroke:category[3]}));
+    const caption=svg("text",{x:position.x+10,y:position.y+22});
+    const limit=focused?32:20;
+    const lines=[""];
+    node.label.split(/\s+/).forEach(word=>{
+      const line=lines.length-1;
+      const candidate=lines[line] ? lines[line]+" "+word : word;
+      if(candidate.length>limit && lines[line])lines.push(word);
+      else lines[line]=candidate;
+    });
+    const visibleLines=lines.slice(0,2);
+    if(lines.length>2)visibleLines[1]=visibleLines[1].slice(0,limit-1)+"…";
+    visibleLines.forEach((line,index)=>{
+      const tspan=svg("tspan",{x:position.x+10,dy:index?17:0});
+      tspan.textContent=line.length>limit?line.slice(0,limit-1)+"…":line;
+      caption.append(tspan);
+    });
+    group.append(caption);
+    const title=svg("title");title.textContent=node.label;group.append(title);
+    group.addEventListener("click",()=>focusGraphNode(node.id));
+    group.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();focusGraphNode(node.id);}});
     canvas.append(group);
-  }));
+  });
 }
 function renderNodes() {
   const root = $("node-list"); root.replaceChildren();
@@ -564,6 +618,11 @@ function selectNode(id) {
   setView("bausteine");
   renderNodes(); renderNodeForm(); renderGraph(); renderRelationContext(); fillNodeSelects();
 }
+function focusGraphNode(id) {
+  state.selected=id;
+  state.nodeEditing=false;
+  renderAll();
+}
 function field(root, label, value, onChange, multiline = false, hint = "") {
   const wrap = element("div");
   const caption = element("label",label + (hint ? " · " + hint : ""));
@@ -585,9 +644,9 @@ function renderNodeForm() {
   $("edit-node").textContent = state.nodeEditing ? "Lesen" : "Bearbeiten";
   $("delete-node").hidden = !node || !state.nodeEditing || !node.id.startsWith("local.");
   $("detail-title").textContent = node ? node.label : "Baustein auswählen";
-  if (!node) {read.append(element("p","Wähle links einen Baustein oder klicke im Fachgraphen darauf.","empty"));return;}
+  if (!node) {read.append(element("p","Wähle links oder im Bild einen Baustein aus.","empty"));return;}
   const type=groups.find(([key])=>key===node.category)?.[1] || "Baustein";
-  read.append(element("p",type + " · " + (node.id.startsWith("local.") ? "Ergänzung in diesem Repository" : "Aus der NaC-Vorlage übernommen"),"node-meta"));
+  read.append(element("p",type + " · " + (node.id.startsWith("local.") ? "Neu ergänzter Baustein" : "Aus der NaC-Vorlage übernommen"),"node-meta"));
   const facts=[
     ["Fachfrage",node.question],
     ["Abschnitt der Vorlage",node.section],
@@ -598,9 +657,7 @@ function renderNodeForm() {
   for(const [label,value] of facts){if(!value) continue; const block=element("div",undefined,"node-fact");block.append(element("strong",label),element("p",value));read.append(block);shown++;}
   if(node.options.length){
     const block=element("div",undefined,"node-fact");block.append(element("strong","Auswahlwerte der NaC-Vorlage"));
-    const details=element("details",undefined,"node-options");details.append(element("summary",`${node.options.length} technische Werte anzeigen`));
-    details.append(element("p","Für diese Kennungen fehlen derzeit fachlich geprüfte, lesbare Bezeichnungen."));
-    const list=element("ul");node.options.forEach(option=>list.append(element("li",option)));details.append(list);block.append(details);read.append(block);shown++;
+    block.append(element("p","Für diese Auswahl fehlen derzeit fachlich geprüfte, lesbare Bezeichnungen."));read.append(block);shown++;
   }
   if(node.contains_personal_data===true){const block=element("div",undefined,"node-fact");block.append(element("strong","Datenschutz"),element("p","Dieser Baustein kann Personendaten betreffen."));read.append(block);shown++;}
   if(!shown) read.append(element("p","Zu diesem Baustein sind noch keine weiteren fachlichen Angaben erfasst.","empty"));
@@ -611,9 +668,6 @@ function renderNodeForm() {
     if(node.required_for.length)extra.append(element("p","Benötigt für: "+node.required_for.join(", ")));
     read.append(extra);
   }
-  const provenance=element("details",undefined,"node-provenance");provenance.append(element("summary","Technische Herkunft und Kennung"));
-  provenance.append(element("p","Kennung: " + node.id),element("p","Quellstatus: " + (node.status || "nicht angegeben")));
-  read.append(provenance);
   const id=field(root,"Kennung",node.id,()=>{});id.readOnly=true;
   const label = field(root,"Bezeichnung",node.label,value => {
     node.label=value; $("detail-title").textContent=value;renderNodes();renderGraph();renderEdges();renderRelationContext();fillNodeSelects();
@@ -680,7 +734,7 @@ async function save() {
     const vocabulary=state.view==="vokabular";
     if((vocabulary && state.purpose!=="vocabulary") || (!vocabulary && state.purpose!=="case"))throw new Error("Dieser Arbeitszweig gehört zu einem anderen Arbeitsbereich.");
     const result=await api(vocabulary ? "/api/vocabulary/preview" : "/api/cases/" + state.current.slug + "/preview",vocabulary ? state.vocabulary : state.current);
-    $("preview-description").textContent=vocabulary ? "Diese Änderungen werden im gemeinsamen Turtle-Vokabular gespeichert. Die notarielle Freigabe erfolgt anschließend im Pull Request." : "Diese fachlichen Änderungen werden in Turtle und in der daraus erzeugten Leseseite gespeichert. Die notarielle Freigabe erfolgt anschließend im Pull Request.";
+    $("preview-description").textContent="Prüfe die fachlichen Änderungen vor dem Speichern. Danach kannst du sie zur notariellen Fachprüfung einreichen.";
     const list=$("preview-list");list.replaceChildren();
     result.changes.forEach(change=>list.append(element("li",change)));
     if(!result.changed) list.append(element("li","Keine fachliche Änderung erkannt."));
@@ -700,7 +754,7 @@ async function confirmSave() {
       if($("case-index-query").value.trim().length>=2)loadCaseIndex().catch(()=>{});
     }
     $("change-preview").close();
-    notice(result.changed ? (vocabulary ? "Gemeinsames Turtle-Vokabular gespeichert. Reiche die Änderung nun zur Fachprüfung ein." : "Turtle und Mermaid-Seite gespeichert. Als Nächstes die Änderung im Pull Request fachlich prüfen lassen.") : "Keine Änderungen zu speichern.","success");
+    notice(result.changed ? (vocabulary ? "Gemeinsame Begriffe gespeichert. Reiche die Änderung nun zur Fachprüfung ein." : "Fallvorlage gespeichert. Reiche die Änderung nun zur Fachprüfung ein.") : "Keine Änderungen zu speichern.","success");
   } catch (error) {notice(error.message,"error");}
 }
 async function submitReview() {
@@ -755,7 +809,7 @@ async function init() {
     $("graph-scope").addEventListener("click",()=>{
       state.graphFocused=!state.graphFocused;
       $("graph-scope").setAttribute("aria-pressed",String(state.graphFocused));
-      $("graph-scope").textContent=state.graphFocused ? "Alle Bausteine zeigen" : "Auswahl und Nachbarn zeigen";
+      $("graph-scope").textContent=state.graphFocused ? "Gesamten Fall zeigen" : "Ausgewählten Baustein zeigen";
       renderGraph();
     });
     $("graph-focus").addEventListener("change",event=>{state.selected=event.target.value;renderAll();});
@@ -807,16 +861,10 @@ async function init() {
     $("refresh-reviews").addEventListener("click",()=>loadReviewQueue().catch(error=>notice(error.message,"error")));
     $("request-changes").addEventListener("click",()=>submitCaseReview("REQUEST_CHANGES"));
     $("approve-review").addEventListener("click",()=>submitCaseReview("APPROVE"));
-    $("turtle-details").addEventListener("toggle",async()=>{
-      if(!$("turtle-details").open || !state.current) return;
-      try{const result=await api("/api/cases/" + state.current.slug + "/turtle");$("turtle-content").textContent=result.turtle;}
-      catch(error){$("turtle-content").textContent=error.message;}
-    });
-    $("vocab-turtle-details").addEventListener("toggle",async()=>{
-      if(!$("vocab-turtle-details").open)return;
-      try{const result=await api("/api/vocabulary/turtle");$("vocab-turtle").textContent=result.turtle;}
-      catch(error){$("vocab-turtle").textContent=error.message;}
-    });
+    $("source-open").addEventListener("click",()=>$("case-sources").showModal());
+    $("source-close").addEventListener("click",()=>$("case-sources").close());
+    $("global-search").addEventListener("click",()=>{$("catalog-search").showModal();$("case-index-query").focus();});
+    $("catalog-search-close").addEventListener("click",()=>$("catalog-search").close());
     for(const id of ["close-preview","cancel-preview"]) $(id).addEventListener("click",()=>$("change-preview").close());
     window.addEventListener("beforeunload",event=>{if(state.dirty){event.preventDefault();event.returnValue="";}});
     await loadCase(cases.some(item=>item.slug===requestedCase) ? requestedCase : cases[0].slug);
