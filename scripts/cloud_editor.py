@@ -213,7 +213,9 @@ class CloudHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         try:
             path = urlparse(self.path)
-            if path.path == "/login":
+            if path.path == "/healthz":
+                self._json(200, {"status": "ok"})
+            elif path.path == "/login":
                 self._login()
             elif path.path == "/callback":
                 self._callback(parse_qs(path.query))

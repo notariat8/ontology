@@ -24,3 +24,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t nac-ontology-editor:ci .
+      - name: Start editor and verify public and protected endpoints
+        run: |
+          docker run --rm -d --name nac-editor-smoke -p 127.0.0.1:18765:8080 \
+            -e GITHUB_APP_CLIENT_ID=smoke-test \
+            -e GITHUB_APP_CLIENT_SECRET=smoke-test \
+            -e GITHUB_REPOSITORY=notariat8/ontology \
+            -e PUBLIC_ORIGIN=https://editor.example.org \
+            -e EDITOR_USERS=smoke-tester nac-ontology-editor:ci
+          trap 'docker logs nac-editor-smoke; docker stop nac-editor-smoke' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:18765/healthz | grep -q '"status": "ok"'; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:18765/healthz | grep -q '"status": "ok"'
+          curl --fail --silent http://127.0.0.1:18765/ | grep -q 'NaC'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18765/api/status)" = 401
