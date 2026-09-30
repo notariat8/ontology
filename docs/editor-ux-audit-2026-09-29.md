@@ -21,11 +21,16 @@ Die [Palantir-Dokumentation zum Ontology Manager](https://www.palantir.com/docs/
 
 Die Oberfläche zeigt keine Turtle-Rohansicht mehr. Turtle und die daraus erzeugten Mermaid-Seiten bleiben im Git-Repository die maschinenlesbare Pflegequelle; die App stellt die daraus abgeleiteten fachlichen Inhalte dar. Der Graph zeigt nur erfasste Beziehungen. Bei Erbausschlagung sind derzeit 19 Bausteine und 6 Beziehungen vorhanden; 9 Bausteine haben keine erfasste Verbindung. Die App benennt diese Lücke, statt fachliche Verbindungen zu erfinden.
 
-## Prüf- und Lernschleife
+## Korrektur vom 30.09.2026: UI-Entwicklung und Fachprüfung trennen
 
-1. Die Aufgaben zuerst als konkrete Szenarien formulieren: Fall finden, Zusammenhang erklären, Baustein ändern, Quelle bei Rückfrage prüfen, Änderung zur Fachprüfung geben.
-2. Desktop und schmale Ansicht **gerendert** ansehen und jeden Weg selbst durchklicken. Eine Codeprüfung allein reicht für Layout nicht.
-3. Eine Notariatsfachkraft und eine Person für Ontologiepflege dieselben Szenarien ohne Anleitung bearbeiten lassen. Beobachten, wo sie suchen, stocken oder Begriffe missverstehen; keine Echtdaten eingeben.
-4. Änderungen an der Seitenhierarchie anhand dieser Beobachtungen vornehmen und den Test wiederholen. Erfolg bedeutet, dass die Zielaufgaben gefunden und verstanden werden; grüne CI ist dafür kein Ersatz.
+Die Verantwortung für eine gut benutzbare Oberfläche liegt beim Editor-Team. Notarinnen und Notare sollen keine unausgereifte UI durch Ausprobieren retten. Die UI wird daher als eigenständige Produktaufgabe umgesetzt und geprüft:
+
+1. Ein klarer Hauptbereich pro Ansicht; Fallnavigation, Bearbeitung und Fachprüfung bleiben unterscheidbar.
+2. Der Fachgraph ist auf breiten Bildschirmen direkt sichtbar. Ein Klick auf einen Baustein öffnet dessen Erklärung und Beziehungen unmittelbar in einer Seitenansicht. Auf schmalen Bildschirmen ersetzt eine gruppierte, vollständig lesbare Karte die abgeschnittene Grafik.
+3. Quellen, Historie und technische Metadaten erscheinen erst bei Bedarf. Rohes Turtle bleibt aus der Oberfläche heraus.
+4. Sichtbare Zustände für Lesemodus, Entwurf und ungespeicherte Änderung; Tastaturbedienung und mobile Ansicht werden im Browser geprüft.
+5. Die technische UI-Abnahme erfolgt mit gerenderten Desktop- und Mobilansichten sowie durchgeklickten Wegen: Fall wählen, Zusammenhang erkennen, Details öffnen, Inhalt bearbeiten, Änderung speichern und einreichen. Eine fachliche Freigabe der Ontologie ist eine gesonderte Aufgabe für Notarinnen oder Notare.
 
 Die lokale Chrome-Prüfung am 29.09.2026 zeigte den ganzen Erbausschlagungsgraphen in der Fallübersicht und die Quellen außerhalb des Hauptbereichs. Ein anschließender Browser-Test bestätigte 19 sichtbare Knoten, die Auswahl eines Knotens, den Wechsel zur Detailansicht sowie das Öffnen von Quellen- und Suchdialog. Die gehostete Revision `ca-nac-ontology-editor--0000005` liefert das neue HTML mit Graph und Quellendialog aus. Diese technischen Nachweise ersetzen keinen Nutzertest. Für dessen fachliche Abnahme werden reale Arbeitsaufgaben und mindestens eine Notariatsfachkraft benötigt; zusätzliche Palantir-Screenshots sind für den nächsten technischen Schritt nicht erforderlich.
+
+Der letzte Absatz beschreibt die Prüfung des Standes vom 29.09.2026. Für die neue UI ist ein Notarkonto keine technische Abnahmevoraussetzung. Eine spätere Rückmeldung aus der Praxis ist willkommen, aber die Oberfläche muss bereits davor kohärent und verständlich sein.

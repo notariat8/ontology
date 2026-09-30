@@ -11,7 +11,7 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark">N8</span><div><strong>NaC-Fallontologie</strong><small>Fachlicher Editor · 20 kanonische Fälle</small></div></div>
-    <div class="top-actions"><button id="global-search" type="button" aria-haspopup="dialog" aria-controls="catalog-search">Suche</button><span id="session-user" class="session-user"></span><button id="logout" type="button" hidden>Abmelden</button><span id="branch" class="branch"></span><button id="start-branch" type="button">Änderung beginnen</button><button id="leave-draft" type="button" hidden>Entwurf ablegen</button><button id="save" class="primary" type="button">Änderung speichern</button></div>
+    <div class="top-actions"><button id="global-search" class="search-trigger" type="button" aria-haspopup="dialog" aria-controls="catalog-search"><span aria-hidden="true">⌕</span> Katalog durchsuchen <kbd>Ctrl K</kbd></button><button id="vocab-nav" class="utility-nav" type="button" data-view-button="vokabular">Begriffe</button><button id="review-nav" class="utility-nav" type="button" data-view-button="fachpruefung" hidden>Prüfkorb</button><span id="branch" class="branch"></span><button id="start-branch" type="button">Änderung beginnen</button><button id="leave-draft" type="button" hidden>Entwurf ablegen</button><button id="save" class="primary" type="button">Änderung speichern</button><span id="session-user" class="session-user"></span><button id="logout" class="account-action" type="button" hidden>Abmelden</button></div>
   </header>
   <main>
     <div id="notice" class="notice" role="status" aria-live="polite">Lade Fälle …</div>
@@ -21,33 +21,30 @@
     </section>
     <div class="workspace-shell">
     <aside class="case-sidebar" aria-label="Vorgangsarten">
-      <p class="eyebrow">NAC-KATALOG</p><h2>20 Vorgangsarten</h2>
-      <label for="case-search">Fall suchen</label><input id="case-search" type="search" placeholder="Vorgangsart eingeben">
+      <p class="eyebrow">FALLKATALOG</p><h2>Vorgangsarten <span>20</span></h2>
+      <label class="visually-hidden" for="case-search">Vorgangsart suchen</label><input id="case-search" type="search" placeholder="Vorgangsart suchen …">
       <div id="case-list" class="case-list"></div>
-      <p class="sidebar-note">Fachvorlagen ohne Aktenwerte. Änderungen gehen zur notariellen Prüfung.</p>
+      <p class="sidebar-note">Fachvorlagen · ohne Aktenwerte</p>
     </aside>
     <div class="workspace-main">
     <section class="mobile-case-picker"><label for="case-select">Vorgangsart</label><select id="case-select" aria-label="Vorgangsart auswählen"></select></section>
     <nav class="workbench-nav" aria-label="Arbeitsbereiche">
-      <button type="button" data-view-button="fall" aria-current="page">Fall verstehen</button>
-      <button type="button" data-view-button="bausteine">Inhalte pflegen</button>
-      <button type="button" data-view-button="verbindungen">Beziehungen bearbeiten</button>
-      <button type="button" data-view-button="pruefung">Zur Prüfung geben</button>
-      <button type="button" data-view-button="vokabular">Gemeinsame Begriffe</button>
-      <button id="review-nav" type="button" data-view-button="fachpruefung" hidden>Fachprüfung</button>
+      <button type="button" data-view-button="fall" aria-current="page">Übersicht</button>
+      <button type="button" data-view-button="bausteine">Bausteine</button>
+      <button type="button" data-view-button="verbindungen">Verbindungen</button>
+      <button type="button" data-view-button="pruefung">Einreichen</button>
     </nav>
     <section class="card overview" data-view="fall">
-      <div class="section-head"><div><p class="eyebrow">VORGANGSART</p><h1 id="case-title"></h1></div><button id="source-open" type="button" aria-haspopup="dialog" aria-controls="case-sources">Quellen und Herkunft</button></div>
+      <div class="section-head case-hero"><div><p class="eyebrow">VORGANGSART / ÜBERBLICK</p><h1 id="case-title"></h1></div><button id="source-open" class="text-action" type="button" aria-haspopup="dialog" aria-controls="case-sources">Quellen <span aria-hidden="true">↗</span></button></div>
       <p id="summary-read" class="case-summary"></p>
-      <div id="overview-stats" class="overview-stats" aria-label="Bausteine dieses Falls"></div>
       <section class="graph-panel" aria-labelledby="graph-title">
-        <div class="section-head"><div><p class="eyebrow">ZUSAMMENHÄNGE</p><h2 id="graph-title">So hängt der Fall zusammen</h2><p class="graph-help">Wähle einen Baustein im Bild. Die zugehörigen Verbindungen stehen darunter.</p></div><button id="graph-scope" type="button" aria-pressed="false">Ausgewählten Baustein zeigen</button></div>
-        <label for="graph-focus">Baustein auswählen</label><select id="graph-focus"></select>
+        <div class="section-head"><div><p class="eyebrow">FACHLANDKARTE</p><h2 id="graph-title">Zusammenhänge auf einen Blick</h2><p id="graph-status" class="graph-status"></p></div></div>
+        <div class="graph-toolbar"><label class="visually-hidden" for="graph-focus">Baustein auswählen</label><select id="graph-focus" aria-label="Baustein auswählen"></select><button id="graph-scope" type="button" aria-pressed="false">Umfeld zeigen</button></div>
         <div id="graph-legend" class="graph-legend" aria-label="Farben der Bausteine"></div>
-        <p id="graph-status" class="graph-status"></p>
-        <div class="graph-wrap"><svg id="graph" role="img" aria-label="Fachliche Zusammenhänge des gewählten Falls"></svg></div>
-        <div id="relation-context" class="relation-context"></div>
+        <div class="graph-wrap"><svg id="graph" role="group" aria-label="Fachliche Zusammenhänge des gewählten Falls"></svg></div>
+        <div id="graph-list" class="graph-list" aria-label="Bausteine des Falls"></div>
       </section>
+      <div class="content-shortcuts"><div><p class="eyebrow">IN DIE TIEFE GEHEN</p><h2>Inhalte des Falls</h2></div><div id="overview-stats" class="overview-stats" aria-label="Bausteine dieses Falls"></div></div>
       <button id="edit-overview" type="button">Beschreibung und Quellen bearbeiten</button>
       <div id="overview-editor" hidden>
       <label for="summary">Kurzbeschreibung</label><textarea id="summary" rows="3"></textarea>
@@ -61,7 +58,7 @@
           <button id="history-apply" type="button">Als neuen Prüfentwurf übernehmen</button>
         </div>
       </details>
-      <button class="next-step" type="button" data-go-view="bausteine">Inhalte dieses Falls öffnen →</button>
+      <button class="next-step" type="button" data-go-view="bausteine">Alle Bausteine ansehen <span aria-hidden="true">→</span></button>
     </section>
     <div class="columns" data-view="bausteine" hidden>
       <section class="card">
@@ -77,25 +74,26 @@
         <div id="node-form" class="node-form" hidden></div>
       </section>
     </div>
-    <section class="card" data-view="verbindungen" hidden>
-      <details class="manage-relations"><summary>Alle Verbindungen und ihre Bearbeitung anzeigen</summary>
-      <p class="context-help">Hier kannst du fachliche Verbindungen ergänzen oder entfernen. Die Änderung wird vor dem Speichern geprüft.</p>
+    <section class="card relations-workspace" data-view="verbindungen" hidden>
+      <div class="section-head"><div><p class="eyebrow">ZUSAMMENHÄNGE IM FALL</p><h2>Verbindungen</h2></div><span id="edge-count" class="result-count"></span></div>
+      <p class="context-help">Diese Verbindungen zeigen, wie die Bausteine fachlich zusammenhängen.</p>
+      <div id="edge-list" class="edge-list"></div>
+      <details id="edge-create" class="edge-editor"><summary>Verbindung hinzufügen</summary>
       <div class="edge-add">
         <select id="edge-from" aria-label="Ausgangsbaustein"></select>
         <select id="edge-type" aria-label="Beziehungstyp"></select>
         <select id="edge-to" aria-label="Zielbaustein"></select>
-        <button id="add-edge" type="button">+ Beziehung</button>
+        <button id="add-edge" type="button">Hinzufügen</button>
       </div>
-      <div id="edge-list" class="edge-list"></div>
       </details>
     </section>
     <section class="card submission" data-view="pruefung" hidden>
       <div class="section-head"><div><p class="eyebrow">ZUR PRÜFUNG GEBEN</p><h2>Änderung einreichen</h2></div></div>
-      <p>Nach dem Speichern beschreibst du den fachlichen Grund und den verwendeten Quellenstand. Daraus wird ein Pull Request zur notariellen Prüfung. Eine Freigabe erfolgt erst durch ein anderes, eingetragenes Notarkonto.</p>
+      <p>Beschreibe kurz den Grund und die verwendeten Quellen. Danach geht dein gespeicherter Entwurf zur notariellen Fachprüfung. Die Freigabe dokumentiert eine andere berechtigte Person.</p>
       <label for="change-reason">Warum ist die Änderung nötig?</label><textarea id="change-reason" rows="3" placeholder="Beschreibe die fachliche Änderung und ihre Wirkung."></textarea>
       <label for="change-source">Welcher Quellenstand wurde verwendet?</label><input id="change-source" placeholder="z. B. NaC-Commit und Fachquelle">
-      <button id="submit-review" type="button">Zur Fachprüfung einreichen</button>
-      <a id="review-link" hidden target="_blank" rel="noopener noreferrer">Pull Request öffnen ↗</a>
+      <button id="submit-review" class="primary" type="button">Zur Fachprüfung einreichen</button>
+      <a id="review-link" hidden target="_blank" rel="noopener noreferrer">Prüfentwurf öffnen ↗</a>
     </section>
     <section class="card review-workspace" data-view="fachpruefung" hidden>
       <div class="section-head"><div><p class="eyebrow">FACHLICHE PRÜFUNG</p><h2>Änderungen zur Prüfung</h2></div><button id="refresh-reviews" type="button">Liste aktualisieren</button></div>
@@ -155,6 +153,10 @@
     <p id="preview-description">Prüfe die fachlichen Änderungen vor dem Speichern. Danach kannst du sie zur notariellen Fachprüfung einreichen.</p>
     <ul id="preview-list"></ul>
     <div class="preview-actions"><button id="cancel-preview" type="button">Weiter bearbeiten</button><button id="confirm-save" class="primary" type="button">Änderung speichern</button></div>
+  </dialog>
+  <dialog id="graph-inspector" aria-labelledby="inspector-title">
+    <div class="inspector-head"><div><p class="eyebrow">FACHLANDKARTE</p><h2 id="inspector-title">Baustein im Zusammenhang</h2></div><button id="inspector-close" type="button" aria-label="Detailansicht schließen">✕</button></div>
+    <div id="relation-context" class="relation-context"></div>
   </dialog>
   <dialog id="case-sources" aria-labelledby="sources-title">
     <div class="preview-head"><div><p class="eyebrow">ZUM GEWÄHLTEN FALL</p><h2 id="sources-title">Quellen und Herkunft</h2></div><button id="source-close" type="button">Schließen</button></div>

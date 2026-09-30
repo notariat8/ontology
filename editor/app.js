@@ -54,6 +54,7 @@ async function api(path, body) {
 }
 function dirty() {
   state.dirty = true;
+  refreshBranch();
   notice("Änderungen sind noch nicht gespeichert.");
 }
 function nodeLabel(id) {
@@ -69,7 +70,10 @@ function refreshBranch() {
   $("draft-panel").hidden = state.branch !== "main" || !state.drafts.length;
   $("start-branch").hidden = state.branch !== "main" || (state.view==="vokabular" && !state.ontologyMaintainer);
   $("leave-draft").hidden = !state.hosted || state.branch === "main";
-  $("save").disabled = state.view==="vokabular" ? state.branch==="main" || state.purpose!=="vocabulary" : !caseEditable();
+  $("save").hidden = state.branch==="main" || !state.dirty;
+  $("save").disabled = !state.dirty || (state.view==="vokabular" ? state.purpose!=="vocabulary" : !caseEditable());
+  $("add-node").hidden=!caseEditable();
+  $("edge-create").hidden=!caseEditable();
   for(const id of ["add-node","add-edge","submit-review"]) $(id).disabled=!caseEditable();
   $("edit-overview").disabled=state.branch!=="main" && !caseEditable();
   $("edit-node").disabled=state.branch!=="main" && !caseEditable();
@@ -422,6 +426,10 @@ function setView(view) {
   if(state.dirty && (view==="vokabular") !== (state.view==="vokabular")) {notice("Bitte zuerst die offenen Änderungen speichern.","error");return;}
   state.view=view;
   document.body.classList.toggle("review-mode",view==="fachpruefung" || view==="vokabular");
+  if(view==="bausteine" && state.current && !state.selected){
+    state.selected=state.current.nodes[0]?.id || null;
+    renderNodes();renderNodeForm();renderGraph();renderGraphList();renderRelationContext();
+  }
   if(view==="verbindungen" && state.current){renderRelationContext();fillNodeSelects();renderGraph();}
   if(view==="fachpruefung" && state.user)loadReviewQueue().catch(error=>notice(error.message,"error"));
   if(view==="vokabular" && !state.vocabulary)loadVocabulary().catch(error=>notice(error.message,"error"));
@@ -439,13 +447,10 @@ async function loadCase(slug) {
     return;
   }
   state.current = await api("/api/cases/" + encodeURIComponent(slug));
-  const degree=new Map(state.current.nodes.map(node=>[node.id,0]));
-  state.current.edges.forEach(edge=>{degree.set(edge.from,(degree.get(edge.from)||0)+1);degree.set(edge.to,(degree.get(edge.to)||0)+1);});
-  const usefulness=node=>(node.question ? 20 : 0)+(node.detail ? 20 : 0)+(degree.get(node.id)||0);
-  state.selected = [...state.current.nodes].sort((a,b)=>usefulness(b)-usefulness(a))[0]?.id || null;
+  state.selected = null;
   state.graphFocused=false;
   $("graph-scope").setAttribute("aria-pressed","false");
-  $("graph-scope").textContent="Ausgewählten Baustein zeigen";
+  $("graph-scope").textContent="Umfeld zeigen";
   state.nodeEditing = false;
   state.dirty = false;
   $("overview-editor").hidden=true;
@@ -466,6 +471,7 @@ async function loadCase(slug) {
 }
 function renderAll() {
   renderGraph();
+  renderGraphList();
   renderNodes();
   renderNodeForm();
   renderEdges();
@@ -480,8 +486,8 @@ function renderRelationContext() {
   panel.append(element("p","AUSGEWÄHLTER BAUSTEIN","eyebrow"),element("h3",node.label));
   const type=groups.find(([key])=>key===node.category)?.[1] || "Baustein";
   panel.append(element("p",type + (node.question ? " · " + node.question : ""),"relation-question"));
-  const open=element("button","Inhalt ansehen","relation-open");open.type="button";
-  open.addEventListener("click",()=>selectNode(node.id));panel.append(open);
+  const open=element("button","Inhalt ansehen →","relation-open");open.type="button";
+  open.addEventListener("click",()=>{$("graph-inspector").close();selectNode(node.id);});panel.append(open);
   root.append(panel);
   const relevant=state.current.edges.filter(edge=>edge.from===node.id || edge.to===node.id);
   const heading=element("h3",`Direkte Verbindungen · ${relevant.length}`);root.append(heading);
@@ -502,8 +508,9 @@ function renderGraph() {
   canvas.replaceChildren();
   const linked=new Set(state.current.edges.flatMap(edge=>[edge.from,edge.to]));
   const withoutLink=state.current.nodes.filter(node=>!linked.has(node.id)).length;
-  $("graph-status").textContent=state.current.edges.length+" fachliche Verbindungen erfasst · "+withoutLink+" Bausteine bisher ohne Verbindung";
+  $("graph-status").textContent=state.current.nodes.length+" Bausteine · "+state.current.edges.length+" Verbindungen"+(withoutLink ? " · "+withoutLink+" bislang ohne Verbindung" : "");
   const selected=state.current.nodes.find(node=>node.id===state.selected);
+  $("graph-scope").disabled=!selected;
   const focused=!!(state.graphFocused && selected);
   const positions=new Map();
   let nodes, edges, width, height, nodeWidth;
@@ -520,11 +527,11 @@ function renderGraph() {
   }else{
     nodes=state.current.nodes;
     edges=state.current.edges;
-    width=1050;nodeWidth=180;
+    width=1180;nodeWidth=210;
     const ordered=groups.map(([key])=>nodes.filter(node=>node.category===key).sort((a,b)=>a.label.localeCompare(b.label,"de")));
     height=Math.max(230,105+Math.max(...ordered.map(group=>group.length),1)*72);
     ordered.forEach((list,column)=>{
-      const x=20+column*205;
+      const x=20+column*230;
       const heading=svg("text",{x,y:28,class:"graph-heading"});
       heading.textContent=groups[column][1]+" ("+list.length+")";
       canvas.append(heading);
@@ -534,7 +541,7 @@ function renderGraph() {
   canvas.dataset.scope=focused?"focused":"all";
   canvas.setAttribute("viewBox","0 0 "+width+" "+height);
   canvas.style.height=height+"px";
-  canvas.style.minWidth=focused?"720px":"900px";
+  canvas.style.minWidth=focused?"720px":"1160px";
   const defs=svg("defs");
   const marker=svg("marker",{id:"arrow",markerWidth:"8",markerHeight:"8",refX:"7",refY:"4",orient:"auto"});
   marker.append(svg("path",{d:"M 0 0 L 8 4 L 0 8 z",fill:"#6b929f"}));
@@ -568,7 +575,7 @@ function renderGraph() {
     const group=svg("g",{class:"graph-node"+(chosen?" selected":"")+(linked.has(node.id)?"":" disconnected"),tabindex:"0",role:"button","aria-label":node.label+"; "+category[1]+(linked.has(node.id)?"":"; bisher ohne Verbindung")});
     group.append(svg("rect",{x:position.x,y:position.y,width:nodeWidth,height:56,rx:8,fill:category[2],stroke:category[3]}));
     const caption=svg("text",{x:position.x+10,y:position.y+22});
-    const limit=focused?32:20;
+    const limit=focused?32:24;
     const lines=[""];
     node.label.split(/\s+/).forEach(word=>{
       const line=lines.length-1;
@@ -588,6 +595,24 @@ function renderGraph() {
     group.addEventListener("click",()=>focusGraphNode(node.id));
     group.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();focusGraphNode(node.id);}});
     canvas.append(group);
+  });
+}
+function renderGraphList() {
+  const root=$("graph-list");root.replaceChildren();
+  const selected=state.current.nodes.find(node=>node.id===state.selected);
+  const visible=state.graphFocused && selected ? new Set([selected.id,...state.current.edges.filter(edge=>edge.from===selected.id || edge.to===selected.id).map(edge=>edge.from===selected.id?edge.to:edge.from)]) : null;
+  groups.forEach(([key,label,fill,border])=>{
+    const nodes=state.current.nodes.filter(node=>node.category===key && (!visible || visible.has(node.id))).sort((a,b)=>a.label.localeCompare(b.label,"de"));
+    if(!nodes.length)return;
+    const section=element("section",undefined,"graph-list-group");
+    section.style.setProperty("--group-fill",fill);section.style.setProperty("--group-border",border);
+    section.append(element("h3",label+" · "+nodes.length));
+    nodes.forEach(node=>{
+      const connections=state.current.edges.filter(edge=>edge.from===node.id || edge.to===node.id).length;
+      const button=element("button",undefined,"graph-list-node"+(node.id===state.selected?" selected":""));button.type="button";
+      button.append(element("span",node.label),element("small",connections+" "+(connections===1?"Verbindung":"Verbindungen")+" · Details ansehen →"));
+      button.addEventListener("click",()=>focusGraphNode(node.id));section.append(button);
+    });root.append(section);
   });
 }
 function renderNodes() {
@@ -616,12 +641,13 @@ function selectNode(id) {
   state.selected = id;
   state.nodeEditing = false;
   setView("bausteine");
-  renderNodes(); renderNodeForm(); renderGraph(); renderRelationContext(); fillNodeSelects();
+  renderNodes(); renderNodeForm(); renderGraph(); renderGraphList(); renderRelationContext(); fillNodeSelects();
 }
 function focusGraphNode(id) {
   state.selected=id;
   state.nodeEditing=false;
   renderAll();
+  if(!$("graph-inspector").open)$("graph-inspector").showModal();
 }
 function field(root, label, value, onChange, multiline = false, hint = "") {
   const wrap = element("div");
@@ -670,7 +696,7 @@ function renderNodeForm() {
   }
   const id=field(root,"Kennung",node.id,()=>{});id.readOnly=true;
   const label = field(root,"Bezeichnung",node.label,value => {
-    node.label=value; $("detail-title").textContent=value;renderNodes();renderGraph();renderEdges();renderRelationContext();fillNodeSelects();
+    node.label=value; $("detail-title").textContent=value;renderNodes();renderGraph();renderGraphList();renderEdges();renderRelationContext();fillNodeSelects();
   });
   label.maxLength=2000;
   const categoryWrap=element("div");
@@ -679,7 +705,7 @@ function renderNodeForm() {
   groups.forEach(([key,title])=>{const option=element("option",title);option.value=key;categorySelect.append(option);});
   categorySelect.value=node.category;
   categorySelect.disabled=!caseEditable();
-  categorySelect.addEventListener("change",()=>{node.category=categorySelect.value;dirty();renderNodes();renderGraph();});
+  categorySelect.addEventListener("change",()=>{node.category=categorySelect.value;dirty();renderNodes();renderGraph();renderGraphList();});
   categoryLabel.append(categorySelect);categoryWrap.append(categoryLabel);root.append(categoryWrap);
   const status=field(root,node.id.startsWith("local.") ? "Pflegestatus des lokalen Entwurfs" : "Status der NaC-Vorlage",node.status,value=>node.status=value);
   if (!node.id.startsWith("local.")) status.readOnly=true;
@@ -711,11 +737,14 @@ function fillNodeSelects() {
     if (state.current.nodes.some(node=>node.id===prior)) select.value=prior;
   }
   const focus=$("graph-focus");focus.replaceChildren();
+  const placeholder=element("option","Baustein auswählen …");placeholder.value="";focus.append(placeholder);
   state.current.nodes.forEach(node=>{const option=element("option",node.label);option.value=node.id;focus.append(option);});
   focus.value=state.selected || "";
 }
 function renderEdges() {
   const root=$("edge-list");root.replaceChildren();
+  $("edge-count").textContent=state.current.edges.length+" "+(state.current.edges.length===1?"Verbindung":"Verbindungen");
+  if(!state.current.edges.length)root.append(element("p","Für diesen Fall sind noch keine Verbindungen erfasst.","empty"));
   state.current.edges.forEach((edge,index)=>{
     const row=element("div",undefined,"edge-row");
     row.append(element("span",nodeLabel(edge.from)));
@@ -723,7 +752,7 @@ function renderEdges() {
     row.append(element("span",nodeLabel(edge.to)));
     const remove=element("button","Entfernen","danger");remove.type="button";
     remove.disabled=!caseEditable();
-    remove.addEventListener("click",()=>{state.current.edges.splice(index,1);dirty();renderEdges();renderGraph();});
+    remove.addEventListener("click",()=>{state.current.edges.splice(index,1);dirty();renderEdges();renderGraph();renderGraphList();});
     row.append(remove);root.append(row);
   });
 }
@@ -747,7 +776,7 @@ async function confirmSave() {
     const vocabulary=state.view==="vokabular";
     const result=await api(vocabulary ? "/api/vocabulary/save" : "/api/cases/" + state.current.slug + "/save",vocabulary ? state.vocabulary : state.current);
     const subject=vocabulary ? state.vocabulary : state.current;
-    subject.revision=result.revision;state.dirty=false;
+    subject.revision=result.revision;state.dirty=false;refreshBranch();
     if(result.expected_ref) subject.expected_ref=result.expected_ref;
     if(result.changed && !vocabulary){
       state.caseIndex=null;state.caseIndexPromise=null;
@@ -809,10 +838,10 @@ async function init() {
     $("graph-scope").addEventListener("click",()=>{
       state.graphFocused=!state.graphFocused;
       $("graph-scope").setAttribute("aria-pressed",String(state.graphFocused));
-      $("graph-scope").textContent=state.graphFocused ? "Gesamten Fall zeigen" : "Ausgewählten Baustein zeigen";
-      renderGraph();
+      $("graph-scope").textContent=state.graphFocused ? "Ganzen Fall zeigen" : "Umfeld zeigen";
+      renderGraph();renderGraphList();
     });
-    $("graph-focus").addEventListener("change",event=>{state.selected=event.target.value;renderAll();});
+    $("graph-focus").addEventListener("change",event=>focusGraphNode(event.target.value));
     $("summary").addEventListener("input",event=>{state.current.summary=event.target.value;renderOverview();dirty();});
     $("sources").addEventListener("input",event=>{state.current.sources=event.target.value.split("\n").map(v=>v.trim()).filter(Boolean);renderOverview();dirty();});
     $("edit-overview").addEventListener("click",async()=>{
@@ -849,7 +878,7 @@ async function init() {
     $("add-edge").addEventListener("click",()=>{
       const edge={from:$("edge-from").value,type:$("edge-type").value,to:$("edge-to").value};
       if(state.current.edges.some(item=>item.from===edge.from && item.type===edge.type && item.to===edge.to)){notice("Diese Beziehung besteht bereits.","error");return;}
-      state.current.edges.push(edge);dirty();renderEdges();renderGraph();
+      state.current.edges.push(edge);dirty();renderEdges();renderGraph();renderGraphList();
     });
     $("start-branch").addEventListener("click",async()=>{
       try{await beginBranch(state.view==="vokabular" ? "vocabulary" : "case");}
@@ -863,7 +892,14 @@ async function init() {
     $("approve-review").addEventListener("click",()=>submitCaseReview("APPROVE"));
     $("source-open").addEventListener("click",()=>$("case-sources").showModal());
     $("source-close").addEventListener("click",()=>$("case-sources").close());
+    $("inspector-close").addEventListener("click",()=>$("graph-inspector").close());
     $("global-search").addEventListener("click",()=>{$("catalog-search").showModal();$("case-index-query").focus();});
+    document.addEventListener("keydown",event=>{
+      if((event.ctrlKey || event.metaKey) && event.key.toLowerCase()==="k"){
+        event.preventDefault();
+        if(!$("catalog-search").open){$("catalog-search").showModal();$("case-index-query").focus();}
+      }
+    });
     $("catalog-search-close").addEventListener("click",()=>$("catalog-search").close());
     for(const id of ["close-preview","cancel-preview"]) $(id).addEventListener("click",()=>$("change-preview").close());
     window.addEventListener("beforeunload",event=>{if(state.dirty){event.preventDefault();event.returnValue="";}});
