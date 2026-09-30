@@ -35,12 +35,9 @@
       <button type="button" data-view-button="pruefung">Einreichen</button>
     </nav>
     <section class="card overview" data-view="fall">
-      <div class="section-head case-hero"><div><p class="eyebrow">VORGANGSART / ÜBERBLICK</p><h1 id="case-title"></h1></div><button id="source-open" class="text-action" type="button" aria-haspopup="dialog" aria-controls="case-sources">Quellen <span aria-hidden="true">↗</span></button></div>
-      <p id="summary-read" class="case-summary"></p>
+      <div class="section-head case-hero"><div><h1 id="case-title"></h1></div><button id="source-open" class="text-action" type="button" aria-haspopup="dialog" aria-controls="case-sources">Info zum Fall</button></div>
       <section class="graph-panel" aria-labelledby="graph-title">
-        <div class="section-head"><div><p class="eyebrow">FACHLANDKARTE</p><h2 id="graph-title">Zusammenhänge auf einen Blick</h2><p id="graph-status" class="graph-status"></p></div></div>
-        <div class="graph-toolbar"><label class="visually-hidden" for="graph-focus">Baustein auswählen</label><select id="graph-focus" aria-label="Baustein auswählen"></select><button id="graph-scope" type="button" aria-pressed="false">Umfeld zeigen</button></div>
-        <div id="graph-legend" class="graph-legend" aria-label="Farben der Bausteine"></div>
+        <div class="section-head graph-head"><div><h2 id="graph-title">Zusammenhänge</h2><p id="graph-status" class="graph-status"></p></div><div class="graph-actions"><button id="graph-find" type="button" aria-haspopup="dialog" aria-controls="case-node-search">Baustein finden</button><button id="graph-scope" type="button" aria-pressed="false" hidden>Umfeld zeigen</button></div></div>
         <div class="graph-wrap"><svg id="graph" role="group" aria-label="Fachliche Zusammenhänge des gewählten Falls"></svg></div>
         <div id="graph-list" class="graph-list" aria-label="Bausteine des Falls"></div>
       </section>
@@ -158,9 +155,15 @@
     <div class="inspector-head"><div><p class="eyebrow">FACHLANDKARTE</p><h2 id="inspector-title">Baustein im Zusammenhang</h2></div><button id="inspector-close" type="button" aria-label="Detailansicht schließen">✕</button></div>
     <div id="relation-context" class="relation-context"></div>
   </dialog>
+  <dialog id="case-node-search" aria-labelledby="case-node-search-title">
+    <div class="preview-head"><h2 id="case-node-search-title">Baustein finden</h2><button id="case-node-search-close" type="button" aria-label="Suche schließen">✕</button></div>
+    <label class="visually-hidden" for="graph-query">Baustein in diesem Fall suchen</label><input id="graph-query" type="search" placeholder="In diesem Fall suchen" autocomplete="off">
+    <p id="graph-search-count" class="result-count" aria-live="polite"></p>
+    <div id="graph-results" class="graph-results"></div>
+  </dialog>
   <dialog id="case-sources" aria-labelledby="sources-title">
-    <div class="preview-head"><div><p class="eyebrow">ZUM GEWÄHLTEN FALL</p><h2 id="sources-title">Quellen und Herkunft</h2></div><button id="source-close" type="button">Schließen</button></div>
-    <p>Hier findest du die fachlichen Quellen und den Ablauf in NaC. Diese Angaben helfen bei Rückfragen und der Prüfung von Änderungen.</p>
+    <div class="preview-head"><h2 id="sources-title">Über diesen Fall</h2><button id="source-close" type="button">Schließen</button></div>
+    <p id="summary-read" class="case-summary"></p>
     <h3>Rechtsquellen</h3><div id="source-links" class="source-links"></div>
     <h3>NaC-Vorlage</h3><p><a id="nac-source" target="_blank" rel="noopener noreferrer">Ursprüngliche Fallvorlage öffnen ↗</a></p>
     <h3>Prozessablauf</h3><p><a id="bpmn-source" target="_blank" rel="noopener noreferrer">Ablauf in NaC öffnen ↗</a></p>

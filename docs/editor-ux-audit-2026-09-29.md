@@ -14,7 +14,7 @@ Die [Palantir-Dokumentation zum Ontology Manager](https://www.palantir.com/docs/
 | --- | --- |
 | Kopfbereich | Arbeitsstand, Suche über alle Fälle, Änderung beginnen und speichern. |
 | Linke Seitenleiste | Eine der 20 Vorgangsarten wählen. |
-| Fallübersicht | Kurzbeschreibung und **direkt sichtbarer, interaktiver Graph des ganzen Falls**. Ein Klick auf einen Baustein markiert ihn und erklärt seine direkten Verbindungen in Textform. |
+| Fallübersicht | **Direkt sichtbarer, interaktiver Graph des ganzen Falls**. Ein Klick auf einen Baustein markiert ihn und erklärt seine direkten Verbindungen in Textform. Die Fallbeschreibung ist über „Info zum Fall“ erreichbar. |
 | Fallübersicht bei Bedarf | Auf einen Baustein und seine Nachbarn fokussieren; die Gesamtansicht bleibt umschaltbar. |
 | Kontextdialog | Rechtsquellen, NaC-Herkunft und Prozessablauf nur bei Rückfragen öffnen. |
 | Weitere Arbeitsbereiche | Fachliche Bausteine und Beziehungen ändern, Änderungen einreichen oder prüfen, gemeinsame Begriffe pflegen. |
@@ -36,3 +36,9 @@ Die lokale Chrome-Prüfung am 29.09.2026 zeigte den ganzen Erbausschlagungsgraph
 Der letzte Absatz beschreibt die Prüfung des Standes vom 29.09.2026. Für die neue UI ist ein Notarkonto keine technische Abnahmevoraussetzung. Eine spätere Rückmeldung aus der Praxis ist willkommen, aber die Oberfläche muss bereits davor kohärent und verständlich sein.
 
 Am 30.09.2026 wurden die Desktop- und Mobilansicht des UI-Standes `45b31ae` erneut gerendert. Ein lokaler Browserdurchlauf bestätigte für Erbausschlagung 19 Bausteine in beiden Darstellungen, einen direkt geöffneten Detaildialog nach Bausteinwahl, Quellen- und Suchdialog, `Ctrl+K`, sechs sofort sichtbare Verbindungen, eine ausgefüllte Bausteindetailansicht und keine horizontale Seitenüberläufe bei 500 Pixeln Breite. Das aktuelle Pilot-Image dieses Stands läuft in Azure-Revision `ca-nac-ontology-editor--0000006`.
+
+## Korrektur nach Rückmeldung zur Immobilienansicht
+
+Der Screenshot des Immobilienkaufvertrags zeigte einen nativen Auswahlkasten mit 22 Einträgen, der den Graphen verdeckte. Die doppelte Überschrift und der Erklärungssatz nahmen weiteren Platz ein. Die Browserprüfung des vorherigen Stands hatte diesen Bedienfehler nicht erfasst; die dortige Bewertung der UI war zu positiv.
+
+Die Fallbeschreibung „Kauf oder Verkauf …“ ist fachlicher Inhalt aus `dcterms:description` in `cases/immobilienkaufvertrag/ontology.ttl`. Überschriften, Zähler, Platzhalter und Bedienhinweise kommen aus `editor/index.html` und `editor/app.js`. Bei der Korrektur wurde kein Hilfetext in Turtle geschrieben und kein fachlicher Fallinhalt geändert. Die Beschreibung bleibt im Dialog „Info zum Fall“ erreichbar. Die lange native Auswahlliste entfällt; eine fallbezogene Suche öffnet Treffer in einem eigenen Dialog und anschließend ihre Beziehungen. Der Graph wird auf mittleren Desktopbreiten vollständig ohne horizontales Abschneiden angezeigt. Bereits in Turtle enthaltene Präfixe wie „Dokument:“ werden in der jeweiligen, eindeutig beschrifteten UI-Kategorie nur für die Anzeige entfernt; die gespeicherten Bezeichnungen bleiben unverändert.

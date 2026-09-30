@@ -57,8 +57,13 @@ function dirty() {
   refreshBranch();
   notice("Änderungen sind noch nicht gespeichert.");
 }
+function displayNodeLabel(node) {
+  const prefix={documents:/^Dokument:\s*/i,decisions:/^Entscheidung:\s*/i,gates:/^Prüfgate:\s*/i,evidence:/^Nachweis:\s*/i}[node.category];
+  return prefix ? node.label.replace(prefix,"") : node.label;
+}
 function nodeLabel(id) {
-  return state.current.nodes.find(node => node.id === id)?.label || id;
+  const node=state.current.nodes.find(item => item.id === id);
+  return node ? displayNodeLabel(node) : id;
 }
 function caseEditable() {
   return state.branch !== "main" && state.purpose === "case" && (!state.hosted || state.activeCase === state.current?.slug);
@@ -108,7 +113,7 @@ function renderCaseIndex() {
   $("case-index-status").textContent=`${matches.length} Treffer in ${state.caseIndex.case_count} Fällen · Katalogstand ${/^[0-9a-f]{40}$/.test(source) ? source.slice(0,12) : source}`;
   matches.slice(0,40).forEach(item=>{
     const button=element("button",undefined,"case-index-result");button.type="button";
-    button.append(element("strong",item.label),element("small",`${item.case_title} · ${groups.find(group=>group[0]===item.category)?.[1] || item.category}`));
+    button.append(element("strong",displayNodeLabel(item)),element("small",`${item.case_title} · ${groups.find(group=>group[0]===item.category)?.[1] || item.category}`));
     if(item.question)button.append(element("span",item.question));
     button.addEventListener("click",async()=>{
       try{
@@ -132,13 +137,6 @@ async function loadCaseIndex() {
 }
 function renderOverview() {
   $("summary-read").textContent=state.current.summary;
-  const legend=$("graph-legend");legend.replaceChildren();
-  groups.forEach(([key,label,fill,border])=>{
-    const item=element("span",label,"graph-legend-item");
-    item.style.setProperty("--group-fill",fill);
-    item.style.setProperty("--group-border",border);
-    legend.append(item);
-  });
   const sources=$("source-links");sources.replaceChildren();
   state.current.sources.forEach(source=>{
     try{
@@ -156,6 +154,25 @@ function renderOverview() {
     button.addEventListener("click",()=>{$("node-category").value=key;setView("bausteine");renderNodes();});
     stats.append(button);
   });
+}
+function renderGraphSearch() {
+  const root=$("graph-results");root.replaceChildren();
+  if(!state.current)return;
+  const words=$("graph-query").value.trim().toLocaleLowerCase("de").split(/\s+/).filter(Boolean);
+  let count=0;
+  groups.forEach(([category,title])=>{
+    const matches=state.current.nodes.filter(node=>node.category===category && words.every(word=>[node.label,node.question,node.detail].join(" ").toLocaleLowerCase("de").includes(word))).sort((a,b)=>a.label.localeCompare(b.label,"de"));
+    if(!matches.length)return;
+    const section=element("section",undefined,"graph-result-group");section.append(element("h3",title));
+    matches.forEach(node=>{
+      const button=element("button",displayNodeLabel(node),"graph-result");button.type="button";
+      button.addEventListener("click",()=>{$("case-node-search").close();focusGraphNode(node.id);});
+      section.append(button);
+    });
+    count+=matches.length;root.append(section);
+  });
+  $("graph-search-count").textContent=count+" "+(count===1?"Baustein":"Bausteine");
+  if(!count)root.append(element("p","Kein Treffer.","empty"));
 }
 async function loadCaseHistory() {
   const slug=state.current.slug;
@@ -458,6 +475,8 @@ async function loadCase(slug) {
   $("review-link").hidden=true;
   $("case-history").open=false;state.caseHistory=null;state.historyTarget="";$("history-preview").hidden=true;
   if($("case-sources").open)$("case-sources").close();
+  if($("case-node-search").open)$("case-node-search").close();
+  $("graph-query").value="";
   setView("fall");
   $("case-title").textContent = state.current.title;
   $("summary").value = state.current.summary;
@@ -472,6 +491,7 @@ async function loadCase(slug) {
 function renderAll() {
   renderGraph();
   renderGraphList();
+  renderGraphSearch();
   renderNodes();
   renderNodeForm();
   renderEdges();
@@ -483,7 +503,7 @@ function renderRelationContext() {
   const node=state.current.nodes.find(item=>item.id===state.selected);
   if(!node){root.append(element("p","Bitte einen Baustein wählen.","empty"));return;}
   const panel=element("div",undefined,"relation-focus-card");
-  panel.append(element("p","AUSGEWÄHLTER BAUSTEIN","eyebrow"),element("h3",node.label));
+  panel.append(element("p","AUSGEWÄHLTER BAUSTEIN","eyebrow"),element("h3",displayNodeLabel(node)));
   const type=groups.find(([key])=>key===node.category)?.[1] || "Baustein";
   panel.append(element("p",type + (node.question ? " · " + node.question : ""),"relation-question"));
   const open=element("button","Inhalt ansehen →","relation-open");open.type="button";
@@ -507,10 +527,9 @@ function renderGraph() {
   const canvas = $("graph");
   canvas.replaceChildren();
   const linked=new Set(state.current.edges.flatMap(edge=>[edge.from,edge.to]));
-  const withoutLink=state.current.nodes.filter(node=>!linked.has(node.id)).length;
-  $("graph-status").textContent=state.current.nodes.length+" Bausteine · "+state.current.edges.length+" Verbindungen"+(withoutLink ? " · "+withoutLink+" bislang ohne Verbindung" : "");
+  $("graph-status").textContent=state.current.nodes.length+" Bausteine · "+state.current.edges.length+" Verbindungen";
   const selected=state.current.nodes.find(node=>node.id===state.selected);
-  $("graph-scope").disabled=!selected;
+  $("graph-scope").hidden=!selected;
   const focused=!!(state.graphFocused && selected);
   const positions=new Map();
   let nodes, edges, width, height, nodeWidth;
@@ -527,11 +546,11 @@ function renderGraph() {
   }else{
     nodes=state.current.nodes;
     edges=state.current.edges;
-    width=1180;nodeWidth=210;
+    width=1000;nodeWidth=180;
     const ordered=groups.map(([key])=>nodes.filter(node=>node.category===key).sort((a,b)=>a.label.localeCompare(b.label,"de")));
     height=Math.max(230,105+Math.max(...ordered.map(group=>group.length),1)*72);
     ordered.forEach((list,column)=>{
-      const x=20+column*230;
+      const x=20+column*195;
       const heading=svg("text",{x,y:28,class:"graph-heading"});
       heading.textContent=groups[column][1]+" ("+list.length+")";
       canvas.append(heading);
@@ -541,7 +560,7 @@ function renderGraph() {
   canvas.dataset.scope=focused?"focused":"all";
   canvas.setAttribute("viewBox","0 0 "+width+" "+height);
   canvas.style.height=height+"px";
-  canvas.style.minWidth=focused?"720px":"1160px";
+  canvas.style.minWidth="0";
   const defs=svg("defs");
   const marker=svg("marker",{id:"arrow",markerWidth:"8",markerHeight:"8",refX:"7",refY:"4",orient:"auto"});
   marker.append(svg("path",{d:"M 0 0 L 8 4 L 0 8 z",fill:"#6b929f"}));
@@ -572,12 +591,12 @@ function renderGraph() {
     const groupIndex=groups.findIndex(([key])=>key===node.category);
     const category=groups[groupIndex<0?0:groupIndex];
     const chosen=node.id===state.selected;
-    const group=svg("g",{class:"graph-node"+(chosen?" selected":"")+(linked.has(node.id)?"":" disconnected"),tabindex:"0",role:"button","aria-label":node.label+"; "+category[1]+(linked.has(node.id)?"":"; bisher ohne Verbindung")});
+    const group=svg("g",{class:"graph-node"+(chosen?" selected":"")+(linked.has(node.id)?"":" disconnected"),tabindex:"0",role:"button","aria-label":displayNodeLabel(node)+"; "+category[1]+(linked.has(node.id)?"":"; bisher ohne Verbindung")});
     group.append(svg("rect",{x:position.x,y:position.y,width:nodeWidth,height:56,rx:8,fill:category[2],stroke:category[3]}));
     const caption=svg("text",{x:position.x+10,y:position.y+22});
-    const limit=focused?32:24;
+    const limit=focused?32:20;
     const lines=[""];
-    node.label.split(/\s+/).forEach(word=>{
+    displayNodeLabel(node).split(/\s+/).forEach(word=>{
       const line=lines.length-1;
       const candidate=lines[line] ? lines[line]+" "+word : word;
       if(candidate.length>limit && lines[line])lines.push(word);
@@ -610,7 +629,7 @@ function renderGraphList() {
     nodes.forEach(node=>{
       const connections=state.current.edges.filter(edge=>edge.from===node.id || edge.to===node.id).length;
       const button=element("button",undefined,"graph-list-node"+(node.id===state.selected?" selected":""));button.type="button";
-      button.append(element("span",node.label),element("small",connections+" "+(connections===1?"Verbindung":"Verbindungen")+" · Details ansehen →"));
+      button.append(element("span",displayNodeLabel(node)),element("small",connections+" "+(connections===1?"Verbindung":"Verbindungen")+" · Details ansehen →"));
       button.addEventListener("click",()=>focusGraphNode(node.id));section.append(button);
     });root.append(section);
   });
@@ -627,7 +646,7 @@ function renderNodes() {
     const box = element("div",undefined,"node-group");
     box.append(element("h3",title + " · " + list.length));
     list.forEach(node => {
-      const button = element("button",node.label,"node-row" + (state.selected === node.id ? " active" : ""));
+      const button = element("button",displayNodeLabel(node),"node-row" + (state.selected === node.id ? " active" : ""));
       button.type = "button";
       button.addEventListener("click",() => selectNode(node.id));
       box.append(button);
@@ -669,7 +688,7 @@ function renderNodeForm() {
   $("edit-node").hidden = !node;
   $("edit-node").textContent = state.nodeEditing ? "Lesen" : "Bearbeiten";
   $("delete-node").hidden = !node || !state.nodeEditing || !node.id.startsWith("local.");
-  $("detail-title").textContent = node ? node.label : "Baustein auswählen";
+  $("detail-title").textContent = node ? displayNodeLabel(node) : "Baustein auswählen";
   if (!node) {read.append(element("p","Wähle links oder im Bild einen Baustein aus.","empty"));return;}
   const type=groups.find(([key])=>key===node.category)?.[1] || "Baustein";
   read.append(element("p",type + " · " + (node.id.startsWith("local.") ? "Neu ergänzter Baustein" : "Aus der NaC-Vorlage übernommen"),"node-meta"));
@@ -696,7 +715,7 @@ function renderNodeForm() {
   }
   const id=field(root,"Kennung",node.id,()=>{});id.readOnly=true;
   const label = field(root,"Bezeichnung",node.label,value => {
-    node.label=value; $("detail-title").textContent=value;renderNodes();renderGraph();renderGraphList();renderEdges();renderRelationContext();fillNodeSelects();
+    node.label=value; $("detail-title").textContent=displayNodeLabel(node);renderNodes();renderGraph();renderGraphList();renderGraphSearch();renderEdges();renderRelationContext();fillNodeSelects();
   });
   label.maxLength=2000;
   const categoryWrap=element("div");
@@ -733,13 +752,9 @@ function renderNodeForm() {
 function fillNodeSelects() {
   for (const id of ["edge-from","edge-to"]) {
     const select=$(id), prior=select.value; select.replaceChildren();
-    state.current.nodes.forEach(node=>{const option=element("option",node.label);option.value=node.id;select.append(option);});
+    state.current.nodes.forEach(node=>{const option=element("option",displayNodeLabel(node));option.value=node.id;select.append(option);});
     if (state.current.nodes.some(node=>node.id===prior)) select.value=prior;
   }
-  const focus=$("graph-focus");focus.replaceChildren();
-  const placeholder=element("option","Baustein auswählen …");placeholder.value="";focus.append(placeholder);
-  state.current.nodes.forEach(node=>{const option=element("option",node.label);option.value=node.id;focus.append(option);});
-  focus.value=state.selected || "";
 }
 function renderEdges() {
   const root=$("edge-list");root.replaceChildren();
@@ -841,7 +856,9 @@ async function init() {
       $("graph-scope").textContent=state.graphFocused ? "Ganzen Fall zeigen" : "Umfeld zeigen";
       renderGraph();renderGraphList();
     });
-    $("graph-focus").addEventListener("change",event=>focusGraphNode(event.target.value));
+    $("graph-find").addEventListener("click",()=>{renderGraphSearch();$("case-node-search").showModal();$("graph-query").focus();});
+    $("graph-query").addEventListener("input",renderGraphSearch);
+    $("case-node-search-close").addEventListener("click",()=>$("case-node-search").close());
     $("summary").addEventListener("input",event=>{state.current.summary=event.target.value;renderOverview();dirty();});
     $("sources").addEventListener("input",event=>{state.current.sources=event.target.value.split("\n").map(v=>v.trim()).filter(Boolean);renderOverview();dirty();});
     $("edit-overview").addEventListener("click",async()=>{

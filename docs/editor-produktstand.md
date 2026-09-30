@@ -6,7 +6,7 @@ Stand: 30.09.2026. Bezugsrahmen sind ausschließlich die 20 Vorgangsarten in [`c
 
 | Aufgabe | Umgesetzter Weg |
 | --- | --- |
-| Einen Fall verstehen | Kurzbeschreibung und direkt sichtbare Fachlandkarte des ganzen Falls. Bausteine öffnen ihre Beziehungen in einer Seitenansicht; auf schmalen Bildschirmen sind sie als gruppierte, anklickbare Karten lesbar. Quellen und NaC-Prozessablauf stehen bei Bedarf in einem Kontextdialog. |
+| Einen Fall verstehen | Direkt sichtbarer Fachgraph des ganzen Falls; eine Suche öffnet den gewünschten Baustein ohne lange Auswahlliste über dem Graphen. Bausteine öffnen ihre Beziehungen in einer Seitenansicht; auf schmalen Bildschirmen sind sie als gruppierte, anklickbare Karten lesbar. Beschreibung, Quellen und NaC-Prozessablauf stehen im Dialog „Info zum Fall“. |
 | Einen Baustein finden | Suche im Fall und über alle 20 Fälle; ein Treffer öffnet unmittelbar den betreffenden Baustein. Der gemeinsame Suchstand ist an einen Git-Commit gebunden. |
 | Fachliche Inhalte pflegen | Strukturierte Felder für Fragen, Dokumenttypen, Entscheidungen, Prüfschritte, Nachweistypen und ihre Beziehungen. Vor dem Speichern erscheint eine fachliche Änderungsvorschau. Turtle bleibt Pflegequelle. |
 | Gemeinsame Begriffe pflegen | Klassen und Eigenschaften bearbeiten; die technische Verwendung in den 20 Fällen sehen und zu betroffenen Fällen springen. |
