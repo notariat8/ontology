@@ -20,7 +20,7 @@ const relations = {
 };
 const $ = id => document.getElementById(id);
 const svgNS = "http://www.w3.org/2000/svg";
-let state = { token: "", branch: "", purpose: "case", activeCase: "", hosted: false, user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: false, view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null, caseHistory: null, historyTarget: "", drafts: [] };
+let state = { token: "", branch: "", purpose: "case", activeCase: "", hosted: false, user: "", notaryReviewer: false, ontologyMaintainer: false, reviewDetail: null, current: null, cases: [], selected: null, nodeEditing: false, dirty: false, graphFocused: false, graphMode: "linked", graphZoom: 1, graphSearchTarget: "node", view: "fall", vocabulary: null, vocabSelected: null, vocabEditing: false, vocabNew: false, vocabularyImpact: null, impactLoading: false, impactError: "", caseIndex: null, caseIndexPromise: null, caseHistory: null, historyTarget: "", drafts: [] };
 
 function element(tag, text, className) {
   const el = document.createElement(tag);
@@ -146,14 +146,6 @@ function renderOverview() {
       sources.append(link);
     }catch{sources.append(element("span","Quelle benötigt eine HTTPS-Adresse","source-invalid"));}
   });
-  const stats=$("overview-stats");stats.replaceChildren();
-  groups.forEach(([key,label])=>{
-    const count=state.current.nodes.filter(node=>node.category===key).length;
-    const button=element("button",undefined,"stat-card");button.type="button";
-    button.append(element("strong",String(count)),element("span",label));
-    button.addEventListener("click",()=>{$("node-category").value=key;setView("bausteine");renderNodes();});
-    stats.append(button);
-  });
 }
 function renderGraphSearch() {
   const root=$("graph-results");root.replaceChildren();
@@ -166,13 +158,45 @@ function renderGraphSearch() {
     const section=element("section",undefined,"graph-result-group");section.append(element("h3",title));
     matches.forEach(node=>{
       const button=element("button",displayNodeLabel(node),"graph-result");button.type="button";
-      button.addEventListener("click",()=>{$("case-node-search").close();focusGraphNode(node.id);});
+      button.addEventListener("click",()=>{
+        $("case-node-search").close();
+        if(state.graphSearchTarget==="edge-from" || state.graphSearchTarget==="edge-to"){
+          $(state.graphSearchTarget).value=node.id;fillNodeSelects();
+        }else focusGraphNode(node.id);
+      });
       section.append(button);
     });
     count+=matches.length;root.append(section);
   });
   $("graph-search-count").textContent=count+" "+(count===1?"Baustein":"Bausteine");
   if(!count)root.append(element("p","Kein Treffer.","empty"));
+}
+function openGraphSearch(target="node") {
+  state.graphSearchTarget=target;
+  $("case-node-search-title").textContent=target==="edge-from" ? "Ausgang wählen" : target==="edge-to" ? "Ziel wählen" : "Baustein suchen";
+  $("graph-query").value="";
+  renderGraphSearch();
+  $("case-node-search").showModal();
+  $("graph-query").focus();
+}
+function enableSearchKeyboard(queryId,resultsId) {
+  const query=$(queryId),results=$(resultsId);
+  query.addEventListener("keydown",event=>{
+    if(event.key!=="ArrowDown" && event.key!=="Enter")return;
+    const first=results.querySelector("button");
+    if(!first)return;
+    event.preventDefault();
+    if(event.key==="Enter")first.click();else first.focus();
+  });
+  results.addEventListener("keydown",event=>{
+    if(event.key!=="ArrowDown" && event.key!=="ArrowUp")return;
+    const buttons=[...results.querySelectorAll("button")];
+    const index=buttons.indexOf(document.activeElement);
+    if(index<0)return;
+    event.preventDefault();
+    if(event.key==="ArrowUp" && index===0)query.focus();
+    else buttons[Math.max(0,Math.min(buttons.length-1,index+(event.key==="ArrowDown"?1:-1)))].focus();
+  });
 }
 async function loadCaseHistory() {
   const slug=state.current.slug;
@@ -442,6 +466,7 @@ async function submitVocabulary(){
 function setView(view) {
   if(state.dirty && (view==="vokabular") !== (state.view==="vokabular")) {notice("Bitte zuerst die offenen Änderungen speichern.","error");return;}
   state.view=view;
+  if(view!=="fall")closeGraphInspector();
   document.body.classList.toggle("review-mode",view==="fachpruefung" || view==="vokabular");
   if(view==="bausteine" && state.current && !state.selected){
     state.selected=state.current.nodes[0]?.id || null;
@@ -466,6 +491,9 @@ async function loadCase(slug) {
   state.current = await api("/api/cases/" + encodeURIComponent(slug));
   state.selected = null;
   state.graphFocused=false;
+  state.graphMode="linked";
+  state.graphZoom=1;
+  closeGraphInspector();
   $("graph-scope").setAttribute("aria-pressed","false");
   $("graph-scope").textContent="Umfeld zeigen";
   state.nodeEditing = false;
@@ -477,6 +505,7 @@ async function loadCase(slug) {
   if($("case-sources").open)$("case-sources").close();
   if($("case-node-search").open)$("case-node-search").close();
   $("graph-query").value="";
+  $("edge-from").value="";$("edge-to").value="";
   setView("fall");
   $("case-title").textContent = state.current.title;
   $("summary").value = state.current.summary;
@@ -502,16 +531,18 @@ function renderRelationContext() {
   const root=$("relation-context");root.replaceChildren();
   const node=state.current.nodes.find(item=>item.id===state.selected);
   if(!node){root.append(element("p","Bitte einen Baustein wählen.","empty"));return;}
+  $("inspector-title").textContent=displayNodeLabel(node);
   const panel=element("div",undefined,"relation-focus-card");
-  panel.append(element("p","AUSGEWÄHLTER BAUSTEIN","eyebrow"),element("h3",displayNodeLabel(node)));
   const type=groups.find(([key])=>key===node.category)?.[1] || "Baustein";
-  panel.append(element("p",type + (node.question ? " · " + node.question : ""),"relation-question"));
+  panel.append(element("p",type,"relation-type"));
+  if(node.question)panel.append(element("p",node.question,"relation-question"));
   const open=element("button","Inhalt ansehen →","relation-open");open.type="button";
-  open.addEventListener("click",()=>{$("graph-inspector").close();selectNode(node.id);});panel.append(open);
+  open.addEventListener("click",()=>{closeGraphInspector();selectNode(node.id);});panel.append(open);
   root.append(panel);
   const relevant=state.current.edges.filter(edge=>edge.from===node.id || edge.to===node.id);
-  const heading=element("h3",`Direkte Verbindungen · ${relevant.length}`);root.append(heading);
-  if(!relevant.length){root.append(element("p","Für diesen Baustein sind noch keine direkten Verbindungen erfasst.","empty"));return;}
+  const links=element("section",undefined,"relation-links");root.append(links);
+  links.append(element("h3",`Direkte Verbindungen · ${relevant.length}`));
+  if(!relevant.length){links.append(element("p","Für diesen Baustein sind noch keine direkten Verbindungen erfasst.","empty"));return;}
   relevant.forEach(edge=>{
     const other=edge.from===node.id ? edge.to : edge.from;
     const outgoing=edge.from===node.id;
@@ -519,32 +550,47 @@ function renderRelationContext() {
     row.append(element("span",outgoing ? "Geht von diesem Baustein aus" : "Führt zu diesem Baustein","relation-direction"));
     row.append(element("strong",relations[edge.type] || edge.type));
     const button=element("button",nodeLabel(other),"relation-target");button.type="button";
-    button.addEventListener("click",()=>{state.selected=other;renderAll();});
-    row.append(button);root.append(row);
+    button.addEventListener("click",()=>{state.selected=other;renderAll();$("inspector-title").focus({preventScroll:true});});
+    row.append(button);links.append(row);
   });
 }
 function renderGraph() {
   const canvas = $("graph");
   canvas.replaceChildren();
+  if(!state.current.edges.length)state.graphMode="all";
   const linked=new Set(state.current.edges.flatMap(edge=>[edge.from,edge.to]));
-  $("graph-status").textContent=state.current.nodes.length+" Bausteine · "+state.current.edges.length+" Verbindungen";
-  const selected=state.current.nodes.find(node=>node.id===state.selected);
+  const orphans=state.current.nodes.filter(node=>!linked.has(node.id));
+  $("graph-status").textContent=state.current.edges.length ? state.current.edges.length+" Verbindungen · "+linked.size+" verknüpfte Bausteine"+(orphans.length ? " · "+orphans.length+" ohne Verbindung" : "") : state.current.nodes.length+" Bausteine · noch keine Verbindungen";
+  $("graph-linked").setAttribute("aria-pressed",String(state.graphMode==="linked"));
+  $("graph-all").setAttribute("aria-pressed",String(state.graphMode==="all"));
+  $("graph-linked").disabled=!state.current.edges.length;
+  $("graph-zoom-reset").textContent=Math.round(state.graphZoom*100)+" %";
+  $("graph-zoom-out").disabled=state.graphZoom<=0.85;
+  $("graph-zoom-in").disabled=state.graphZoom>=1.5;
+  renderGraphOrphans(orphans);
+  const selected=$("graph-inspector").hidden ? null : state.current.nodes.find(node=>node.id===state.selected);
   $("graph-scope").hidden=!selected;
   const focused=!!(state.graphFocused && selected);
   const positions=new Map();
   let nodes, edges, width, height, nodeWidth;
   if(focused){
-    const neighbors=new Set();
     edges=state.current.edges.filter(edge=>edge.from===selected.id || edge.to===selected.id);
-    edges.forEach(edge=>neighbors.add(edge.from===selected.id ? edge.to : edge.from));
-    const related=state.current.nodes.filter(node=>neighbors.has(node.id)).sort((a,b)=>a.label.localeCompare(b.label,"de"));
-    nodes=[selected,...related];
-    width=980;nodeWidth=270;
-    height=Math.max(240,170+Math.ceil(related.length/3)*76);
-    positions.set(selected.id,{x:355,y:48});
-    related.forEach((node,index)=>positions.set(node.id,{x:20+(index%3)*325,y:160+Math.floor(index/3)*76}));
+    const byId=new Map(state.current.nodes.map(node=>[node.id,node]));
+    const incoming=[...new Set(edges.filter(edge=>edge.to===selected.id).map(edge=>edge.from))].map(id=>byId.get(id)).filter(Boolean).sort((a,b)=>a.label.localeCompare(b.label,"de"));
+    const incomingIds=new Set(incoming.map(node=>node.id));
+    const outgoing=[...new Set(edges.filter(edge=>edge.from===selected.id).map(edge=>edge.to))].filter(id=>!incomingIds.has(id)).map(id=>byId.get(id)).filter(Boolean).sort((a,b)=>a.label.localeCompare(b.label,"de"));
+    nodes=[...incoming,selected,...outgoing];
+    nodeWidth=210;
+    const centerX=incoming.length ? 275 : 20;
+    const rightX=centerX+255;
+    width=outgoing.length ? rightX+nodeWidth+20 : centerX+nodeWidth+20;
+    const rows=Math.max(incoming.length,outgoing.length,1);
+    height=Math.max(160,138+(rows-1)*76);
+    positions.set(selected.id,{x:centerX,y:50+(rows-1)*38});
+    incoming.forEach((node,index)=>positions.set(node.id,{x:20,y:50+index*76}));
+    outgoing.forEach((node,index)=>positions.set(node.id,{x:rightX,y:50+index*76}));
   }else{
-    nodes=state.current.nodes;
+    nodes=state.graphMode==="linked" && state.current.edges.length ? state.current.nodes.filter(node=>linked.has(node.id)) : state.current.nodes;
     edges=state.current.edges;
     width=1000;nodeWidth=180;
     const ordered=groups.map(([key])=>nodes.filter(node=>node.category===key).sort((a,b)=>a.label.localeCompare(b.label,"de")));
@@ -559,7 +605,8 @@ function renderGraph() {
   }
   canvas.dataset.scope=focused?"focused":"all";
   canvas.setAttribute("viewBox","0 0 "+width+" "+height);
-  canvas.style.height=height+"px";
+  canvas.style.height=Math.round(height*state.graphZoom)+"px";
+  canvas.style.width=(state.graphZoom*100)+"%";
   canvas.style.minWidth="0";
   const defs=svg("defs");
   const marker=svg("marker",{id:"arrow",markerWidth:"8",markerHeight:"8",refX:"7",refY:"4",orient:"auto"});
@@ -570,17 +617,18 @@ function renderGraph() {
     if(!a||!b)return;
     let pathData;
     if(focused){
-      const fromCenter=edge.from===selected.id;
-      const sx=a.x+nodeWidth/2,sy=fromCenter?a.y+56:a.y;
-      const tx=b.x+nodeWidth/2,ty=fromCenter?b.y:b.y+56;
-      const middle=(sy+ty)/2;
-      pathData="M "+sx+" "+sy+" C "+sx+" "+middle+", "+tx+" "+middle+", "+tx+" "+ty;
+      const forward=b.x>=a.x;
+      const sx=a.x+(forward?nodeWidth:0),sy=a.y+28;
+      const tx=b.x+(forward?0:nodeWidth),ty=b.y+28;
+      const bend=(tx-sx)/2;
+      pathData="M "+sx+" "+sy+" C "+(sx+bend)+" "+sy+", "+(tx-bend)+" "+ty+", "+tx+" "+ty;
     }else{
       const sx=a.x+nodeWidth,sy=a.y+28,tx=b.x,ty=b.y+28;
       const bend=Math.max(35,Math.abs(tx-sx)/2);
       pathData="M "+sx+" "+sy+" C "+(sx+bend)+" "+sy+", "+(tx-bend)+" "+ty+", "+tx+" "+ty;
     }
-    const path=svg("path",{d:pathData,class:"graph-edge","marker-end":"url(#arrow)"});
+    const active=!selected || edge.from===selected.id || edge.to===selected.id;
+    const path=svg("path",{d:pathData,class:"graph-edge"+(active?"":" dimmed"),"marker-end":"url(#arrow)"});
     const title=svg("title");
     title.textContent=nodeLabel(edge.from)+" "+(relations[edge.type]||edge.type)+" "+nodeLabel(edge.to);
     path.append(title);canvas.append(path);
@@ -591,10 +639,11 @@ function renderGraph() {
     const groupIndex=groups.findIndex(([key])=>key===node.category);
     const category=groups[groupIndex<0?0:groupIndex];
     const chosen=node.id===state.selected;
-    const group=svg("g",{class:"graph-node"+(chosen?" selected":"")+(linked.has(node.id)?"":" disconnected"),tabindex:"0",role:"button","aria-label":displayNodeLabel(node)+"; "+category[1]+(linked.has(node.id)?"":"; bisher ohne Verbindung")});
+    const connectedToSelection=!selected || chosen || state.current.edges.some(edge=>(edge.from===selected.id && edge.to===node.id)||(edge.to===selected.id && edge.from===node.id));
+    const group=svg("g",{class:"graph-node"+(chosen?" selected":"")+(linked.has(node.id)?"":" disconnected")+(connectedToSelection?"":" dimmed"),tabindex:"0",role:"button","aria-label":displayNodeLabel(node)+"; "+category[1]+(linked.has(node.id)?"":"; bisher ohne Verbindung")});
     group.append(svg("rect",{x:position.x,y:position.y,width:nodeWidth,height:56,rx:8,fill:category[2],stroke:category[3]}));
     const caption=svg("text",{x:position.x+10,y:position.y+22});
-    const limit=focused?32:20;
+    const limit=focused?26:20;
     const lines=[""];
     displayNodeLabel(node).split(/\s+/).forEach(word=>{
       const line=lines.length-1;
@@ -616,10 +665,23 @@ function renderGraph() {
     canvas.append(group);
   });
 }
+function renderGraphOrphans(orphans) {
+  const section=$("graph-orphans");
+  section.hidden=!orphans.length || state.graphMode==="all" || !state.current.edges.length;
+  if(section.hidden)return;
+  $("graph-orphans-title").textContent=orphans.length+" Bausteine ohne Verbindung";
+  const list=$("graph-orphans-list");list.replaceChildren();
+  orphans.forEach(node=>{
+    const button=element("button",displayNodeLabel(node),"graph-orphan");button.type="button";
+    button.title=groups.find(group=>group[0]===node.category)?.[1] || "Baustein";
+    button.addEventListener("click",()=>focusGraphNode(node.id));list.append(button);
+  });
+}
 function renderGraphList() {
   const root=$("graph-list");root.replaceChildren();
   const selected=state.current.nodes.find(node=>node.id===state.selected);
-  const visible=state.graphFocused && selected ? new Set([selected.id,...state.current.edges.filter(edge=>edge.from===selected.id || edge.to===selected.id).map(edge=>edge.from===selected.id?edge.to:edge.from)]) : null;
+  const linked=new Set(state.current.edges.flatMap(edge=>[edge.from,edge.to]));
+  const visible=state.graphFocused && selected ? new Set([selected.id,...state.current.edges.filter(edge=>edge.from===selected.id || edge.to===selected.id).map(edge=>edge.from===selected.id?edge.to:edge.from)]) : state.graphMode==="linked" && state.current.edges.length ? linked : null;
   groups.forEach(([key,label,fill,border])=>{
     const nodes=state.current.nodes.filter(node=>node.category===key && (!visible || visible.has(node.id))).sort((a,b)=>a.label.localeCompare(b.label,"de"));
     if(!nodes.length)return;
@@ -662,11 +724,24 @@ function selectNode(id) {
   setView("bausteine");
   renderNodes(); renderNodeForm(); renderGraph(); renderGraphList(); renderRelationContext(); fillNodeSelects();
 }
+function closeGraphInspector() {
+  $("graph-inspector").hidden=true;
+  $("graph-stage").classList.remove("has-selection");
+  state.graphFocused=false;
+}
 function focusGraphNode(id) {
   state.selected=id;
   state.nodeEditing=false;
+  const linked=new Set(state.current.edges.flatMap(edge=>[edge.from,edge.to]));
+  if(!linked.has(id))state.graphMode="all";
+  state.graphFocused=true;
+  $("graph-scope").setAttribute("aria-pressed","true");
+  $("graph-scope").textContent="Ganzen Fall zeigen";
+  $("graph-inspector").hidden=false;
+  $("graph-stage").classList.add("has-selection");
   renderAll();
-  if(!$("graph-inspector").open)$("graph-inspector").showModal();
+  $("graph-stage").querySelector(".graph-wrap").scrollTop=0;
+  $("inspector-title").focus({preventScroll:true});
 }
 function field(root, label, value, onChange, multiline = false, hint = "") {
   const wrap = element("div");
@@ -751,9 +826,9 @@ function renderNodeForm() {
 }
 function fillNodeSelects() {
   for (const id of ["edge-from","edge-to"]) {
-    const select=$(id), prior=select.value; select.replaceChildren();
-    state.current.nodes.forEach(node=>{const option=element("option",displayNodeLabel(node));option.value=node.id;select.append(option);});
-    if (state.current.nodes.some(node=>node.id===prior)) select.value=prior;
+    const node=state.current.nodes.find(item=>item.id===$(id).value);
+    if(!node)$(id).value="";
+    $(id+"-choose").textContent=node ? displayNodeLabel(node) : id==="edge-from" ? "Ausgang wählen" : "Ziel wählen";
   }
 }
 function renderEdges() {
@@ -761,14 +836,18 @@ function renderEdges() {
   $("edge-count").textContent=state.current.edges.length+" "+(state.current.edges.length===1?"Verbindung":"Verbindungen");
   if(!state.current.edges.length)root.append(element("p","Für diesen Fall sind noch keine Verbindungen erfasst.","empty"));
   state.current.edges.forEach((edge,index)=>{
-    const row=element("div",undefined,"edge-row");
+    const editable=caseEditable();
+    const row=element(editable ? "div" : "button",undefined,"edge-row"+(editable ? "" : " edge-open-row"));
+    if(!editable){row.type="button";row.addEventListener("click",()=>{setView("fall");focusGraphNode(edge.from);});}
     row.append(element("span",nodeLabel(edge.from)));
     row.append(element("span",relations[edge.type],"edge-type"));
     row.append(element("span",nodeLabel(edge.to)));
-    const remove=element("button","Entfernen","danger");remove.type="button";
-    remove.disabled=!caseEditable();
-    remove.addEventListener("click",()=>{state.current.edges.splice(index,1);dirty();renderEdges();renderGraph();renderGraphList();});
-    row.append(remove);root.append(row);
+    if(editable){
+      const remove=element("button","Entfernen","danger");remove.type="button";
+      remove.addEventListener("click",()=>{state.current.edges.splice(index,1);dirty();renderEdges();renderGraph();renderGraphList();});
+      row.append(remove);
+    }else row.append(element("span","Im Graphen ↗","edge-open-label"));
+    root.append(row);
   });
 }
 async function save() {
@@ -836,6 +915,8 @@ async function init() {
     $("case-history").addEventListener("toggle",()=>{if($("case-history").open)loadCaseHistory().catch(error=>notice(error.message,"error"));});
     $("history-apply").addEventListener("click",applyCaseHistory);
     $("case-index-query").addEventListener("input",()=>{renderCaseIndex();if($("case-index-query").value.trim().length>=2)loadCaseIndex().catch(()=>{});});
+    enableSearchKeyboard("case-index-query","case-index-results");
+    enableSearchKeyboard("graph-query","graph-results");
     $("vocab-search").addEventListener("input",renderVocabulary);
     $("vocab-impact-refresh").addEventListener("click",()=>loadVocabularyImpact().catch(error=>notice(error.message,"error")));
     $("vocab-edit").addEventListener("click",()=>editVocabulary().catch(error=>notice(error.message,"error")));
@@ -856,7 +937,22 @@ async function init() {
       $("graph-scope").textContent=state.graphFocused ? "Ganzen Fall zeigen" : "Umfeld zeigen";
       renderGraph();renderGraphList();
     });
-    $("graph-find").addEventListener("click",()=>{renderGraphSearch();$("case-node-search").showModal();$("graph-query").focus();});
+    for(const [id,mode] of [["graph-linked","linked"],["graph-all","all"]]){
+      $(id).addEventListener("click",()=>{
+        state.graphMode=mode;
+        if(mode==="linked" && state.selected && !state.current.edges.some(edge=>edge.from===state.selected || edge.to===state.selected)){
+          closeGraphInspector();state.selected=null;
+        }
+        renderGraph();renderGraphList();
+      });
+    }
+    $("graph-orphans-show").addEventListener("click",()=>{$("graph-all").click();});
+    for(const [id,change] of [["graph-zoom-out",-.15],["graph-zoom-in",.15],["graph-zoom-reset",0]]){
+      $(id).addEventListener("click",()=>{state.graphZoom=change ? Math.max(.85,Math.min(1.5,Math.round((state.graphZoom+change)*100)/100)) : 1;renderGraph();});
+    }
+    $("graph-find").addEventListener("click",()=>openGraphSearch());
+    $("edge-from-choose").addEventListener("click",()=>openGraphSearch("edge-from"));
+    $("edge-to-choose").addEventListener("click",()=>openGraphSearch("edge-to"));
     $("graph-query").addEventListener("input",renderGraphSearch);
     $("case-node-search-close").addEventListener("click",()=>$("case-node-search").close());
     $("summary").addEventListener("input",event=>{state.current.summary=event.target.value;renderOverview();dirty();});
@@ -865,6 +961,7 @@ async function init() {
       try{
         if(state.branch==="main") await beginBranch();
         if(!caseEditable())throw new Error("Dieser Entwurf gehört zu einem anderen Fall. Lege ihn zuerst ab.");
+        if(!$("case-sources").open)$("case-sources").showModal();
         $("overview-editor").hidden=!$("overview-editor").hidden;
         $("edit-overview").textContent=$("overview-editor").hidden ? "Beschreibung und Quellen bearbeiten" : "Bearbeitungsfelder schließen";
       }catch(error){notice(error.message,"error");}
@@ -894,8 +991,9 @@ async function init() {
     });
     $("add-edge").addEventListener("click",()=>{
       const edge={from:$("edge-from").value,type:$("edge-type").value,to:$("edge-to").value};
+      if(!edge.from || !edge.to){notice("Bitte Ausgang und Ziel auswählen.","error");return;}
       if(state.current.edges.some(item=>item.from===edge.from && item.type===edge.type && item.to===edge.to)){notice("Diese Beziehung besteht bereits.","error");return;}
-      state.current.edges.push(edge);dirty();renderEdges();renderGraph();renderGraphList();
+      state.current.edges.push(edge);$("edge-from").value="";$("edge-to").value="";fillNodeSelects();dirty();renderEdges();renderGraph();renderGraphList();
     });
     $("start-branch").addEventListener("click",async()=>{
       try{await beginBranch(state.view==="vokabular" ? "vocabulary" : "case");}
@@ -909,9 +1007,10 @@ async function init() {
     $("approve-review").addEventListener("click",()=>submitCaseReview("APPROVE"));
     $("source-open").addEventListener("click",()=>$("case-sources").showModal());
     $("source-close").addEventListener("click",()=>$("case-sources").close());
-    $("inspector-close").addEventListener("click",()=>$("graph-inspector").close());
+    $("inspector-close").addEventListener("click",()=>{closeGraphInspector();state.selected=null;renderAll();$("graph-find").focus({preventScroll:true});});
     $("global-search").addEventListener("click",()=>{$("catalog-search").showModal();$("case-index-query").focus();});
     document.addEventListener("keydown",event=>{
+      if(event.key==="Escape" && !$("graph-inspector").hidden && !document.querySelector("dialog[open]")){$("inspector-close").click();return;}
       if((event.ctrlKey || event.metaKey) && event.key.toLowerCase()==="k"){
         event.preventDefault();
         if(!$("catalog-search").open){$("catalog-search").showModal();$("case-index-query").focus();}

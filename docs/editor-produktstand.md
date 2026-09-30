@@ -6,7 +6,7 @@ Stand: 30.09.2026. Bezugsrahmen sind ausschließlich die 20 Vorgangsarten in [`c
 
 | Aufgabe | Umgesetzter Weg |
 | --- | --- |
-| Einen Fall verstehen | Direkt sichtbarer Fachgraph des ganzen Falls; eine Suche öffnet den gewünschten Baustein ohne lange Auswahlliste über dem Graphen. Bausteine öffnen ihre Beziehungen in einer Seitenansicht; auf schmalen Bildschirmen sind sie als gruppierte, anklickbare Karten lesbar. Beschreibung, Quellen und NaC-Prozessablauf stehen im Dialog „Info zum Fall“. |
+| Einen Fall verstehen | Direkt sichtbarer Fachgraph mit den bereits verknüpften Bausteinen und ihren Beziehungen; bisher unverknüpfte Bausteine stehen unmittelbar darunter. „Alle“ zeigt auf Wunsch sämtliche Bausteine im Graphen. Eine Suche öffnet den gewünschten Baustein ohne lange Auswahlliste. Die Auswahl zeigt das direkte Umfeld und die Beziehungen neben dem Graphen; auf schmalen Bildschirmen erscheinen gruppierte Karten und eine Detailfläche am unteren Rand. Beschreibung, Quellen und NaC-Prozessablauf stehen im Dialog „Info zum Fall“. |
 | Einen Baustein finden | Suche im Fall und über alle 20 Fälle; ein Treffer öffnet unmittelbar den betreffenden Baustein. Der gemeinsame Suchstand ist an einen Git-Commit gebunden. |
 | Fachliche Inhalte pflegen | Strukturierte Felder für Fragen, Dokumenttypen, Entscheidungen, Prüfschritte, Nachweistypen und ihre Beziehungen. Vor dem Speichern erscheint eine fachliche Änderungsvorschau. Turtle bleibt Pflegequelle. |
 | Gemeinsame Begriffe pflegen | Klassen und Eigenschaften bearbeiten; die technische Verwendung in den 20 Fällen sehen und zu betroffenen Fällen springen. |
@@ -20,7 +20,7 @@ Das Ziel ist deshalb ein **vollwertiger Editor für den abgegrenzten NaC-Fachkat
 
 Die [UI-Prüfung mit Korrektur vom 30.09.2026](editor-ux-audit-2026-09-29.md) trennt Oberflächengestaltung und technische UI-Abnahme von der notariellen Fachprüfung. Die App zeigt keine Turtle-Rohansicht; die technische Fassung bleibt im Git-Repository.
 
-Die lokale Browserprüfung des UI-Standes `45b31ae` bestätigte den Erbausschlagungsfall mit 19 Bausteinen in Desktop-Graph und Mobilansicht, den direkten Detaildialog, die Suche per `Ctrl+K`, die sichtbaren sechs Verbindungen und den Wechsel zwischen den Arbeitsbereichen. Eine notarielle Fachfreigabe wurde dadurch nicht erteilt.
+Die lokale Browserprüfung des aktuellen UI-Entwurfs bestätigte alle 20 Fallansichten einschließlich ihrer jeweiligen sichtbaren Graph-Bausteine. Am Immobilienkaufvertrag wurden die Ansicht „Verknüpft“ (14 Bausteine, 8 Verbindungen), der Zugang zu 8 unverknüpften Bausteinen, die Gesamtansicht, die nichtmodale Detailfläche, Zoom, Suche mit Tastatur, die fallbezogene Info, die Verbindungswahl per Suche und das Öffnen der Bearbeitungsfelder durchgeklickt. Bei 1438, 1100 und 500 Pixeln Breite traten in diesen Prüfwegen keine horizontalen Seitenüberläufe auf. Eine notarielle Fachfreigabe wurde dadurch nicht erteilt.
 
 ## Offene Produktabnahme
 
