@@ -1,0 +1,11 @@
+{
+  "name": "nac-ontology-editor-browser-tests",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

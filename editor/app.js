@@ -74,6 +74,7 @@ function refreshBranch() {
   $("branch").title = state.branch && state.branch!=="main" ? `GitHub-Zweig: ${state.branch}${activeTitle ? " · Entwurf für " + activeTitle : ""}` : "Aktueller Katalogstand";
   $("draft-panel").hidden = state.branch !== "main" || !state.drafts.length;
   $("start-branch").hidden = state.branch !== "main" || (state.view==="vokabular" && !state.ontologyMaintainer);
+  $("start-branch").disabled = !state.current;
   $("leave-draft").hidden = !state.hosted || state.branch === "main";
   $("save").hidden = state.branch==="main" || !state.dirty;
   $("save").disabled = !state.dirty || (state.view==="vokabular" ? state.purpose!=="vocabulary" : !caseEditable());

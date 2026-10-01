@@ -16,7 +16,7 @@ Die Tokenangaben sind grobe **zusätzliche Modell-Token für Implementierung, Te
 
 | Schritt | Ergebnis | Grobe Modell-Token |
 | --- | --- | ---: |
-| **P0** | Produktweg im Browser und als Draft-PR nachgewiesen | 14.000–26.000 |
+| **P0** | Produktweg im Browser und als Prüf-PR nachgewiesen | 14.000–26.000 |
 | **P1** | Durchgängige, aufgeräumte Bedienung | 12.000–22.000 |
 | **P2** | Änderungen direkt im Graphen verständlich | 12.000–22.000 |
 | **P3** | Rückfragen am betroffenen Baustein | 10.000–18.000 |
@@ -25,9 +25,11 @@ Die Tokenangaben sind grobe **zusätzliche Modell-Token für Implementierung, Te
 
 ### P0 · Produktweg absichern
 
-**Umsetzung:** Die bisher nur lokal ausgeführten Browserwege als wiederholbaren Test in `tests/` und CI aufnehmen: Fallwahl, Graph, Suche, Bearbeitungsfelder, Vorschau, 20 Fallmodule, Tastatur und schmale Breiten. Den gehosteten Ablauf mit angemeldetem Editor an einer echten, reviewbaren Korrektur bis zum Draft-PR nachweisen. Kein Testinhalt wird nach `main` gemergt.
+**Umsetzung:** Die bisher nur lokal ausgeführten Browserwege als wiederholbaren Test in `tests/` und CI aufnehmen: Fallwahl, Graph, Suche, Bearbeitungsfelder, Vorschau, 20 Fallmodule, Tastatur und schmale Breiten. Den gehosteten Ablauf mit angemeldetem Editor an einer echten, reviewbaren Korrektur bis zum Pull Request zur Fachprüfung nachweisen. Kein Testinhalt wird nach `main` gemergt.
 
 **Abnahme:** CI prüft Browser und API. Der live erzeugte PR verändert nur das gewählte Fallmodul und dessen generierte Seite. Erwartete und tatsächliche GitHub-Dateien, Commit und Sichtbarkeit sind dokumentiert.
+
+**Teilstand 01.10.2026:** Der Browserlauf für alle 20 Fälle, Suche und Tastatur, drei Bildschirmbreiten sowie Bearbeiten, Vorschau, Speichern und Einreichen gegen einen lokalen GitHub-Ersatz ist im Repository und als CI-Job angelegt. Lokal sind fünf Browserprüfungen erfolgreich. Der angemeldete Schreib- und PR-Durchlauf am gehosteten Piloten bleibt als gesonderter Live-Nachweis offen.
 
 ### P1 · Bedienqualität und Wartbarkeit
 
@@ -67,7 +69,7 @@ Ergebnis dieses Tests ist eine kurze Entscheidung: **übernehmen**, **ergänzend
 
 ## Erstes umsetzbares Arbeitspaket
 
-P0 beginnt ohne neue fachliche Aussagen: (1) das lokale Browser-Prüfskript in ein wartbares Repository-Testwerkzeug überführen; (2) den bestehenden Mock-GitHub-Ablauf für Erstellen, Vorschau, Speichern und Einreichen vom Browser aus prüfen; (3) den Lauf in `.github/workflows/validate.yml` aufnehmen; (4) die 20 Fallansichten und die entscheidenden Tastatur-/Breitenwege prüfen; (5) anschließend mit `ofunk` eine **echte fachlich sinnvolle Änderung** über den gehosteten Editor als Draft-PR vorführen. Für Schritt 5 muss eine konkrete Korrektur vorliegen; ein erfundener Fallinhalt wird nicht als Test geschrieben. Das zweite notarielle Konto ist erst für die Live-Prüfung von P3 und die fachliche Freigabe erforderlich.
+P0 beginnt ohne neue fachliche Aussagen: (1) das lokale Browser-Prüfskript in ein wartbares Repository-Testwerkzeug überführen; (2) den bestehenden Mock-GitHub-Ablauf für Erstellen, Vorschau, Speichern und Einreichen vom Browser aus prüfen; (3) den Lauf in `.github/workflows/validate.yml` aufnehmen; (4) die 20 Fallansichten und die entscheidenden Tastatur-/Breitenwege prüfen; (5) anschließend mit `ofunk` eine **echte fachlich sinnvolle Änderung** über den gehosteten Editor als Pull Request zur Fachprüfung vorführen. Für Schritt 5 muss eine konkrete Korrektur vorliegen; ein erfundener Fallinhalt wird nicht als Test geschrieben. Das zweite notarielle Konto ist erst für die Live-Prüfung von P3 und die fachliche Freigabe erforderlich.
 
 Nach P0/P1 ist eine technische Release-Kandidatur prüfbar. Ein produktiver fachlicher Betrieb braucht weiterhin den dokumentierten notariellen Review-Weg; der optionale technisch erzwungene Merge-Gate bleibt in [Issue #7](https://github.com/notariat8/ontology/issues/7). Ohne belegten Nutzwert wird weder ein allgemeiner OWL-Reasoner noch eine zweite Ontologie-Datenbank Teil dieses Editors.
 
