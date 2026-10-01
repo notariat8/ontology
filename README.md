@@ -33,15 +33,9 @@ Die lokale und GitHub-CI-Prüfung lautet nach Installation von [requirements.txt
 
 ## Im Browser bearbeiten
 
-Der [Fall-Editor](editor/index.html) bietet für die 20 Fälle Formulare für Beschreibung, Rechtsquellen, Bausteine und Beziehungen sowie eine direkte Graphansicht. Turtle-Syntax muss dafür nicht geschrieben werden. Der Editor läuft **nur auf dem eigenen Rechner** und ist kein öffentlich gehosteter Dienst. Auf Windows nach Installation von Python:
+Die Editor-Anwendung wird ausschließlich in [ontologie8/editor8](https://github.com/ontologie8/editor8) gepflegt. Dieses Repository enthält die führenden Fachmodelle und deren Datenwerkzeuge. Für lokale Entwicklung den Editor aus editor8 starten und diesen Checkout ausdrücklich als `EDITOR8_DATA_ROOT` angeben. Im Cloudbetrieb bezeichnet `GITHUB_REPOSITORY=notariat8/ontology` das Datenziel. Installation, Anmeldung, Hosting und Softwaretests stehen im Editorprojekt.
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe scripts/case_editor.py
-```
-
-Der Browser öffnet `http://127.0.0.1:8765/`. Mit **Änderung beginnen** wird bei Bedarf ein Git-Arbeitszweig angelegt. **Änderung speichern** schreibt das Turtle-Modul und die daraus erzeugte Mermaid-Seite; es veröffentlicht noch nichts. Danach werden beide Dateien als Pull Request mit Quellenstand und fachlicher Begründung geprüft. Neue Bausteine tragen eine `local.`-Kennung und bleiben als lokale Entwürfe von den importierten NaC-Knoten unterscheidbar. Der NaC-Abgleich mit `--nac-root` prüft weiterhin die ursprünglichen NaC-Knoten und -Beziehungen; zusätzliche lokale Entwürfe werden getrennt zugelassen. Keine Mandatsdaten in den Editor eingeben.
+Der [Datenvertrag](docs/editor-datenvertrag.md) legt Pfade, Versionsbindung und Review fest. Ein Softwaretest oder ein gespeicherter Entwurf ersetzt keine notarielle Fachprüfung.
 
 Die Ontologie beschreibt **was** eine Vorgangsart ist und welche Angabenfragen, Dokumenttypen, Entscheidungen, Prüfgates und Nachweistypen ihre Vorlage enthält. Die Fallmodule übernehmen deren gerichtete Beziehungen aus NaC und sind hier die Pflegequelle. NaC-BPMN beschreibt **wie** ein bestimmter Ablauf verläuft. Mermaid wird aus Turtle erzeugt. SHACL soll später Qualitätsregeln für Turtle-Daten prüfen. Laufende Akten, Personendaten und Dokumentinhalte gehören nicht in dieses GitHub-Repository.
 
