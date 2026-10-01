@@ -25,4 +25,4 @@ Jeder Fall hat eine eigenständig pflegbare Turtle-Datei und eine daraus erzeugt
 | Vollmacht für Immobilien- oder Gesellschaftsgeschäfte | [Turtle](vollmacht-immobilien-gesellschaftsgeschaefte/ontology.ttl) | [Mermaid](vollmacht-immobilien-gesellschaftsgeschaefte/README.md) |
 | Vorsorgevollmacht und Patientenverfügung | [Turtle](vorsorgevollmacht-patientenverfuegung/ontology.ttl) | [Mermaid](vorsorgevollmacht-patientenverfuegung/README.md) |
 
-Die Turtle-Dateien sind die Pflegequelle. Der [Browser-Editor](../README.md#im-browser-bearbeiten) bearbeitet sie über Formulare und erzeugt die Mermaid-Seiten automatisch. Bei manueller Turtle-Pflege `python scripts/render_case_docs.py --write` ausführen. `python scripts/validate_cases.py` prüft die 20 Dateien und ihre Sichten.
+Die Turtle-Dateien sind die Pflegequelle. Der [Browser-Editor](https://github.com/ontologie8/editor8#lokal-starten) bearbeitet sie über Formulare und erzeugt die Mermaid-Seiten automatisch. Bei manueller Turtle-Pflege `python scripts/render_case_docs.py --write` ausführen. `python scripts/validate_cases.py` prüft die 20 Dateien und ihre Sichten.

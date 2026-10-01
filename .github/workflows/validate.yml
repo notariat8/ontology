@@ -1,7 +1,7 @@
-name: Validate ontology
-on:
-  push:
-  pull_request:
+name: Validate ontology data
+on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   turtle:
     runs-on: ubuntu-latest
