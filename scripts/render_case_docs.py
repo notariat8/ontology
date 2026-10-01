@@ -108,7 +108,7 @@ def render(slug: str, case_graph: Graph | None = None) -> str:
         "",
         "## Pflege",
         "",
-        "Fachbegriffe und Beziehungen mit dem [Browser-Editor](../../README.md#im-browser-bearbeiten) oder in [ontology.ttl](ontology.ttl) ändern. Der Editor erzeugt diese Seite beim Speichern. Bei manueller Turtle-Pflege `python scripts/render_case_docs.py --write` ausführen und beide Änderungen gemeinsam reviewen.",
+        "Fachbegriffe und Beziehungen mit dem [Browser-Editor](https://github.com/ontologie8/editor8#lokal-starten) oder in [ontology.ttl](ontology.ttl) ändern. Der Editor erzeugt diese Seite beim Speichern. Bei manueller Turtle-Pflege `python scripts/render_case_docs.py --write` ausführen und beide Änderungen gemeinsam reviewen.",
         "",
     ])
     return "\n".join(lines)
@@ -129,7 +129,7 @@ def render_index(slugs: list[str]) -> str:
         lines.append(f"| {label} | [Turtle]({slug}/ontology.ttl) | [Mermaid]({slug}/README.md) |")
     lines.extend([
         "",
-        "Die Turtle-Dateien sind die Pflegequelle. Der [Browser-Editor](../README.md#im-browser-bearbeiten) bearbeitet sie über Formulare und erzeugt die Mermaid-Seiten automatisch. Bei manueller Turtle-Pflege `python scripts/render_case_docs.py --write` ausführen. `python scripts/validate_cases.py` prüft die 20 Dateien und ihre Sichten.",
+        "Die Turtle-Dateien sind die Pflegequelle. Der [Browser-Editor](https://github.com/ontologie8/editor8#lokal-starten) bearbeitet sie über Formulare und erzeugt die Mermaid-Seiten automatisch. Bei manueller Turtle-Pflege `python scripts/render_case_docs.py --write` ausführen. `python scripts/validate_cases.py` prüft die 20 Dateien und ihre Sichten.",
         "",
     ])
     return "\n".join(lines)
