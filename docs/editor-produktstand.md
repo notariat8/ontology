@@ -18,6 +18,8 @@ Die [Palantir-Dokumentation zum Ontology Manager](https://www.palantir.com/docs/
 
 Das Ziel ist deshalb ein **vollwertiger Editor für den abgegrenzten NaC-Fachkatalog**, keine Kopie der gesamten Foundry-Plattform. BPMN bleibt in NaC für Abläufe zuständig. SHACL ist eine spätere Prüfschicht und wird erst nach einer konkreten Shapes-Entscheidung bearbeitet.
 
+Die [Editor-Roadmap vom 01.10.2026](editor-roadmap.md) priorisiert den nachgewiesenen Schreibweg, reproduzierbare Browserprüfungen und Bedienqualität vor weiteren Modellierungsfunktionen. Sie enthält Abnahmekriterien und grobe Token-Schätzungen für spätere Ausbauschritte.
+
 Die [UI-Prüfung mit Korrektur vom 30.09.2026](editor-ux-audit-2026-09-29.md) trennt Oberflächengestaltung und technische UI-Abnahme von der notariellen Fachprüfung. Die App zeigt keine Turtle-Rohansicht; die technische Fassung bleibt im Git-Repository.
 
 Die lokale Browserprüfung des aktuellen UI-Entwurfs bestätigte alle 20 Fallansichten einschließlich ihrer jeweiligen sichtbaren Graph-Bausteine. Am Immobilienkaufvertrag wurden die Ansicht „Verknüpft“ (14 Bausteine, 8 Verbindungen), der Zugang zu 8 unverknüpften Bausteinen, die Gesamtansicht, die nichtmodale Detailfläche, Zoom, Suche mit Tastatur, die fallbezogene Info, die Verbindungswahl per Suche und das Öffnen der Bearbeitungsfelder durchgeklickt. Bei 1438, 1100 und 500 Pixeln Breite traten in diesen Prüfwegen keine horizontalen Seitenüberläufe auf. Eine notarielle Fachfreigabe wurde dadurch nicht erteilt.
