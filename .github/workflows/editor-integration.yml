@@ -81,4 +81,5 @@ jobs:
         working-directory: ${{ github.workspace }}
         env:
           RESULT: ${{ job.status }}
-        run: echo "- Integration result: $RESULT" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo "- Integration result: $RESULT" >> "$GITHUB_STEP_SUMMARY"
