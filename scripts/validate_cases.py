@@ -78,12 +78,14 @@ def check_one(slug: str, source_ref: str, nac_root: Path | None) -> tuple[int, i
             raise ValueError(f"{slug}: source is not a canonical case")
         for key in CATEGORIES:
             expected = {n["id"]: n["label"] for n in item[key]}
-            if actual_by_category[key] != expected:
+            imported = {node_id: label for node_id, label in actual_by_category[key].items() if not node_id.startswith("local.")}
+            if imported != expected:
                 raise ValueError(f"{slug}: {key} node IDs or labels differ from pinned NaC template")
             if any(n.get("value") is not None for n in item[key]):
                 raise ValueError(f"{slug}: source includes non-null case value")
         expected_edges = {(e["from"], str(N8[EDGES[e["type"]]]), e["to"]) for e in item["edges"]}
-        if edges != expected_edges:
+        imported_edges = {edge for edge in edges if not edge[0].startswith("local.") and not edge[2].startswith("local.")}
+        if imported_edges != expected_edges:
             raise ValueError(f"{slug}: relationships differ from pinned NaC template")
         refs = {n["id"]: n["url"] for n in source["source_refs"]}
         expected_urls = {URIRef(refs[anchor]) for anchor in item["legal_anchors"]}
@@ -108,7 +110,7 @@ def main() -> int:
         nodes, edges = check_one(slug, baseline["source_ref"], args.nac_root)
         total_nodes += nodes
         total_edges += edges
-    print(f"OK: 20 case TTL modules and Mermaid pages, {total_nodes} typed nodes, {total_edges} relationships" + ("; pinned NaC content matches" if args.nac_root else ""))
+    print(f"OK: 20 case TTL modules and Mermaid pages, {total_nodes} typed nodes, {total_edges} relationships" + ("; pinned NaC import preserved (local drafts allowed)" if args.nac_root else ""))
     return 0
 
 

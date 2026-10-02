@@ -3,6 +3,7 @@
 @prefix n8: <https://notariat8.github.io/ontology/id/> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
 n8:vorgangsart-erbausschlagung
   dcterms:description "Erbausschlagungserklärung gegenüber dem Nachlassgericht mit Frist, Identität, Vertretung, Minderjährigen- oder Betreuungsbezug und Zustellnachweis."@de ;
@@ -196,3 +197,463 @@ n8:vorgangsart-erbausschlagung
 <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/cost.business_value> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/decision.gnotkg_cost_path> .
 <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/decision.gnotkg_cost_path> n8:blockiertBisVollstaendig <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/gate.gnotkg_cost_review> .
 <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/gate.gnotkg_cost_review> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/evidence.gnotkg_cost_note> .
+
+# Zusätzliche Fachbausteine aus der bereitgestellten NaC-Standardvorlage.
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.scope> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.scope> a n8:Angabenfrage ;
+  n8:lokaleNodeId "local.mandate.scope" ;
+  skos:prefLabel "Auftragsumfang und Vollzugsleistungen"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "I" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:offeneFrage "Welche Angaben und Nachweise sind für Auftragsumfang und Vollzugsleistungen erforderlich?"@de .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.conflict> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.conflict> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.mandate.conflict" ;
+  skos:prefLabel "Konflikt- und Beteiligtenprüfung"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "I" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.privacy> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.privacy> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.mandate.privacy" ;
+  skos:prefLabel "Datensparsame Aktenanlage"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "I" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.deadline.file> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.deadline.file> a n8:Dokumenttyp ;
+  n8:lokaleNodeId "local.deadline.file" ;
+  skos:prefLabel "Fristenblatt und Wiedervorlagen"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "I" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decedent.residence> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decedent.residence> a n8:Angabenfrage ;
+  n8:lokaleNodeId "local.decedent.residence" ;
+  skos:prefLabel "Aufenthalt und Auslandswohnsitz des Erblassers"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "II" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:offeneFrage "Welche Angaben und Nachweise sind für Aufenthalt und Auslandswohnsitz des Erblassers erforderlich?"@de .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.renouncer.capacity> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.renouncer.capacity> a n8:Angabenfrage ;
+  n8:lokaleNodeId "local.renouncer.capacity" ;
+  skos:prefLabel "Geschäftsfähigkeit und Aufenthalt der ausschlagenden Person"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "II" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:offeneFrage "Welche Angaben und Nachweise sind für Geschäftsfähigkeit und Aufenthalt der ausschlagenden Person erforderlich?"@de .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.family.successors> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.family.successors> a n8:Angabenfrage ;
+  n8:lokaleNodeId "local.family.successors" ;
+  skos:prefLabel "Kinder und weitere mögliche Nachberufene"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "II" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:offeneFrage "Welche Angaben und Nachweise sind für Kinder und weitere mögliche Nachberufene erforderlich?"@de .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.heirship.multiple> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.heirship.multiple> a n8:Angabenfrage ;
+  n8:lokaleNodeId "local.heirship.multiple" ;
+  skos:prefLabel "Mehrere Berufungsgründe und Vor- oder Nacherbschaft"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "II" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:offeneFrage "Welche Angaben und Nachweise sind für Mehrere Berufungsgründe und Vor- oder Nacherbschaft erforderlich?"@de .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.knowledge.times> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.knowledge.times> a n8:Angabenfrage ;
+  n8:lokaleNodeId "local.knowledge.times" ;
+  skos:prefLabel "Kenntnis von Erbfall und Berufungsgrund"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "II" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:offeneFrage "Welche Angaben und Nachweise sind für Kenntnis von Erbfall und Berufungsgrund erforderlich?"@de .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.international.links> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.international.links> a n8:Angabenfrage ;
+  n8:lokaleNodeId "local.international.links" ;
+  skos:prefLabel "Internationale Bezüge"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "II" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:offeneFrage "Welche Angaben und Nachweise sind für Internationale Bezüge erforderlich?"@de .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.prior.acts> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.prior.acts> a n8:Angabenfrage ;
+  n8:lokaleNodeId "local.prior.acts" ;
+  skos:prefLabel "Vorhandlungen am Nachlass"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "II" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:offeneFrage "Welche Angaben und Nachweise sind für Vorhandlungen am Nachlass erforderlich?"@de .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.intake> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.intake> a n8:Dokumenttyp ;
+  n8:lokaleNodeId "local.doc.intake" ;
+  skos:prefLabel "Erhebungsbogen und Dokumentenliste"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "II" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.acceptance> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.acceptance> a n8:Entscheidungspunkt ;
+  n8:lokaleNodeId "local.decision.acceptance" ;
+  skos:prefLabel "Mögliche Annahme der Erbschaft"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "III" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:entscheidungsoption "none-indicated" ;
+  n8:entscheidungsoption "possible" ;
+  n8:entscheidungsoption "needs-notarial-review" .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.successor> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.successor> a n8:Entscheidungspunkt ;
+  n8:lokaleNodeId "local.decision.successor" ;
+  skos:prefLabel "Nachrücken und Folgeerklärungen"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "III" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:entscheidungsoption "yes" ;
+  n8:entscheidungsoption "no" ;
+  n8:entscheidungsoption "needs-review" .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.legal.risk> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.legal.risk> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.legal.risk" ;
+  skos:prefLabel "Notarielle Prüfung von Sonderrisiken"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "III" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.risk.memo> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.risk.memo> a n8:Nachweistyp ;
+  n8:lokaleNodeId "local.evidence.risk.memo" ;
+  skos:prefLabel "Risiko- und Eskalationsvermerk"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "III" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.deadline.period> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.deadline.period> a n8:Entscheidungspunkt ;
+  n8:lokaleNodeId "local.decision.deadline.period" ;
+  skos:prefLabel "Sechs Wochen oder sechs Monate"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "IV" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:entscheidungsoption "six-weeks" ;
+  n8:entscheidungsoption "six-months" ;
+  n8:entscheidungsoption "unclear" .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.deadline.four.eyes> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.deadline.four.eyes> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.deadline.four.eyes" ;
+  skos:prefLabel "Vier-Augen-Fristkontrolle"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "IV" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.court> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.court> a n8:Entscheidungspunkt ;
+  n8:lokaleNodeId "local.decision.court" ;
+  skos:prefLabel "Empfangendes Nachlassgericht"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "IV" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:entscheidungsoption "decedent-court" ;
+  n8:entscheidungsoption "renouncer-court" ;
+  n8:entscheidungsoption "needs-review" .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.court.memo> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.court.memo> a n8:Nachweistyp ;
+  n8:lokaleNodeId "local.evidence.court.memo" ;
+  skos:prefLabel "Zuständigkeitsvermerk"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "IV" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.form> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.form> a n8:Entscheidungspunkt ;
+  n8:lokaleNodeId "local.decision.form" ;
+  skos:prefLabel "Form der Ausschlagungserklärung"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "V" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:entscheidungsoption "court-record" ;
+  n8:entscheidungsoption "publicly-certified" ;
+  n8:entscheidungsoption "notarial-record-review" .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.draft> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.draft> a n8:Dokumenttyp ;
+  n8:lokaleNodeId "local.doc.draft" ;
+  skos:prefLabel "Entwurf der Ausschlagungserklärung"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "V" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.notary.explanation> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.notary.explanation> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.notary.explanation" ;
+  skos:prefLabel "Notarielle Belehrung und Willensklärung"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "V" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.explanation> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.explanation> a n8:Nachweistyp ;
+  n8:lokaleNodeId "local.evidence.explanation" ;
+  skos:prefLabel "Belehrungs- und Entscheidungsvermerk"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "V" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.proxy> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.proxy> a n8:Dokumenttyp ;
+  n8:lokaleNodeId "local.doc.proxy" ;
+  skos:prefLabel "Öffentlich beglaubigte Vollmacht oder notarielle Bescheinigung"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VI" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.proxy> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.proxy> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.proxy" ;
+  skos:prefLabel "Vertretungsmacht und Interessenkollision"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VI" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.minor.approval> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.minor.approval> a n8:Entscheidungspunkt ;
+  n8:lokaleNodeId "local.decision.minor.approval" ;
+  skos:prefLabel "Genehmigungsbedarf für vertretene Person"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VI" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:entscheidungsoption "yes" ;
+  n8:entscheidungsoption "no" ;
+  n8:entscheidungsoption "needs-review" .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.approval.deadline> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.approval.deadline> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.approval.deadline" ;
+  skos:prefLabel "Genehmigungsantrag und Fristwirkung"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VI" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.approval.track> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.approval.track> a n8:Nachweistyp ;
+  n8:lokaleNodeId "local.evidence.approval.track" ;
+  skos:prefLabel "Individueller Genehmigungs- und Fristnachweis"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VI" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.execution> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.execution> a n8:Entscheidungspunkt ;
+  n8:lokaleNodeId "local.decision.execution" ;
+  skos:prefLabel "Vollzugsauftrag an Notar erteilt?"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:entscheidungsoption "notary-executes" ;
+  n8:entscheidungsoption "client-files" .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.execution.order> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.execution.order> a n8:Dokumenttyp ;
+  n8:lokaleNodeId "local.doc.execution.order" ;
+  skos:prefLabel "Schriftlicher Vollzugsauftrag"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.dispatch> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.dispatch> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.dispatch" ;
+  skos:prefLabel "Versandform und gerichtliche Vorgaben"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.followup> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.followup> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.receipt.followup" ;
+  skos:prefLabel "Gerichtseingang überwachen"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.dispatch> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.dispatch> a n8:Nachweistyp ;
+  n8:lokaleNodeId "local.evidence.dispatch" ;
+  skos:prefLabel "Versand- und Gerichtseingangsnachweis"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.handover> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.handover> a n8:Dokumenttyp ;
+  n8:lokaleNodeId "local.doc.handover" ;
+  skos:prefLabel "Schriftlicher Hinweis bei Selbsteinreichung"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.handover> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.handover> a n8:Nachweistyp ;
+  n8:lokaleNodeId "local.evidence.handover" ;
+  skos:prefLabel "Quittierte Aushändigung und Hinweisvermerk"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.followup.scope> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.followup.scope> a n8:Entscheidungspunkt ;
+  n8:lokaleNodeId "local.decision.followup.scope" ;
+  skos:prefLabel "Nachkontrolle ohne Vollzugsauftrag vereinbart?"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:entscheidungsoption "agreed" ;
+  n8:entscheidungsoption "not-agreed" .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.meaning> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.meaning> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.receipt.meaning" ;
+  skos:prefLabel "Eingangsbestätigung richtig einordnen"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VIII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.communication> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.communication> a n8:Entscheidungspunkt ;
+  n8:lokaleNodeId "local.decision.communication" ;
+  skos:prefLabel "Abschlussmitteilung beauftragt?"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VIII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> ;
+  n8:entscheidungsoption "commissioned" ;
+  n8:entscheidungsoption "not-commissioned" .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.successor.contact> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.successor.contact> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.successor.contact" ;
+  skos:prefLabel "Kontakt zu Nachberufenen begrenzen"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VIII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.court.correspondence> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.court.correspondence> a n8:Nachweistyp ;
+  n8:lokaleNodeId "local.evidence.court.correspondence" ;
+  skos:prefLabel "Gerichtliche Korrespondenz und Nachfragen"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "VIII" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.file.complete> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.file.complete> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.file.complete" ;
+  skos:prefLabel "Vollständigkeits- und Endkontrolle"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "IX" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.retention> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.retention> a n8:Pruefgate ;
+  n8:lokaleNodeId "local.gate.retention" ;
+  skos:prefLabel "Aufbewahrung und Urkundensammlung"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "IX" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.closure> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.closure> a n8:Nachweistyp ;
+  n8:lokaleNodeId "local.evidence.closure" ;
+  skos:prefLabel "Abschlussvermerk"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "IX" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+n8:vorgangsart-erbausschlagung n8:hatBaustein <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.cost> .
+
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.cost> a n8:Nachweistyp ;
+  n8:lokaleNodeId "local.evidence.cost" ;
+  skos:prefLabel "Kostenrechnung und Kostenprüfung"@de ;
+  n8:pflegeStatus "draft-notarial-review" ;
+  n8:quellabschnitt "IX" ;
+  dcterms:source <urn:sha256:8bc96ab1a3a456910a444507e124647b026e873dd904486435e6d5fb89a6b33b> .
+
+# Fachliche Beziehungen; keine BPMN-Sequenzflüsse.
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.scope> n8:erfordertEntscheidung <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.execution> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.scope> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.communication> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.scope> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.conflict> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.scope> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.privacy> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.knowledge.times> n8:fuellt <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.deadline.file> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decedent.residence> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.deadline.period> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.renouncer.capacity> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.deadline.period> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.heirship.multiple> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.legal.risk> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.prior.acts> n8:erfordertEntscheidung <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.acceptance> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.acceptance> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.legal.risk> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.successor> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.family.successors> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.legal.risk> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.risk.memo> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.deadline.period> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.deadline.four.eyes> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.deadline.four.eyes> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/evidence.deadline_review> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decedent.residence> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.court> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.court> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.court.memo> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.form> n8:bestimmt <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.draft> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.draft> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.notary.explanation> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.notary.explanation> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.explanation> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.proxy> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.proxy> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.renouncer.capacity> n8:erfordertEntscheidung <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.minor.approval> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.minor.approval> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.approval.deadline> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.approval.deadline> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.approval.track> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.execution> n8:bestimmt <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.execution.order> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.execution.order> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.dispatch> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.dispatch> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.followup> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.followup> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.dispatch> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.execution> n8:bestimmt <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.handover> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.handover> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.handover> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.handover> n8:erfordertEntscheidung <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.followup.scope> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.dispatch> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.meaning> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.meaning> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.court.correspondence> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.communication> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.successor.contact> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.file.complete> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.closure> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.retention> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.closure> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.cost> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.file.complete> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/decedent.identity> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.intake> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/renouncer.identity> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.intake> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/heirship.basis> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.successor> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/deadline.status> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.deadline.period> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/representation.minors> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.minor.approval> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/delivery.route> n8:informiert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.execution> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/gate.court_delivery> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.meaning> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/doc.renunciation_declaration> n8:erfordert <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.dispatch> .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/doc.approval_evidence> n8:belegtDurch <https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.approval.track> .
+
+# Präzisierende Prüfinhalte aus der Vorlage; Typen und keine Aktenwerte.
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.mandate.scope> rdfs:comment "Auftrag getrennt nach Vorbereitung, Beglaubigung oder Beurkundung, Fristprüfung, Zuständigkeit, Genehmigungsverfahren, Versand, Empfangsbestätigung und Abschlussinformation klären. Steuerliche oder wirtschaftliche Gestaltung nur bei eigenem Auftrag."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.deadline.file> rdfs:comment "Fristenakte sofort anlegen, auch wenn Belege fehlen. Fristbeginn, vorläufiges Fristende, interne Vorfristen, Eingangskontrolle und Abschluss mit Verantwortlichkeit und Wiedervorlage erfassen."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.knowledge.times> rdfs:comment "Kenntnis vom Erbfall und vom Berufungsgrund getrennt erheben und durch Gerichtsschreiben oder nachvollziehbaren Aktenvermerk belegen."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.prior.acts> rdfs:comment "Besitznahme, Verfügung, Zahlung oder Geltendmachung von Nachlassverbindlichkeiten, Erbscheinsantrag und Kommunikation mit Banken oder Behörden als mögliche Annahmehandlungen erfassen."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.deadline.period> rdfs:comment "Grundsätzlich sechs Wochen prüfen; sechs Monate bei gesetzlich relevantem Auslandsbezug. Bei Verfügung von Todes wegen den besonderen Fristbeginn nach Bekanntgabe durch das Gericht beachten."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.deadline.four.eyes> rdfs:comment "Kenntnisbelege, Fristbeginn und Fristende, interne Vorfrist sowie Versand mindestens im Vier-Augen-Prinzip prüfen. Maßgeblich ist der Gerichtszugang."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.court> rdfs:comment "Gericht am letzten gewöhnlichen Aufenthalt des Erblassers und die Empfangsmöglichkeit am gewöhnlichen Aufenthalt des Ausschlagenden prüfen; Zweifel sofort eskalieren."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.notary.explanation> rdfs:comment "Willen und Beweggründe klären; Folgen, Nachrücken, mehrere Berufungsgründe, Frist, Gerichtszugang und Grenzen einer gerichtlichen Eingangsbestätigung erläutern."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.minor.approval> rdfs:comment "Bei minderjährigen, betreuten oder sonst vertretenen Personen Genehmigungserfordernis und mögliche Ausnahme für nachrückende Kinder einzelfallbezogen prüfen; keine pauschale Aussage."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.approval.deadline> rdfs:comment "Vertretungsmacht, gemeinsamen Willen der Sorgeberechtigten, Genehmigungsantrag, Antragseingang, mögliche Fristwirkung und spätere Vorlage der Genehmigung prüfen."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.decision.execution> rdfs:comment "Zwei alternative Wege: Notariat übernimmt Übermittlung und Zugangskontrolle oder Mandantschaft reicht selbst beim Gericht ein. Den Auftrag schriftlich festhalten."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.dispatch> rdfs:comment "Je nach Urkundenform Original, Ausfertigung oder erforderliche Abschrift und aktuelle gerichtliche Vorgaben zur Übermittlung prüfen."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.followup> rdfs:comment "Bei beauftragtem Vollzug bis zum nachgewiesenen Gerichtseingang täglich kontrollieren, bei fehlender Bestätigung nachfassen und bei Risiko sofort eskalieren."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.doc.handover> rdfs:comment "Bei Selbsteinreichung schriftlich auf eigene Verantwortung, unverzügliche Einreichung und maßgeblichen Gerichtszugang hinweisen; keine Wirksamkeitszusage."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.evidence.handover> rdfs:comment "Quittierte Übergabe, Datum, übergebene Unterlagen und Hinweis auf Gerichtszugang als Nachweisart dokumentieren."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.receipt.meaning> rdfs:comment "Gerichtliche Eingangsbestätigung nur als Nachweis des Eingangs behandeln; sie ist keine abschließende Bestätigung materieller oder formeller Wirksamkeit."@de .
+<https://notariat8.github.io/ontology/id/case/erbausschlagung/node/local.gate.file.complete> rdfs:comment "Urkunde, Identität, Fristenblatt, Vollmacht, Genehmigung, Versand, Zugang, Kommunikation, Kosten und offene Risiken vor Abschluss prüfen."@de .
